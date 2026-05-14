@@ -89,9 +89,12 @@ spec:
         prometheus:
           address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
           query: |
-            histogram_quantile(
-              0.95,
-              sum(rate(demo_http_request_duration_seconds_bucket{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m])) by (le)
+            (
+              histogram_quantile(
+                0.95,
+                sum(rate(demo_http_request_duration_seconds_bucket{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m])) by (le)
+              )
+              or on() vector(0)
             )
 YAML
 
