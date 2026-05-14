@@ -15,11 +15,11 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v1-argocd-base
+        version: v1-argocd-test
     spec:
       containers:
         - name: demo-app
-          image: 192.168.30.11:30500/sre/demo-app:v1-argocd-base
+          image: 192.168.30.11:30500/sre/demo-app:v1-argocd-test
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -28,7 +28,7 @@ spec:
             - name: VERSION
               value: "v1"
             - name: RELEASE_TAG
-              value: "v1-argocd-base"
+              value: "v1-argocd-test"
             - name: FAULT_RATE
               value: "0"
             - name: LATENCY_MS
