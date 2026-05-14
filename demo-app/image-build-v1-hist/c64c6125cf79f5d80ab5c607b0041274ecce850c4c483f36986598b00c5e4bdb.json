@@ -1,0 +1,30 @@
+{
+  "created": "2026-05-13T00:00:00Z",
+  "architecture": "amd64",
+  "os": "linux",
+  "config": {
+    "ExposedPorts": {
+      "8080/tcp": {}
+    },
+    "Env": [
+      "VERSION=v1",
+      "FAULT_RATE=0",
+      "LATENCY_MS=0"
+    ],
+    "Entrypoint": [
+      "/demo-app"
+    ]
+  },
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:eceb4b580efe4760a172dcb1ba32b51624a7b374447859077a0902f2cd79df18"
+    ]
+  },
+  "history": [
+    {
+      "created": "2026-05-13T00:00:00Z",
+      "created_by": "manual build from scratch"
+    }
+  ]
+}

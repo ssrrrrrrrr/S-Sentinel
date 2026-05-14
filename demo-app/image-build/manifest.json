@@ -1,0 +1,11 @@
+[
+  {
+    "Config": "1332be1771614a19480a5522eb6dd7fd12b4a6bffbaf2ea34498f16242beeda9.json",
+    "RepoTags": [
+      "demo-app:v2"
+    ],
+    "Layers": [
+      "layer.tar"
+    ]
+  }
+]
