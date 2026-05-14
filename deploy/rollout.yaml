@@ -15,11 +15,11 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v1
+        version: v1-gitops
     spec:
       containers:
         - name: demo-app
-          image: demo-app:v1
+          image: 192.168.30.11:30500/sre/demo-app:v1-gitops
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -27,6 +27,8 @@ spec:
           env:
             - name: VERSION
               value: "v1"
+            - name: RELEASE_TAG
+              value: "v1-gitops"
             - name: FAULT_RATE
               value: "0"
             - name: LATENCY_MS

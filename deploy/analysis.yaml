@@ -16,13 +16,13 @@ spec:
           query: |
             (
               (
-                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v2-version-bad",status=~"5.."}[1m]))
+                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v1-gitops",status=~"5.."}[1m]))
                 or vector(0)
               )
               /
               clamp_min(
                 (
-                  sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v2-version-bad"}[1m]))
+                  sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v1-gitops"}[1m]))
                   or vector(0)
                 ),
                 0.001
@@ -40,5 +40,5 @@ spec:
           query: |
             histogram_quantile(
               0.95,
-              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="v2-version-bad"}[1m])) by (le)
+              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="v1-gitops"}[1m])) by (le)
             )
