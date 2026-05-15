@@ -2,9 +2,9 @@
 set -euo pipefail
 
 if [ $# -ne 4 ]; then
-  echo "Usage: $0 <IMAGE_TAG> <APP_VERSION> <FAULT_RATE> <LATENCY_MS>"
-  echo "Example healthy: $0 v1-gitops v1 0 0"
-  echo "Example bad:     $0 v2-gitops-bad v2 0.8 800"
+  echo "Usage: $0 <image_tag> <app_version> <fault_rate> <latency_ms>"
+  echo "Example healthy: $0 v1-actions v1 0 0"
+  echo "Example bad:     $0 v2-actions-bad v2 0.8 800"
   exit 1
 fi
 
@@ -19,36 +19,41 @@ NAMESPACE="slo-rollout"
 ROLLOUT_NAME="demo-app"
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
+APP_DIR="${ROOT_DIR}/demo-app"
 DEPLOY_DIR="${ROOT_DIR}/deploy"
+BASE_DIR="${ROOT_DIR}/deploy/base"
 
 LOCAL_IMAGE="docker.io/library/demo-app:${IMAGE_TAG}"
 REMOTE_IMAGE="${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 TAR_FILE="demo-app-${IMAGE_TAG}.tar"
 
 echo "========== GitOps Release Info =========="
-echo "IMAGE_TAG:   ${IMAGE_TAG}"
-echo "APP_VERSION: ${APP_VERSION}"
-echo "FAULT_RATE:  ${FAULT_RATE}"
-echo "LATENCY_MS:  ${LATENCY_MS}"
-echo "REMOTE:      ${REMOTE_IMAGE}"
+echo "IMAGE_TAG:    ${IMAGE_TAG}"
+echo "APP_VERSION:  ${APP_VERSION}"
+echo "FAULT_RATE:   ${FAULT_RATE}"
+echo "LATENCY_MS:   ${LATENCY_MS}"
+echo "REMOTE_IMAGE: ${REMOTE_IMAGE}"
+echo "BASE_DIR:     ${BASE_DIR}"
 echo "========================================="
 
-echo "[1/6] Build Go binary..."
+cd "${APP_DIR}"
+
+echo "[1/7] Build Go binary..."
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o demo-app main.go
 
-echo "[2/6] Build image tar..."
+echo "[2/7] Build image tar..."
 python3 build-image.py "${IMAGE_TAG}" "${APP_VERSION}" "${FAULT_RATE}" "${LATENCY_MS}"
 
-echo "[3/6] Import image into containerd..."
+echo "[3/7] Import image into containerd..."
 ctr -n k8s.io images import "${TAR_FILE}"
 
-echo "[4/6] Tag and push image to private registry..."
+echo "[4/7] Tag and push image to private registry..."
 ctr -n k8s.io images tag --force "${LOCAL_IMAGE}" "${REMOTE_IMAGE}"
 ctr -n k8s.io images push --plain-http "${REMOTE_IMAGE}"
 
-echo "[5/6] Render GitOps manifests..."
+echo "[5/7] Render GitOps manifests into deploy/base..."
 
-cat > "${DEPLOY_DIR}/analysis.yaml" <<YAML
+cat > "${BASE_DIR}/analysis.yaml" <<EOF_ANALYSIS
 apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
@@ -56,49 +61,63 @@ metadata:
   namespace: ${NAMESPACE}
 spec:
   metrics:
-    - name: error-rate
-      interval: 20s
-      count: 3
-      failureLimit: 1
-      successCondition: result[0] < 5
-      provider:
-        prometheus:
-          address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-          query: |
-            (
-              (
-                sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}",status=~"5.."}[1m]))
-                or vector(0)
-              )
-              /
-              clamp_min(
-                (
-                  sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m]))
-                  or vector(0)
-                ),
-                0.001
-              )
-            ) * 100
+  - name: request-count
+    interval: 20s
+    count: 3
+    failureLimit: 1
+    successCondition: result[0] >= 20
+    provider:
+      prometheus:
+        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          (
+            sum(increase(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m]))
+            or on() vector(0)
+          )
 
-    - name: p95-latency
-      interval: 20s
-      count: 3
-      failureLimit: 1
-      successCondition: isNaN(result[0]) || result[0] < 0.3
-      provider:
-        prometheus:
-          address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-          query: |
+  - name: error-rate
+    interval: 20s
+    count: 3
+    failureLimit: 1
+    successCondition: result[0] < 5
+    provider:
+      prometheus:
+        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          (
             (
-              histogram_quantile(
-                0.95,
-                sum(rate(demo_http_request_duration_seconds_bucket{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m])) by (le)
-              )
-              or on() vector(0)
+              sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}",status=~"5.."}[1m]))
+              or vector(0)
             )
-YAML
+            /
+            clamp_min(
+              (
+                sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m]))
+                or vector(0)
+              ),
+              0.001
+            )
+          ) * 100
 
-cat > "${DEPLOY_DIR}/rollout.yaml" <<YAML
+  - name: p95-latency
+    interval: 20s
+    count: 3
+    failureLimit: 1
+    successCondition: isNaN(result[0]) || result[0] < 0.3
+    provider:
+      prometheus:
+        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          (
+            histogram_quantile(
+              0.95,
+              sum(rate(demo_http_request_duration_seconds_bucket{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m])) by (le)
+            )
+            or on() vector(0)
+          )
+EOF_ANALYSIS
+
+cat > "${BASE_DIR}/rollout.yaml" <<EOF_ROLLOUT
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
@@ -119,65 +138,69 @@ spec:
         version: ${IMAGE_TAG}
     spec:
       containers:
-        - name: demo-app
-          image: ${REMOTE_IMAGE}
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
-              name: http
-          env:
-            - name: VERSION
-              value: "${APP_VERSION}"
-            - name: RELEASE_TAG
-              value: "${IMAGE_TAG}"
-            - name: FAULT_RATE
-              value: "${FAULT_RATE}"
-            - name: LATENCY_MS
-              value: "${LATENCY_MS}"
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 10
+      - name: demo-app
+        image: ${REMOTE_IMAGE}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: VERSION
+          value: "${APP_VERSION}"
+        - name: RELEASE_TAG
+          value: "${IMAGE_TAG}"
+        - name: FAULT_RATE
+          value: "${FAULT_RATE}"
+        - name: LATENCY_MS
+          value: "${LATENCY_MS}"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
   strategy:
     canary:
       steps:
-        - setWeight: 20
-        - pause:
-            duration: 30s
-        - analysis:
-            templates:
-              - templateName: demo-app-error-rate
-        - setWeight: 50
-        - pause:
-            duration: 30s
-        - analysis:
-            templates:
-              - templateName: demo-app-error-rate
-        - setWeight: 100
-YAML
+      - setWeight: 20
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: demo-app-error-rate
+      - setWeight: 50
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: demo-app-error-rate
+      - setWeight: 100
+EOF_ROLLOUT
 
-echo "[6/6] Git commit manifests..."
 cd "${ROOT_DIR}"
 
-git add deploy/analysis.yaml deploy/rollout.yaml
-git commit -m "release ${IMAGE_TAG}" || echo "No git changes to commit"
+echo "[6/7] Validate kustomize render..."
+kubectl kustomize "${DEPLOY_DIR}" >/tmp/slo-rollout-rendered.yaml
+grep -q "name: request-count" /tmp/slo-rollout-rendered.yaml
+grep -q "version=\"${IMAGE_TAG}\"" /tmp/slo-rollout-rendered.yaml
+echo "Kustomize render OK."
 
-echo
-echo "GitOps release files updated."
-echo
-echo "Next step:"
-echo "  cd ${ROOT_DIR}"
-echo "  kubectl apply -k deploy"
-echo
-echo "Check:"
-echo "  kubectl get rollout -n ${NAMESPACE}"
-echo "  kubectl get analysisrun -n ${NAMESPACE}"
-echo "  kubectl get pods -n ${NAMESPACE} -L version -o wide"
+echo "[7/7] Commit and push GitOps changes..."
+git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
+
+if git diff --cached --quiet; then
+  echo "No GitOps changes to commit."
+else
+  git config user.name "sre-demo"
+  git config user.email "sre-demo@example.com"
+  git commit -m "release: ${IMAGE_TAG}"
+  git push origin main
+fi
+
+echo "Release GitOps update finished."
