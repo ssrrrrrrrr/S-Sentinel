@@ -4,3 +4,6 @@ argocd_repo_key
 argocd_repo_key.pub
 *.key
 *.pem
+
+# GitHub Actions runner local files
+actions-runner/
