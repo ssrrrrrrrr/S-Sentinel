@@ -18,7 +18,7 @@ IMAGE_NAME="sre/demo-app"
 NAMESPACE="slo-rollout"
 ROLLOUT_NAME="demo-app"
 
-ROOT_DIR="/root/slo-rollout-demo"
+ROOT_DIR="$(git rev-parse --show-toplevel)"
 DEPLOY_DIR="${ROOT_DIR}/deploy"
 
 LOCAL_IMAGE="docker.io/library/demo-app:${IMAGE_TAG}"
