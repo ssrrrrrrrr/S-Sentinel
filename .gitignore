@@ -1,4 +1,3 @@
-
 # secrets
 argocd_repo_key
 argocd_repo_key.pub
@@ -14,4 +13,9 @@ demo-app/image-build*/
 demo-app/demo-app
 demo-app/app*.log
 *.bak
+
+# local argocd application file
 argocd-slo-rollout-app.yaml
+
+# system files
+.DS_Store
