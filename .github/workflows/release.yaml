@@ -28,11 +28,19 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout repository by SSH
+        run: |
+          rm -rf "$GITHUB_WORKSPACE"
+          mkdir -p "$GITHUB_WORKSPACE"
+
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          git clone --branch main git@github.com:ssrrrrrrrr/slo-rollout-demo.git "$GITHUB_WORKSPACE"
 
       - name: Show environment
         run: |
+          cd "$GITHUB_WORKSPACE"
           pwd
           git status
           go version
@@ -42,12 +50,13 @@ jobs:
 
       - name: Configure git
         run: |
+          cd "$GITHUB_WORKSPACE"
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
       - name: Run GitOps release script
         run: |
-          cd demo-app
+          cd "$GITHUB_WORKSPACE/demo-app"
           chmod +x release-gitops.sh
           ./release-gitops.sh \
             "${{ github.event.inputs.image_tag }}" \
@@ -57,4 +66,5 @@ jobs:
 
       - name: Push GitOps manifest changes
         run: |
+          cd "$GITHUB_WORKSPACE"
           git push origin main
