@@ -7,3 +7,9 @@ argocd_repo_key.pub
 
 # GitHub Actions runner local files
 actions-runner/
+
+# demo-app build artifacts
+demo-app/*.tar
+demo-app/image-build*/
+demo-app/demo-app
+demo-app/app*.log
