@@ -18,46 +18,46 @@ spec:
         version: v1-actions
     spec:
       containers:
-        - name: demo-app
-          image: 192.168.30.11:30500/sre/demo-app:v1-actions
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
-              name: http
-          env:
-            - name: VERSION
-              value: "v1"
-            - name: RELEASE_TAG
-              value: "v1-actions"
-            - name: FAULT_RATE
-              value: "0"
-            - name: LATENCY_MS
-              value: "0"
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 10
+      - name: demo-app
+        image: 192.168.30.11:30500/sre/demo-app:v1-actions
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: VERSION
+          value: "v1"
+        - name: RELEASE_TAG
+          value: "v1-actions"
+        - name: FAULT_RATE
+          value: "0"
+        - name: LATENCY_MS
+          value: "0"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
   strategy:
     canary:
       steps:
-        - setWeight: 20
-        - pause:
-            duration: 30s
-        - analysis:
-            templates:
-              - templateName: demo-app-error-rate
-        - setWeight: 50
-        - pause:
-            duration: 30s
-        - analysis:
-            templates:
-              - templateName: demo-app-error-rate
-        - setWeight: 100
+      - setWeight: 20
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: demo-app-error-rate
+      - setWeight: 50
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: demo-app-error-rate
+      - setWeight: 100
