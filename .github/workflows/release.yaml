@@ -1,0 +1,60 @@
+name: Release Demo App
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag / release tag"
+        required: true
+        default: "v1-actions"
+      app_version:
+        description: "App version"
+        required: true
+        default: "v1"
+      fault_rate:
+        description: "Fault rate"
+        required: true
+        default: "0"
+      latency_ms:
+        description: "Latency ms"
+        required: true
+        default: "0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          pwd
+          git status
+          go version
+          python3 --version
+          kubectl version --client
+          ctr version
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Run GitOps release script
+        run: |
+          cd demo-app
+          chmod +x release-gitops.sh
+          ./release-gitops.sh \
+            "${{ github.event.inputs.image_tag }}" \
+            "${{ github.event.inputs.app_version }}" \
+            "${{ github.event.inputs.fault_rate }}" \
+            "${{ github.event.inputs.latency_ms }}"
+
+      - name: Push GitOps manifest changes
+        run: |
+          git push origin main
