@@ -14,3 +14,4 @@ demo-app/image-build*/
 demo-app/demo-app
 demo-app/app*.log
 *.bak
+argocd-slo-rollout-app.yaml
