@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: slo-rollout-webhook
+  namespace: monitoring
+  labels:
+    project: slo-rollout-demo
+spec:
+  route:
+    receiver: release-webhook
+    groupBy:
+      - alertname
+      - project
+      - version
+    groupWait: 10s
+    groupInterval: 30s
+    repeatInterval: 10m
+    matchers:
+      - name: project
+        value: slo-rollout-demo
+        matchType: "="
+  receivers:
+    - name: release-webhook
+      webhookConfigs:
+        - url: http://192.168.30.11:18080/alertmanager
+          sendResolved: false
