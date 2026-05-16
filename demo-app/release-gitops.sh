@@ -38,7 +38,15 @@ echo "========================================="
 
 cd "${APP_DIR}"
 
-echo "[1/7] Build Go binary..."
+echo "[1/7] Prepare Go build cache..."
+export HOME="${HOME:-/tmp/slo-runner-home}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/tmp/slo-runner-cache}"
+export GOCACHE="${GOCACHE:-/tmp/slo-go-build-cache}"
+export GOMODCACHE="${GOMODCACHE:-/tmp/slo-go-mod-cache}"
+
+mkdir -p "$HOME" "$XDG_CACHE_HOME" "$GOCACHE" "$GOMODCACHE"
+
+echo "[2/7] Build Go binary..."
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o demo-app main.go
 
 echo "[2/7] Build image tar..."
