@@ -112,6 +112,11 @@ Has Prometheus Query Error: {has_prometheus_error}
 
 关键原文证据：
 {evidence_text}
+
+指标含义说明：
+- request-count：最小流量门禁，成功条件是 result[0] >= 20。如果失败，说明样本量不足。
+- error-rate：5xx 错误率门禁，成功条件是 result[0] < 5。如果失败，说明错误率超过 5%。
+- p95-latency：P95 延迟门禁，成功条件是 result[0] < 0.3。如果失败，说明 P95 延迟超过 0.3 秒。
 """
 
 system_prompt = """
