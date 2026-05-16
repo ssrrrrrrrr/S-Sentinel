@@ -12,13 +12,25 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"gopkg.in/yaml.v3"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+type Config struct {
+	Namespace string `yaml:"namespace"`
+	Rollout   string `yaml:"rollout"`
+	Interval  string `yaml:"interval"`
+	RepoDir   string `yaml:"repoDir"`
+	StateFile string `yaml:"stateFile"`
+	OllamaURL string `yaml:"ollamaUrl"`
+	Model     string `yaml:"model"`
+}
 
 type WatchEvent struct {
 	Key              string
@@ -47,6 +59,60 @@ var (
 		Resource: "analysisruns",
 	}
 )
+
+func defaultConfig() Config {
+	return Config{
+		Namespace: "slo-rollout",
+		Rollout:   "demo-app",
+		Interval:  "10s",
+		RepoDir:   "/root/slo-rollout-demo",
+		StateFile: "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
+		OllamaURL: "http://192.168.30.1:11434",
+		Model:     "qwen2.5:3b",
+	}
+}
+
+func loadConfig(path string) (Config, error) {
+	cfg := defaultConfig()
+
+	if path == "" {
+		return cfg, nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return cfg, err
+	}
+
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return cfg, err
+	}
+
+	def := defaultConfig()
+	if cfg.Namespace == "" {
+		cfg.Namespace = def.Namespace
+	}
+	if cfg.Rollout == "" {
+		cfg.Rollout = def.Rollout
+	}
+	if cfg.Interval == "" {
+		cfg.Interval = def.Interval
+	}
+	if cfg.RepoDir == "" {
+		cfg.RepoDir = def.RepoDir
+	}
+	if cfg.StateFile == "" {
+		cfg.StateFile = def.StateFile
+	}
+	if cfg.OllamaURL == "" {
+		cfg.OllamaURL = def.OllamaURL
+	}
+	if cfg.Model == "" {
+		cfg.Model = def.Model
+	}
+
+	return cfg, nil
+}
 
 func buildConfig() (*rest.Config, error) {
 	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
@@ -231,7 +297,7 @@ func runScript(repoDir string, env []string, script string) error {
 	return cmd.Run()
 }
 
-func runReportJob(repoDir string, ollamaURL string, model string, e WatchEvent) {
+func runReportJob(cfg Config, e WatchEvent) {
 	log.Printf(
 		"trigger report job: phase=%s abort=%v analysisrun=%s analysisrunPhase=%s reason=%s",
 		e.RolloutPhase,
@@ -242,14 +308,14 @@ func runReportJob(repoDir string, ollamaURL string, model string, e WatchEvent) 
 	)
 
 	env := os.Environ()
-	env = append(env, "OLLAMA_URL="+ollamaURL)
-	env = append(env, "MODEL="+model)
+	env = append(env, "OLLAMA_URL="+cfg.OllamaURL)
+	env = append(env, "MODEL="+cfg.Model)
 
-	if err := runScript(repoDir, env, "scripts/collect-release-report.sh"); err != nil {
+	if err := runScript(cfg.RepoDir, env, "scripts/collect-release-report.sh"); err != nil {
 		log.Printf("collect-release-report.sh failed: %v", err)
 	}
 
-	if err := runScript(repoDir, env, "scripts/ai-release-advisor.sh"); err != nil {
+	if err := runScript(cfg.RepoDir, env, "scripts/ai-release-advisor.sh"); err != nil {
 		log.Printf("ai-release-advisor.sh failed: %v", err)
 	}
 
@@ -257,39 +323,83 @@ func runReportJob(repoDir string, ollamaURL string, model string, e WatchEvent) 
 }
 
 func main() {
-	namespace := flag.String("namespace", "slo-rollout", "rollout namespace")
-	rolloutName := flag.String("rollout", "demo-app", "rollout name")
-	interval := flag.Duration("interval", 10*time.Second, "poll interval")
-	repoDir := flag.String("repo-dir", "/root/slo-rollout-demo", "repository directory")
-	stateFile := flag.String("state-file", "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json", "state file")
-	ollamaURL := flag.String("ollama-url", "http://192.168.30.1:11434", "ollama api url")
-	model := flag.String("model", "qwen2.5:3b", "ollama model")
+	configPath := flag.String("config", "", "config yaml path")
+
+	namespaceOverride := flag.String("namespace", "", "override rollout namespace")
+	rolloutOverride := flag.String("rollout", "", "override rollout name")
+	intervalOverride := flag.String("interval", "", "override poll interval, example: 10s")
+	repoDirOverride := flag.String("repo-dir", "", "override repository directory")
+	stateFileOverride := flag.String("state-file", "", "override state file")
+	ollamaURLOverride := flag.String("ollama-url", "", "override ollama api url")
+	modelOverride := flag.String("model", "", "override ollama model")
+
 	flag.Parse()
 
-	cfg, err := buildConfig()
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	if *namespaceOverride != "" {
+		cfg.Namespace = *namespaceOverride
+	}
+	if *rolloutOverride != "" {
+		cfg.Rollout = *rolloutOverride
+	}
+	if *intervalOverride != "" {
+		cfg.Interval = *intervalOverride
+	}
+	if *repoDirOverride != "" {
+		cfg.RepoDir = *repoDirOverride
+	}
+	if *stateFileOverride != "" {
+		cfg.StateFile = *stateFileOverride
+	}
+	if *ollamaURLOverride != "" {
+		cfg.OllamaURL = *ollamaURLOverride
+	}
+	if *modelOverride != "" {
+		cfg.Model = *modelOverride
+	}
+
+	interval, err := time.ParseDuration(cfg.Interval)
+	if err != nil {
+		log.Fatalf("invalid interval %q: %v", cfg.Interval, err)
+	}
+
+	kubeCfg, err := buildConfig()
 	if err != nil {
 		log.Fatalf("failed to build kube config: %v", err)
 	}
 
-	client, err := dynamic.NewForConfig(cfg)
+	client, err := dynamic.NewForConfig(kubeCfg)
 	if err != nil {
 		log.Fatalf("failed to create dynamic client: %v", err)
 	}
 
-	log.Printf("go rollout watcher started: namespace=%s rollout=%s interval=%s", *namespace, *rolloutName, interval.String())
+	log.Printf(
+		"go rollout watcher started: namespace=%s rollout=%s interval=%s repoDir=%s stateFile=%s model=%s ollamaURL=%s",
+		cfg.Namespace,
+		cfg.Rollout,
+		interval.String(),
+		cfg.RepoDir,
+		cfg.StateFile,
+		cfg.Model,
+		cfg.OllamaURL,
+	)
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
-		rollout, err := client.Resource(rolloutGVR).Namespace(*namespace).Get(ctx, *rolloutName, metav1.GetOptions{})
+		rollout, err := client.Resource(rolloutGVR).Namespace(cfg.Namespace).Get(ctx, cfg.Rollout, metav1.GetOptions{})
 		if err != nil {
 			log.Printf("failed to get rollout: %v", err)
 			cancel()
-			time.Sleep(*interval)
+			time.Sleep(interval)
 			continue
 		}
 
-		ar, err := latestAnalysisRun(ctx, client, *namespace, *rolloutName)
+		ar, err := latestAnalysisRun(ctx, client, cfg.Namespace, cfg.Rollout)
 		if err != nil {
 			log.Printf("failed to list analysisruns: %v", err)
 		}
@@ -305,20 +415,20 @@ func main() {
 		)
 
 		if shouldTrigger(event) {
-			state := loadState(*stateFile)
+			state := loadState(cfg.StateFile)
 
 			if contains(state.Processed, event.Key) {
 				log.Printf("event already processed: %s", event.Key)
 			} else {
-				runReportJob(*repoDir, *ollamaURL, *model, event)
+				runReportJob(cfg, event)
 
 				state.Processed = append(state.Processed, event.Key)
 				state.Processed = tailKeep(state.Processed, 100)
-				saveState(*stateFile, state)
+				saveState(cfg.StateFile, state)
 			}
 		}
 
 		cancel()
-		time.Sleep(*interval)
+		time.Sleep(interval)
 	}
 }

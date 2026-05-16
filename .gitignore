@@ -25,3 +25,10 @@ docs/release-reports/*.md
 
 # generated release reports
 docs/release-reports/*.md
+
+# watcher runtime files
+docs/release-reports/*.md
+docs/release-reports/*.log
+docs/release-reports/*state*.json
+watcher/release-rollout-watcher
+watcher/config.yaml
