@@ -22,3 +22,6 @@ argocd-slo-rollout-app.yaml
 
 # generated release reports
 docs/release-reports/*.md
+
+# generated release reports
+docs/release-reports/*.md
