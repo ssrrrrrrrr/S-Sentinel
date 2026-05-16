@@ -15,20 +15,20 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v10-actions-bad
+        version: v11-actions
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v10-actions-bad
+        image: 192.168.30.11:30500/sre/demo-app:v11-actions
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v10"
+          value: "v11"
         - name: RELEASE_TAG
-          value: "v10-actions-bad"
+          value: "v11-actions"
         - name: FAULT_RATE
           value: "0.8"
         - name: LATENCY_MS
