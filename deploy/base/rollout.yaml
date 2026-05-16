@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v9-actions
+        version: v10-actions-bad
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v9-actions
+        image: 192.168.30.11:30500/sre/demo-app:v10-actions-bad
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v9"
+          value: "v10"
         - name: RELEASE_TAG
-          value: "v9-actions"
+          value: "v10-actions-bad"
         - name: FAULT_RATE
-          value: "0"
+          value: "0.8"
         - name: LATENCY_MS
-          value: "0"
+          value: "800"
         readinessProbe:
           httpGet:
             path: /healthz
