@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: release-rollout-watcher-alerts
+  namespace: slo-rollout
+  labels:
+    app.kubernetes.io/name: release-rollout-watcher
+    project: slo-rollout-demo
+    release: prometheus-stack
+spec:
+  groups:
+    - name: release-rollout-watcher.rules
+      rules:
+        - alert: RolloutWatcherDown
+          expr: absent(rollout_watcher_ready{job="release-rollout-watcher"})
+          for: 2m
+          labels:
+            severity: warning
+            component: release-rollout-watcher
+            project: slo-rollout-demo
+          annotations:
+            summary: "Release Rollout Watcher metrics are missing"
+            description: "Prometheus has not scraped rollout_watcher_ready for more than 2 minutes. The watcher pod, service, or ServiceMonitor may be unavailable."
+
+        - alert: RolloutWatcherNotReady
+          expr: rollout_watcher_ready{job="release-rollout-watcher"} == 0
+          for: 2m
+          labels:
+            severity: warning
+            component: release-rollout-watcher
+            project: slo-rollout-demo
+          annotations:
+            summary: "Release Rollout Watcher is not ready"
+            description: "The watcher is alive but not ready. It may not be able to access Kubernetes API or check Rollout status."
+
+        - alert: RolloutWatcherNoRecentCheck
+          expr: time() - rollout_watcher_last_check_timestamp_seconds{job="release-rollout-watcher"} > 120
+          for: 2m
+          labels:
+            severity: warning
+            component: release-rollout-watcher
+            project: slo-rollout-demo
+          annotations:
+            summary: "Release Rollout Watcher has not checked Rollout recently"
+            description: "The watcher has not updated rollout_watcher_last_check_timestamp_seconds for more than 120 seconds."
+
+        - alert: RolloutWatcherErrorIncreased
+          expr: increase(rollout_watcher_errors_total{job="release-rollout-watcher"}[5m]) > 0
+          for: 1m
+          labels:
+            severity: warning
+            component: release-rollout-watcher
+            project: slo-rollout-demo
+          annotations:
+            summary: "Release Rollout Watcher error count increased"
+            description: "rollout_watcher_errors_total increased during the last 5 minutes. Check watcher logs for Kubernetes API or report generation errors."
