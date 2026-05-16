@@ -338,7 +338,14 @@ func runReportJob(cfg Config, e WatchEvent) {
 	env = append(env, "OLLAMA_URL="+cfg.OllamaURL)
 	env = append(env, "MODEL="+cfg.Model)
 
-	// 先传给脚本，后面我们会把 collect-release-report.sh 改成 target-aware。
+	contextFile, err := writeReleaseContext(cfg, e)
+	if err != nil {
+		log.Printf("failed to write release context: %v", err)
+	} else {
+		log.Printf("release context generated: %s", contextFile)
+		env = append(env, "RELEASE_CONTEXT_FILE="+contextFile)
+	}
+
 	env = append(env, "RELEASE_NAMESPACE="+e.Namespace)
 	env = append(env, "RELEASE_ROLLOUT="+e.RolloutName)
 
