@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -33,9 +34,132 @@ type ReleaseContext struct {
 	FailedMetric          string         `json:"failedMetric"`
 	FailedMetrics         []string       `json:"failedMetrics"`
 	AnalysisRunMetrics    []MetricResult `json:"analysisRunMetrics"`
+	Severity              string         `json:"severity"`
+	RiskScore             int            `json:"riskScore"`
+	RiskReasons           []string       `json:"riskReasons"`
 	Reason                string         `json:"reason"`
 	Decision              string         `json:"decision"`
 	RecommendedAction     string         `json:"recommendedAction"`
+}
+
+func metricValueFloat(value string) (float64, bool) {
+	v := strings.TrimSpace(value)
+	v = strings.TrimPrefix(v, "[")
+	v = strings.TrimSuffix(v, "]")
+
+	if strings.Contains(v, ",") {
+		v = strings.Split(v, ",")[0]
+	}
+
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0, false
+	}
+
+	n, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, false
+	}
+
+	return n, true
+}
+
+func hasMetric(metrics []string, name string) bool {
+	for _, m := range metrics {
+		if m == name {
+			return true
+		}
+	}
+	return false
+}
+
+func metricByName(metrics []MetricResult, name string) *MetricResult {
+	for i := range metrics {
+		if metrics[i].Name == name {
+			return &metrics[i]
+		}
+	}
+	return nil
+}
+
+func calculateRisk(e WatchEvent) (string, int, []string) {
+	score := 0
+	reasons := []string{}
+
+	if strings.EqualFold(e.RolloutPhase, "Degraded") {
+		score += 25
+		reasons = append(reasons, "rollout phase is Degraded")
+	}
+
+	if e.RolloutAbort {
+		score += 25
+		reasons = append(reasons, "rollout has been aborted")
+	}
+
+	if strings.EqualFold(e.AnalysisRunPhase, "Failed") || strings.EqualFold(e.AnalysisRunPhase, "Error") {
+		score += 20
+		reasons = append(reasons, "analysisRun phase is "+e.AnalysisRunPhase)
+	}
+
+	if hasMetric(e.FailedMetrics, "error-rate") {
+		score += 20
+		if m := metricByName(e.AnalysisRunMetrics, "error-rate"); m != nil {
+			if v, ok := metricValueFloat(m.Value); ok {
+				reasons = append(reasons, "error-rate is "+strconv.FormatFloat(v, 'f', 2, 64)+"%, above 5% threshold")
+				if v >= 50 {
+					score += 10
+				}
+			} else {
+				reasons = append(reasons, "error-rate metric failed")
+			}
+		} else {
+			reasons = append(reasons, "error-rate metric failed")
+		}
+	}
+
+	if hasMetric(e.FailedMetrics, "p95-latency") {
+		score += 15
+		if m := metricByName(e.AnalysisRunMetrics, "p95-latency"); m != nil {
+			if v, ok := metricValueFloat(m.Value); ok {
+				reasons = append(reasons, "p95-latency is "+strconv.FormatFloat(v, 'f', 3, 64)+"s, above 0.3s threshold")
+				if v >= 1 {
+					score += 5
+				}
+			} else {
+				reasons = append(reasons, "p95-latency metric failed")
+			}
+		} else {
+			reasons = append(reasons, "p95-latency metric failed")
+		}
+	}
+
+	if hasMetric(e.FailedMetrics, "request-count") {
+		score += 10
+		reasons = append(reasons, "request-count failed, sample size may be insufficient")
+	}
+
+	if hasMetric(e.FailedMetrics, "error-rate") && hasMetric(e.FailedMetrics, "p95-latency") {
+		score += 10
+		reasons = append(reasons, "multiple SLO gates failed in the same rollout")
+	}
+
+	if score > 100 {
+		score = 100
+	}
+
+	severity := "low"
+	switch {
+	case score >= 85:
+		severity = "critical"
+	case score >= 65:
+		severity = "high"
+	case score >= 35:
+		severity = "medium"
+	default:
+		severity = "low"
+	}
+
+	return severity, score, reasons
 }
 
 func buildReleaseContext(e WatchEvent) ReleaseContext {
@@ -61,6 +185,8 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		failedMetrics = []string{failedMetric}
 	}
 
+	severity, riskScore, riskReasons := calculateRisk(e)
+
 	return ReleaseContext{
 		GeneratedAt:           time.Now().Format(time.RFC3339),
 		Namespace:             e.Namespace,
@@ -75,6 +201,9 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		FailedMetric:          failedMetric,
 		FailedMetrics:         failedMetrics,
 		AnalysisRunMetrics:    e.AnalysisRunMetrics,
+		Severity:              severity,
+		RiskScore:             riskScore,
+		RiskReasons:           riskReasons,
 		Reason:                e.Reason,
 		Decision:              decision,
 		RecommendedAction:     action,

@@ -102,6 +102,10 @@ message = context_data.get("rolloutMessage", "")
 reason = context_data.get("reason", "")
 decision = context_data.get("decision", "unknown")
 recommended_action = context_data.get("recommendedAction", "unknown")
+severity = context_data.get("severity", "unknown")
+risk_score = context_data.get("riskScore", "unknown")
+risk_reasons = context_data.get("riskReasons") or []
+risk_reasons_text = "\n".join([f"- {r}" for r in risk_reasons]) if risk_reasons else "- unknown"
 
 context_json = json.dumps(context_data, ensure_ascii=False, indent=2)
 
@@ -245,6 +249,10 @@ def deterministic_report():
 - AnalysisRun Phase: {analysis_phase}
 - Failed Metric: {failed_metric}
 - Failed Metrics: {", ".join(failed_metrics) if failed_metrics else "unknown"}
+- Severity: {severity}
+- Risk Score: {risk_score}
+- Risk Reasons:
+{risk_reasons_text}
 - Decision: {decision}
 - Recommended Action: {recommended_action}
 - Rollout Message: {message}
