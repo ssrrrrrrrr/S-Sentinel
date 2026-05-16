@@ -65,6 +65,17 @@ jobs:
             "${{ github.event.inputs.fault_rate }}" \
             "${{ github.event.inputs.latency_ms }}"
 
+      - name: Sync local working repository
+        run: |
+          echo "Sync /root/slo-rollout-demo with origin/main"
+      
+          if [ -d /root/slo-rollout-demo/.git ]; then
+            git -C /root/slo-rollout-demo fetch origin main
+            git -C /root/slo-rollout-demo pull --ff-only origin main
+          else
+            echo "/root/slo-rollout-demo is not a git repository, skip sync"
+          fi
+
       - name: Push GitOps manifest changes
         run: |
           cd "$GITHUB_WORKSPACE"
