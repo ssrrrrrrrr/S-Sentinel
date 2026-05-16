@@ -59,4 +59,4 @@ spec:
             name: release-rollout-watcher-config
         - name: release-reports
           persistentVolumeClaim:
-            claimName: release-rollout-watcher-reports
+            claimName: release-rollout-watcher-reports-nfs
