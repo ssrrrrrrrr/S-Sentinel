@@ -35,3 +35,6 @@ watcher/config.yaml
 
 # generated release context
 docs/release-reports/release-context-*.json
+
+# generated release event archive
+docs/release-reports/release-events.jsonl

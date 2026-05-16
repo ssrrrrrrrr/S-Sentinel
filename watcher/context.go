@@ -42,6 +42,70 @@ type ReleaseContext struct {
 	RecommendedAction     string         `json:"recommendedAction"`
 }
 
+type ReleaseEventArchiveRecord struct {
+	ID                    string   `json:"id"`
+	GeneratedAt           string   `json:"generatedAt"`
+	Namespace             string   `json:"namespace"`
+	Rollout               string   `json:"rollout"`
+	RolloutPhase          string   `json:"rolloutPhase"`
+	RolloutAbort          bool     `json:"rolloutAbort"`
+	StableReplicaSet      string   `json:"stableReplicaSet"`
+	CurrentDesiredVersion string   `json:"currentDesiredVersion"`
+	AnalysisRun           string   `json:"analysisRun"`
+	AnalysisRunPhase      string   `json:"analysisRunPhase"`
+	FailedMetrics         []string `json:"failedMetrics"`
+	Severity              string   `json:"severity"`
+	RiskScore             int      `json:"riskScore"`
+	Decision              string   `json:"decision"`
+	RecommendedAction     string   `json:"recommendedAction"`
+	ContextFile           string   `json:"contextFile"`
+}
+
+func appendReleaseEventArchive(cfg Config, ctx ReleaseContext, contextFile string) error {
+	reportDir := filepath.Join(cfg.RepoDir, "docs", "release-reports")
+	if err := os.MkdirAll(reportDir, 0755); err != nil {
+		return err
+	}
+
+	archivePath := filepath.Join(reportDir, "release-events.jsonl")
+
+	record := ReleaseEventArchiveRecord{
+		ID:                    ctx.GeneratedAt + ":" + ctx.Namespace + "/" + ctx.Rollout + ":" + ctx.AnalysisRun,
+		GeneratedAt:           ctx.GeneratedAt,
+		Namespace:             ctx.Namespace,
+		Rollout:               ctx.Rollout,
+		RolloutPhase:          ctx.RolloutPhase,
+		RolloutAbort:          ctx.RolloutAbort,
+		StableReplicaSet:      ctx.StableReplicaSet,
+		CurrentDesiredVersion: ctx.CurrentDesiredVersion,
+		AnalysisRun:           ctx.AnalysisRun,
+		AnalysisRunPhase:      ctx.AnalysisRunPhase,
+		FailedMetrics:         ctx.FailedMetrics,
+		Severity:              ctx.Severity,
+		RiskScore:             ctx.RiskScore,
+		Decision:              ctx.Decision,
+		RecommendedAction:     ctx.RecommendedAction,
+		ContextFile:           contextFile,
+	}
+
+	data, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(archivePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := f.Write(append(data, '\n')); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func metricValueFloat(value string) (float64, bool) {
 	v := strings.TrimSpace(value)
 	v = strings.TrimPrefix(v, "[")
@@ -227,6 +291,10 @@ func writeReleaseContext(cfg Config, e WatchEvent) (string, error) {
 	}
 
 	if err := os.WriteFile(path, data, 0644); err != nil {
+		return "", err
+	}
+
+	if err := appendReleaseEventArchive(cfg, ctx, path); err != nil {
 		return "", err
 	}
 
