@@ -19,3 +19,6 @@ argocd-slo-rollout-app.yaml
 
 # system files
 .DS_Store
+
+# generated release reports
+docs/release-reports/*.md
