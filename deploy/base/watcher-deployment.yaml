@@ -59,4 +59,5 @@ spec:
           configMap:
             name: release-rollout-watcher-config
         - name: release-reports
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: release-rollout-watcher-reports

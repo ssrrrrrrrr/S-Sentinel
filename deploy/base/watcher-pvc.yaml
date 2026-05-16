@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: release-rollout-watcher-reports
+  labels:
+    app.kubernetes.io/name: release-rollout-watcher
+    project: slo-rollout-demo
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /data/slo-rollout-watcher/reports
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: release-rollout-watcher-reports
+  namespace: slo-rollout
+  labels:
+    app.kubernetes.io/name: release-rollout-watcher
+    project: slo-rollout-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
