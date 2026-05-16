@@ -47,6 +47,10 @@ if report_file and report_file.exists():
     report = report_file.read_text(encoding="utf-8", errors="ignore")
 
 def pick_failed_metric(ctx, text):
+    ctx_metric = ctx.get("failedMetric")
+    if ctx_metric and ctx_metric != "unknown":
+        return ctx_metric
+
     msg = (ctx.get("rolloutMessage") or "") + "\n" + (ctx.get("reason") or "") + "\n" + text
     if "error-rate" in msg:
         return "error-rate"

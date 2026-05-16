@@ -40,15 +40,19 @@ type Config struct {
 }
 
 type WatchEvent struct {
-	Key              string
-	Namespace        string
-	RolloutName      string
-	RolloutPhase     string
-	RolloutMessage   string
-	RolloutAbort     bool
-	AnalysisRunName  string
-	AnalysisRunPhase string
-	Reason           string
+	Key                   string
+	Namespace             string
+	RolloutName           string
+	RolloutPhase          string
+	RolloutMessage        string
+	RolloutAbort          bool
+	StableReplicaSet      string
+	CurrentDesiredVersion string
+	AnalysisRunName       string
+	AnalysisRunPhase      string
+	FailedMetric          string
+	AnalysisRunMetrics    []MetricResult
+	Reason                string
 }
 
 type State struct {
@@ -257,12 +261,24 @@ func buildEvent(target Target, rollout *unstructured.Unstructured, ar *unstructu
 		observedGeneration = rollout.GetGeneration()
 	}
 
+	stableRS := getString(rollout, "status", "stableRS")
+	currentDesiredVersion := getTemplateVersion(rollout)
+	failedMetric := extractFailedMetricFromMessage(message)
+	analysisMetrics := []MetricResult{}
+
 	arName := "none"
 	arPhase := "none"
 
 	if ar != nil {
 		arName = ar.GetName()
 		arPhase = getString(ar, "status", "phase")
+
+		metrics, arFailedMetric := extractAnalysisMetrics(ar)
+		analysisMetrics = metrics
+
+		if failedMetric == "unknown" {
+			failedMetric = arFailedMetric
+		}
 	}
 
 	reasons := []string{}
@@ -297,16 +313,148 @@ func buildEvent(target Target, rollout *unstructured.Unstructured, ar *unstructu
 	)
 
 	return WatchEvent{
-		Key:              key,
-		Namespace:        target.Namespace,
-		RolloutName:      target.Rollout,
-		RolloutPhase:     phase,
-		RolloutMessage:   message,
-		RolloutAbort:     abort,
-		AnalysisRunName:  arName,
-		AnalysisRunPhase: arPhase,
-		Reason:           strings.Join(reasons, "; "),
+		Key:                   key,
+		Namespace:             target.Namespace,
+		RolloutName:           target.Rollout,
+		RolloutPhase:          phase,
+		RolloutMessage:        message,
+		RolloutAbort:          abort,
+		StableReplicaSet:      stableRS,
+		CurrentDesiredVersion: currentDesiredVersion,
+		AnalysisRunName:       arName,
+		AnalysisRunPhase:      arPhase,
+		FailedMetric:          failedMetric,
+		AnalysisRunMetrics:    analysisMetrics,
+		Reason:                strings.Join(reasons, "; "),
 	}
+}
+
+func getTemplateVersion(rollout *unstructured.Unstructured) string {
+	version := getString(rollout, "spec", "template", "metadata", "labels", "version")
+	if version != "" {
+		return version
+	}
+
+	containers, found, _ := unstructured.NestedSlice(rollout.Object, "spec", "template", "spec", "containers")
+	if !found {
+		return "unknown"
+	}
+
+	for _, c := range containers {
+		container, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		envList, ok := container["env"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, envItem := range envList {
+			env, ok := envItem.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			name, _ := env["name"].(string)
+			value, _ := env["value"].(string)
+
+			if name == "RELEASE_TAG" || name == "APP_VERSION" {
+				if value != "" {
+					return value
+				}
+			}
+		}
+	}
+
+	return "unknown"
+}
+
+func int64FromInterface(v interface{}) int64 {
+	switch t := v.(type) {
+	case int64:
+		return t
+	case int:
+		return int64(t)
+	case float64:
+		return int64(t)
+	case json.Number:
+		n, _ := t.Int64()
+		return n
+	default:
+		return 0
+	}
+}
+
+func extractFailedMetricFromMessage(message string) string {
+	startToken := `Metric "`
+	start := strings.Index(message, startToken)
+	if start < 0 {
+		return "unknown"
+	}
+
+	remain := message[start+len(startToken):]
+	end := strings.Index(remain, `"`)
+	if end < 0 {
+		return "unknown"
+	}
+
+	metric := remain[:end]
+	if metric == "" {
+		return "unknown"
+	}
+
+	return metric
+}
+
+func extractAnalysisMetrics(ar *unstructured.Unstructured) ([]MetricResult, string) {
+	results := []MetricResult{}
+	failedMetric := "unknown"
+
+	rawResults, found, _ := unstructured.NestedSlice(ar.Object, "status", "metricResults")
+	if !found {
+		return results, failedMetric
+	}
+
+	for _, raw := range rawResults {
+		item, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		name, _ := item["name"].(string)
+		phase, _ := item["phase"].(string)
+		message, _ := item["message"].(string)
+
+		value := ""
+
+		if measurements, ok := item["measurements"].([]interface{}); ok && len(measurements) > 0 {
+			last := measurements[len(measurements)-1]
+			if m, ok := last.(map[string]interface{}); ok {
+				value, _ = m["value"].(string)
+			}
+		}
+
+		result := MetricResult{
+			Name:         name,
+			Phase:        phase,
+			Message:      message,
+			Value:        value,
+			Successful:   int64FromInterface(item["successful"]),
+			Failed:       int64FromInterface(item["failed"]),
+			Inconclusive: int64FromInterface(item["inconclusive"]),
+			Error:        int64FromInterface(item["error"]),
+		}
+
+		if strings.EqualFold(phase, "Failed") && failedMetric == "unknown" {
+			failedMetric = name
+		}
+
+		results = append(results, result)
+	}
+
+	return results, failedMetric
 }
 
 func shouldTrigger(e WatchEvent) bool {

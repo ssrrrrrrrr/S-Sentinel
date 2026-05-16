@@ -8,18 +8,33 @@ import (
 	"time"
 )
 
+type MetricResult struct {
+	Name         string `json:"name"`
+	Phase        string `json:"phase"`
+	Message      string `json:"message"`
+	Value        string `json:"value,omitempty"`
+	Successful   int64  `json:"successful"`
+	Failed       int64  `json:"failed"`
+	Inconclusive int64  `json:"inconclusive"`
+	Error        int64  `json:"error"`
+}
+
 type ReleaseContext struct {
-	GeneratedAt       string `json:"generatedAt"`
-	Namespace         string `json:"namespace"`
-	Rollout           string `json:"rollout"`
-	RolloutPhase      string `json:"rolloutPhase"`
-	RolloutAbort      bool   `json:"rolloutAbort"`
-	RolloutMessage    string `json:"rolloutMessage"`
-	AnalysisRun       string `json:"analysisRun"`
-	AnalysisRunPhase  string `json:"analysisRunPhase"`
-	Reason            string `json:"reason"`
-	Decision          string `json:"decision"`
-	RecommendedAction string `json:"recommendedAction"`
+	GeneratedAt           string         `json:"generatedAt"`
+	Namespace             string         `json:"namespace"`
+	Rollout               string         `json:"rollout"`
+	RolloutPhase          string         `json:"rolloutPhase"`
+	RolloutAbort          bool           `json:"rolloutAbort"`
+	RolloutMessage        string         `json:"rolloutMessage"`
+	StableReplicaSet      string         `json:"stableReplicaSet"`
+	CurrentDesiredVersion string         `json:"currentDesiredVersion"`
+	AnalysisRun           string         `json:"analysisRun"`
+	AnalysisRunPhase      string         `json:"analysisRunPhase"`
+	FailedMetric          string         `json:"failedMetric"`
+	AnalysisRunMetrics    []MetricResult `json:"analysisRunMetrics"`
+	Reason                string         `json:"reason"`
+	Decision              string         `json:"decision"`
+	RecommendedAction     string         `json:"recommendedAction"`
 }
 
 func buildReleaseContext(e WatchEvent) ReleaseContext {
@@ -35,18 +50,27 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		action = "stop_promotion_and_investigate"
 	}
 
+	failedMetric := e.FailedMetric
+	if failedMetric == "" {
+		failedMetric = "unknown"
+	}
+
 	return ReleaseContext{
-		GeneratedAt:       time.Now().Format(time.RFC3339),
-		Namespace:         e.Namespace,
-		Rollout:           e.RolloutName,
-		RolloutPhase:      e.RolloutPhase,
-		RolloutAbort:      e.RolloutAbort,
-		RolloutMessage:    e.RolloutMessage,
-		AnalysisRun:       e.AnalysisRunName,
-		AnalysisRunPhase:  e.AnalysisRunPhase,
-		Reason:            e.Reason,
-		Decision:          decision,
-		RecommendedAction: action,
+		GeneratedAt:           time.Now().Format(time.RFC3339),
+		Namespace:             e.Namespace,
+		Rollout:               e.RolloutName,
+		RolloutPhase:          e.RolloutPhase,
+		RolloutAbort:          e.RolloutAbort,
+		RolloutMessage:        e.RolloutMessage,
+		StableReplicaSet:      e.StableReplicaSet,
+		CurrentDesiredVersion: e.CurrentDesiredVersion,
+		AnalysisRun:           e.AnalysisRunName,
+		AnalysisRunPhase:      e.AnalysisRunPhase,
+		FailedMetric:          failedMetric,
+		AnalysisRunMetrics:    e.AnalysisRunMetrics,
+		Reason:                e.Reason,
+		Decision:              decision,
+		RecommendedAction:     action,
 	}
 }
 
