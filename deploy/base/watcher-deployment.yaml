@@ -38,11 +38,10 @@ spec:
         project: slo-rollout-demo
     spec:
       serviceAccountName: release-rollout-watcher
-      nodeName: k8s-node1
       containers:
         - name: watcher
-          image: localhost/release-rollout-watcher:v1.1
-          imagePullPolicy: Never
+          image: 192.168.30.11:5000/release-rollout-watcher:v1.1
+          imagePullPolicy: IfNotPresent
           command:
             - /app/watcher/release-rollout-watcher
           args:
