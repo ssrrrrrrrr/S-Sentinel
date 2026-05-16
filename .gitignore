@@ -32,3 +32,6 @@ docs/release-reports/*.log
 docs/release-reports/*state*.json
 watcher/release-rollout-watcher
 watcher/config.yaml
+
+# generated release context
+docs/release-reports/release-context-*.json
