@@ -31,6 +31,7 @@ type ReleaseContext struct {
 	AnalysisRun           string         `json:"analysisRun"`
 	AnalysisRunPhase      string         `json:"analysisRunPhase"`
 	FailedMetric          string         `json:"failedMetric"`
+	FailedMetrics         []string       `json:"failedMetrics"`
 	AnalysisRunMetrics    []MetricResult `json:"analysisRunMetrics"`
 	Reason                string         `json:"reason"`
 	Decision              string         `json:"decision"`
@@ -55,6 +56,11 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		failedMetric = "unknown"
 	}
 
+	failedMetrics := e.FailedMetrics
+	if len(failedMetrics) == 0 && failedMetric != "unknown" {
+		failedMetrics = []string{failedMetric}
+	}
+
 	return ReleaseContext{
 		GeneratedAt:           time.Now().Format(time.RFC3339),
 		Namespace:             e.Namespace,
@@ -67,6 +73,7 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		AnalysisRun:           e.AnalysisRunName,
 		AnalysisRunPhase:      e.AnalysisRunPhase,
 		FailedMetric:          failedMetric,
+		FailedMetrics:         failedMetrics,
 		AnalysisRunMetrics:    e.AnalysisRunMetrics,
 		Reason:                e.Reason,
 		Decision:              decision,

@@ -47,6 +47,10 @@ if report_file and report_file.exists():
     report = report_file.read_text(encoding="utf-8", errors="ignore")
 
 def pick_failed_metric(ctx, text):
+    failed_metrics = ctx.get("failedMetrics") or []
+    if failed_metrics:
+        return failed_metrics[0]
+
     ctx_metric = ctx.get("failedMetric")
     if ctx_metric and ctx_metric != "unknown":
         return ctx_metric
@@ -85,6 +89,7 @@ def extract_key_evidence(text):
     return "\n".join(lines[:80])
 
 failed_metric = pick_failed_metric(context_data, report)
+failed_metrics = context_data.get("failedMetrics") or ([] if failed_metric == "unknown" else [failed_metric])
 key_evidence = extract_key_evidence(report)
 
 rollout_phase = context_data.get("rolloutPhase", "unknown")
@@ -146,20 +151,81 @@ ReleaseContext JSON：
 {key_evidence}
 """
 
+
+def metric_map(ctx):
+    result = {}
+    for m in ctx.get("analysisRunMetrics", []) or []:
+        name = m.get("name", "unknown")
+        result[name] = m
+    return result
+
+def clean_metric_value(value):
+    if value is None:
+        return "unknown"
+    value = str(value).strip()
+    value = value.strip("[]")
+    if not value:
+        return "unknown"
+    return value
+
+def metric_summary(ctx):
+    metrics = metric_map(ctx)
+
+    lines = []
+    error_rate_value = "unknown"
+    request_count_value = "unknown"
+    p95_value = "unknown"
+
+    if "error-rate" in metrics:
+        m = metrics["error-rate"]
+        error_rate_value = clean_metric_value(m.get("value"))
+        lines.append(f"- error-rate: phase={m.get('phase', 'unknown')}, value={error_rate_value}, failed={m.get('failed', 0)}")
+
+    if "request-count" in metrics:
+        m = metrics["request-count"]
+        request_count_value = clean_metric_value(m.get("value"))
+        lines.append(f"- request-count: phase={m.get('phase', 'unknown')}, value={request_count_value}, successful={m.get('successful', 0)}")
+
+    if "p95-latency" in metrics:
+        m = metrics["p95-latency"]
+        p95_value = clean_metric_value(m.get("value"))
+        lines.append(f"- p95-latency: phase={m.get('phase', 'unknown')}, value={p95_value}, failed={m.get('failed', 0)}")
+
+    if not lines:
+        lines.append("- 当前 ReleaseContext 中没有 analysisRunMetrics 明细。")
+
+    return "\n".join(lines), error_rate_value, request_count_value, p95_value
+
 def deterministic_report():
+    metrics_text, error_rate_value, request_count_value, p95_value = metric_summary(context_data)
+
     if rollout_phase == "Degraded" or rollout_abort or analysis_phase in ["Failed", "Error"]:
         conclusion = f"本次发布未能成功完成。Rollout 当前处于 {rollout_phase} 状态，RolloutAbort 为 {str(rollout_abort).lower()}，AnalysisRun {analysisrun} 的状态为 {analysis_phase}。"
     else:
         conclusion = f"当前发布未发现明确失败证据。Rollout 当前状态为 {rollout_phase}，AnalysisRun 状态为 {analysis_phase}。"
 
-    if failed_metric == "error-rate":
-        cause = "失败原因主要指向 Canary 版本的 5xx 错误率过高，error-rate 未通过 SLO 门禁。"
-    elif failed_metric == "p95-latency":
-        cause = "失败原因主要指向 Canary 版本的 P95 延迟过高，p95-latency 未通过 SLO 门禁。"
-    elif failed_metric == "request-count":
-        cause = "失败原因主要指向样本量不足，request-count 未达到最小请求量门禁。"
-    else:
-        cause = "当前只能确定发布被标记为异常，但失败指标需要结合 AnalysisRun 和 Prometheus 指标继续确认。"
+    failed_set = set(failed_metrics)
+    cause_parts = []
+
+    if "error-rate" in failed_set:
+        part = f"error-rate 指标失败，当前值约为 {error_rate_value}%，超过 5% 的 SLO 门禁阈值，说明 Canary 版本 5xx 错误率过高。"
+        cause_parts.append(part)
+
+    if "p95-latency" in failed_set:
+        part = f"p95-latency 指标失败，当前值约为 {p95_value} 秒，超过 0.3 秒的 SLO 门禁阈值，说明 Canary 版本存在明显延迟劣化。"
+        cause_parts.append(part)
+
+    if "request-count" in failed_set:
+        part = f"request-count 指标失败，当前值约为 {request_count_value}，未达到最小请求量门禁，说明样本量不足。"
+        cause_parts.append(part)
+
+    if not cause_parts:
+        cause_parts.append("当前只能确定发布被标记为异常，但失败指标需要结合 AnalysisRun 和 Prometheus 指标继续确认。")
+
+    if request_count_value != "unknown" and "request-count" not in failed_set:
+        cause_parts.append(f"request-count 约为 {request_count_value}，说明已经有一定请求样本，本次失败不是单纯因为样本量不足。")
+
+    cause = " ".join(cause_parts)
 
     return f"""# AI Release Advisor
 
@@ -173,12 +239,19 @@ def deterministic_report():
 - Rollout: {rollout}
 - Rollout Phase: {rollout_phase}
 - Rollout Abort: {rollout_abort}
+- Stable ReplicaSet: {context_data.get("stableReplicaSet", "unknown")}
+- Current Desired Version: {context_data.get("currentDesiredVersion", "unknown")}
 - AnalysisRun: {analysisrun}
 - AnalysisRun Phase: {analysis_phase}
 - Failed Metric: {failed_metric}
+- Failed Metrics: {", ".join(failed_metrics) if failed_metrics else "unknown"}
 - Decision: {decision}
 - Recommended Action: {recommended_action}
 - Rollout Message: {message}
+
+指标明细：
+
+{metrics_text}
 
 ## 3. 影响范围
 

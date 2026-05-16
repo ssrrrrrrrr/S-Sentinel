@@ -51,6 +51,7 @@ type WatchEvent struct {
 	AnalysisRunName       string
 	AnalysisRunPhase      string
 	FailedMetric          string
+	FailedMetrics         []string
 	AnalysisRunMetrics    []MetricResult
 	Reason                string
 }
@@ -264,6 +265,8 @@ func buildEvent(target Target, rollout *unstructured.Unstructured, ar *unstructu
 	stableRS := getString(rollout, "status", "stableRS")
 	currentDesiredVersion := getTemplateVersion(rollout)
 	failedMetric := extractFailedMetricFromMessage(message)
+	failedMetrics := []string{}
+	failedMetrics = appendUniqueString(failedMetrics, failedMetric)
 	analysisMetrics := []MetricResult{}
 
 	arName := "none"
@@ -273,11 +276,15 @@ func buildEvent(target Target, rollout *unstructured.Unstructured, ar *unstructu
 		arName = ar.GetName()
 		arPhase = getString(ar, "status", "phase")
 
-		metrics, arFailedMetric := extractAnalysisMetrics(ar)
+		metrics, arFailedMetrics := extractAnalysisMetrics(ar)
 		analysisMetrics = metrics
 
-		if failedMetric == "unknown" {
-			failedMetric = arFailedMetric
+		for _, metric := range arFailedMetrics {
+			failedMetrics = appendUniqueString(failedMetrics, metric)
+		}
+
+		if failedMetric == "unknown" && len(arFailedMetrics) > 0 {
+			failedMetric = arFailedMetrics[0]
 		}
 	}
 
@@ -324,6 +331,7 @@ func buildEvent(target Target, rollout *unstructured.Unstructured, ar *unstructu
 		AnalysisRunName:       arName,
 		AnalysisRunPhase:      arPhase,
 		FailedMetric:          failedMetric,
+		FailedMetrics:         failedMetrics,
 		AnalysisRunMetrics:    analysisMetrics,
 		Reason:                strings.Join(reasons, "; "),
 	}
@@ -408,13 +416,27 @@ func extractFailedMetricFromMessage(message string) string {
 	return metric
 }
 
-func extractAnalysisMetrics(ar *unstructured.Unstructured) ([]MetricResult, string) {
+func appendUniqueString(list []string, item string) []string {
+	if item == "" || item == "unknown" {
+		return list
+	}
+
+	for _, existing := range list {
+		if existing == item {
+			return list
+		}
+	}
+
+	return append(list, item)
+}
+
+func extractAnalysisMetrics(ar *unstructured.Unstructured) ([]MetricResult, []string) {
 	results := []MetricResult{}
-	failedMetric := "unknown"
+	failedMetrics := []string{}
 
 	rawResults, found, _ := unstructured.NestedSlice(ar.Object, "status", "metricResults")
 	if !found {
-		return results, failedMetric
+		return results, failedMetrics
 	}
 
 	for _, raw := range rawResults {
@@ -447,14 +469,14 @@ func extractAnalysisMetrics(ar *unstructured.Unstructured) ([]MetricResult, stri
 			Error:        int64FromInterface(item["error"]),
 		}
 
-		if strings.EqualFold(phase, "Failed") && failedMetric == "unknown" {
-			failedMetric = name
+		if strings.EqualFold(phase, "Failed") {
+			failedMetrics = appendUniqueString(failedMetrics, name)
 		}
 
 		results = append(results, result)
 	}
 
-	return results, failedMetric
+	return results, failedMetrics
 }
 
 func shouldTrigger(e WatchEvent) bool {
