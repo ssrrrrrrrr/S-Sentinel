@@ -1,0 +1,70 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: demo-app-rollout-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+  - name: demo-app-rollout.rules
+    rules:
+    - alert: DemoAppCanaryHighErrorRate
+      expr: |
+        (
+          (
+            sum by (version) (
+              rate(demo_http_requests_total{namespace="slo-rollout",status=~"5.."}[1m])
+            )
+            /
+            clamp_min(
+              sum by (version) (
+                rate(demo_http_requests_total{namespace="slo-rollout"}[1m])
+              ),
+              0.001
+            )
+          ) * 100 > 5
+        )
+        and on(version)
+        (
+          sum by (version) (
+            increase(demo_http_requests_total{namespace="slo-rollout"}[1m])
+          ) >= 20
+        )
+      for: 30s
+      labels:
+        severity: critical
+        project: slo-rollout-demo
+        component: demo-app
+        alert_type: rollout-slo
+      annotations:
+        summary: "demo-app canary error rate is too high"
+        description: "version={{ $labels.version }} 5xx error rate is above 5%. Current value={{ printf \"%.2f\" $value }}%."
+        runbook: "kubectl describe rollout demo-app -n slo-rollout"
+
+    - alert: DemoAppCanaryHighP95Latency
+      expr: |
+        (
+          histogram_quantile(
+            0.95,
+            sum by (version, le) (
+              rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout"}[1m])
+            )
+          ) > 0.3
+        )
+        and on(version)
+        (
+          sum by (version) (
+            increase(demo_http_requests_total{namespace="slo-rollout"}[1m])
+          ) >= 20
+        )
+      for: 30s
+      labels:
+        severity: warning
+        project: slo-rollout-demo
+        component: demo-app
+        alert_type: rollout-slo
+      annotations:
+        summary: "demo-app canary p95 latency is too high"
+        description: "version={{ $labels.version }} p95 latency is above 0.3s. Current value={{ printf \"%.3f\" $value }}s."
+        runbook: "kubectl describe rollout demo-app -n slo-rollout"
