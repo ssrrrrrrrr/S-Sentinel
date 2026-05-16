@@ -6,10 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -32,11 +34,12 @@ type Config struct {
 	Rollout   string   `yaml:"rollout"`
 	Targets   []Target `yaml:"targets"`
 
-	Interval  string `yaml:"interval"`
-	RepoDir   string `yaml:"repoDir"`
-	StateFile string `yaml:"stateFile"`
-	OllamaURL string `yaml:"ollamaUrl"`
-	Model     string `yaml:"model"`
+	Interval   string `yaml:"interval"`
+	RepoDir    string `yaml:"repoDir"`
+	StateFile  string `yaml:"stateFile"`
+	OllamaURL  string `yaml:"ollamaUrl"`
+	Model      string `yaml:"model"`
+	HealthAddr string `yaml:"healthAddr"`
 }
 
 type WatchEvent struct {
@@ -60,6 +63,8 @@ type State struct {
 	Processed []string `json:"processed"`
 }
 
+var watcherReady atomic.Bool
+
 var (
 	rolloutGVR = schema.GroupVersionResource{
 		Group:    "argoproj.io",
@@ -76,11 +81,12 @@ var (
 
 func defaultConfig() Config {
 	return Config{
-		Interval:  "10s",
-		RepoDir:   "/root/slo-rollout-demo",
-		StateFile: "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
-		OllamaURL: "http://192.168.30.1:11434",
-		Model:     "qwen2.5:3b",
+		Interval:   "10s",
+		RepoDir:    "/root/slo-rollout-demo",
+		StateFile:  "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
+		OllamaURL:  "http://192.168.30.1:11434",
+		Model:      "qwen2.5:3b",
+		HealthAddr: ":8080",
 		Targets: []Target{
 			{
 				Namespace: "slo-rollout",
@@ -121,6 +127,9 @@ func loadConfig(path string) (Config, error) {
 	if cfg.Model == "" {
 		cfg.Model = def.Model
 	}
+	if cfg.HealthAddr == "" {
+		cfg.HealthAddr = def.HealthAddr
+	}
 
 	// 兼容旧配置：namespace + rollout
 	if len(cfg.Targets) == 0 && cfg.Namespace != "" && cfg.Rollout != "" {
@@ -138,6 +147,37 @@ func loadConfig(path string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func startHealthServer(addr string) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok\n"))
+	})
+
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if watcherReady.Load() {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ready\n"))
+			return
+		}
+
+		http.Error(w, "not ready", http.StatusServiceUnavailable)
+	})
+
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	log.Printf("health server started: addr=%s", addr)
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("health server failed: %v", err)
+	}
 }
 
 func buildKubeConfig() (*rest.Config, error) {
@@ -537,6 +577,8 @@ func processTarget(ctx context.Context, client dynamic.Interface, cfg Config, ta
 		return
 	}
 
+	watcherReady.Store(true)
+
 	ar, err := latestAnalysisRun(ctx, client, target)
 	if err != nil {
 		log.Printf("failed to list analysisruns for %s/%s: %v", target.Namespace, target.Rollout, err)
@@ -582,6 +624,7 @@ func main() {
 	stateFileOverride := flag.String("state-file", "", "override state file")
 	ollamaURLOverride := flag.String("ollama-url", "", "override ollama api url")
 	modelOverride := flag.String("model", "", "override ollama model")
+	healthAddrOverride := flag.String("health-addr", "", "override health server address, example: :8080")
 
 	flag.Parse()
 
@@ -615,6 +658,9 @@ func main() {
 	if *modelOverride != "" {
 		cfg.Model = *modelOverride
 	}
+	if *healthAddrOverride != "" {
+		cfg.HealthAddr = *healthAddrOverride
+	}
 
 	interval, err := time.ParseDuration(cfg.Interval)
 	if err != nil {
@@ -632,18 +678,21 @@ func main() {
 	}
 
 	log.Printf(
-		"go rollout watcher started: targets=%d interval=%s repoDir=%s stateFile=%s model=%s ollamaURL=%s",
+		"go rollout watcher started: targets=%d interval=%s repoDir=%s stateFile=%s model=%s ollamaURL=%s healthAddr=%s",
 		len(cfg.Targets),
 		interval.String(),
 		cfg.RepoDir,
 		cfg.StateFile,
 		cfg.Model,
 		cfg.OllamaURL,
+		cfg.HealthAddr,
 	)
 
 	for _, target := range cfg.Targets {
 		log.Printf("watch target: namespace=%s rollout=%s", target.Namespace, target.Rollout)
 	}
+
+	go startHealthServer(cfg.HealthAddr)
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

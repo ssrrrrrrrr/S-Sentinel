@@ -1,4 +1,5 @@
 interval: 10s
+healthAddr: ":8080"
 repoDir: /app
 stateFile: /app/docs/release-reports/go-rollout-watcher-state.json
 ollamaUrl: http://192.168.30.1:11434
