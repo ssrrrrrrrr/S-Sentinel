@@ -1,7 +1,9 @@
-namespace: slo-rollout
-rollout: demo-app
 interval: 10s
 repoDir: /root/slo-rollout-demo
 stateFile: /root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json
 ollamaUrl: http://192.168.30.1:11434
 model: qwen2.5:3b
+
+targets:
+  - namespace: slo-rollout
+    rollout: demo-app
