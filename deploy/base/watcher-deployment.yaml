@@ -41,8 +41,8 @@ spec:
       nodeName: k8s-node1
       containers:
         - name: watcher
-          image: release-rollout-watcher:v1.1
-          imagePullPolicy: IfNotPresent
+          image: localhost/release-rollout-watcher:v1.1
+          imagePullPolicy: Never
           command:
             - /app/watcher/release-rollout-watcher
           args:
