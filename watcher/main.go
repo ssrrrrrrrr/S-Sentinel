@@ -157,6 +157,8 @@ func startHealthServer(addr string) {
 		_, _ = w.Write([]byte("ok\n"))
 	})
 
+	mux.HandleFunc("/metrics", writeMetrics)
+
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		if watcherReady.Load() {
 			w.WriteHeader(http.StatusOK)
@@ -533,6 +535,8 @@ func runScript(repoDir string, env []string, script string) error {
 }
 
 func runReportJob(cfg Config, e WatchEvent) {
+	incWatcherTriggeredReports()
+
 	log.Printf(
 		"trigger report job: namespace=%s rollout=%s phase=%s abort=%v analysisrun=%s analysisrunPhase=%s reason=%s",
 		e.Namespace,
@@ -571,8 +575,11 @@ func runReportJob(cfg Config, e WatchEvent) {
 }
 
 func processTarget(ctx context.Context, client dynamic.Interface, cfg Config, target Target) {
+	incWatcherChecks()
+
 	rollout, err := client.Resource(rolloutGVR).Namespace(target.Namespace).Get(ctx, target.Rollout, metav1.GetOptions{})
 	if err != nil {
+		incWatcherErrors()
 		log.Printf("failed to get rollout %s/%s: %v", target.Namespace, target.Rollout, err)
 		return
 	}
