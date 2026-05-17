@@ -226,8 +226,24 @@ NAMESPACE="slo-rollout" \
 }
 
 echo "ChangeContext output dir: $CHANGE_CONTEXT_OUTPUT_DIR"
+RELEASE_RESULT="PRECHECK_OK" \
+RELEASE_REASON="GitOps manifests rendered and committed" \
+IMAGE_TAG="$IMAGE_TAG" \
+APP_VERSION="$APP_VERSION" \
+NAMESPACE="$NAMESPACE" \
+ROLLOUT_NAME="$ROLLOUT_NAME" \
+SLO_ERROR_RATE_THRESHOLD="$SLO_ERROR_RATE_THRESHOLD" \
+SLO_P95_SECONDS_THRESHOLD="$SLO_P95_SECONDS_THRESHOLD" \
+SLO_MIN_REQUEST_COUNT="$SLO_MIN_REQUEST_COUNT" \
+OUTPUT_DIR="$CHANGE_CONTEXT_OUTPUT_DIR" \
+./scripts/write-release-report.sh || {
+  echo "WARN: write-release-report.sh failed, continue release"
+}
 
 git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
+if [ -d "${CHANGE_CONTEXT_OUTPUT_DIR}" ]; then
+  git add -f "${CHANGE_CONTEXT_OUTPUT_DIR}"/*.md 2>/dev/null || true
+fi
 
 if git diff --cached --quiet; then
   echo "No GitOps changes to commit."
