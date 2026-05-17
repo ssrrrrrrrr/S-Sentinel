@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v12-changecontext-test
+        version: v13-good
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v12-changecontext-test
+        image: 192.168.30.11:30500/sre/demo-app:v13-good
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v12"
+          value: "v13"
         - name: RELEASE_TAG
-          value: "v12-changecontext-test"
+          value: "v13-good"
         - name: FAULT_RATE
-          value: "0.8"
+          value: "0"
         - name: LATENCY_MS
-          value: "800"
+          value: "0"
         readinessProbe:
           httpGet:
             path: /healthz
