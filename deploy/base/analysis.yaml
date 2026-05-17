@@ -15,7 +15,7 @@ spec:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
         query: |
           (
-            sum(increase(demo_http_requests_total{namespace="slo-rollout",version="v2-actions"}[1m]))
+            sum(increase(demo_http_requests_total{namespace="slo-rollout",version="v1-actions-fix4"}[1m]))
             or on() vector(0)
           )
 
@@ -30,13 +30,13 @@ spec:
         query: |
           (
             (
-              sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v2-actions",status=~"5.."}[1m]))
+              sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v1-actions-fix4",status=~"5.."}[1m]))
               or vector(0)
             )
             /
             clamp_min(
               (
-                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v2-actions"}[1m]))
+                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v1-actions-fix4"}[1m]))
                 or vector(0)
               ),
               0.001
@@ -55,7 +55,7 @@ spec:
           (
             histogram_quantile(
               0.95,
-              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="v2-actions"}[1m])) by (le)
+              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="v1-actions-fix4"}[1m])) by (le)
             )
             or on() vector(0)
           )
