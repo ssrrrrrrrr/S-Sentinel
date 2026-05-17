@@ -15,11 +15,11 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v13-good
+        version: v13-good-retry
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v13-good
+        image: 192.168.30.11:30500/sre/demo-app:v13-good-retry
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -28,7 +28,7 @@ spec:
         - name: VERSION
           value: "v13"
         - name: RELEASE_TAG
-          value: "v13-good"
+          value: "v13-good-retry"
         - name: FAULT_RATE
           value: "0"
         - name: LATENCY_MS
