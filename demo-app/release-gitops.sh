@@ -226,12 +226,30 @@ NAMESPACE="slo-rollout" \
 }
 
 echo "ChangeContext output dir: $CHANGE_CONTEXT_OUTPUT_DIR"
+# Derive real release result from Rollout phase
+ROLLOUT_PHASE="$(kubectl -n "$NAMESPACE" get rollout "$ROLLOUT_NAME" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+if [ -z "$ROLLOUT_PHASE" ]; then
+  RELEASE_RESULT="IN_PROGRESS"
+  RELEASE_REASON="Rollout phase not available yet"
+elif [ "$ROLLOUT_PHASE" = "Healthy" ]; then
+  RELEASE_RESULT="PASS"
+  RELEASE_REASON="Rollout is Healthy"
+elif [ "$ROLLOUT_PHASE" = "Degraded" ]; then
+  RELEASE_RESULT="FAIL"
+  RELEASE_REASON="Rollout is Degraded"
+elif [ "$ROLLOUT_PHASE" = "Paused" ]; then
+  RELEASE_RESULT="IN_PROGRESS"
+  RELEASE_REASON="Rollout is Paused"
+else
+  RELEASE_RESULT="IN_PROGRESS"
+  RELEASE_REASON="Rollout phase: ${ROLLOUT_PHASE}"
+fi
+
+echo "Rollout phase: ${ROLLOUT_PHASE:-unknown}, mapped result: ${RELEASE_RESULT}"
 
 METRICS_ENV="$(IMAGE_TAG="$IMAGE_TAG" NAMESPACE="$NAMESPACE" ./scripts/collect-release-metrics.sh || true)"
 eval "$METRICS_ENV"
 echo "Observed: req_1m=${OBS_REQUEST_COUNT_1M:-unknown}, err_rate=${OBS_ERROR_RATE_PERCENT:-unknown}, p95=${OBS_P95_LATENCY_SECONDS:-unknown}"
-RELEASE_RESULT="PRECHECK_OK" \
-RELEASE_REASON="GitOps manifests rendered and committed" \
 IMAGE_TAG="$IMAGE_TAG" \
 APP_VERSION="$APP_VERSION" \
 NAMESPACE="$NAMESPACE" \
