@@ -902,16 +902,18 @@ func main() {
 		log.Printf("watch target: namespace=%s rollout=%s", target.Namespace, target.Rollout)
 	}
 
+	ctx := context.Background()
+
 	go startHealthServer(cfg.HealthAddr)
 
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	log.Printf("watcher mode dispatcher: mode=%s", cfg.Mode)
 
-		for _, target := range cfg.Targets {
-			processTarget(ctx, client, cfg, target)
-		}
-
-		cancel()
-		time.Sleep(interval)
+	switch cfg.Mode {
+	case "poll":
+		runPollLoop(ctx, client, cfg, interval)
+	case "watch":
+		runWatchLoop(ctx, client, cfg, interval)
+	default:
+		log.Fatalf("invalid watcher mode %q: expected poll or watch", cfg.Mode)
 	}
 }
