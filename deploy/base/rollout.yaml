@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v13-good-retry
+        version: v14-change-risk-bad
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v13-good-retry
+        image: 192.168.30.11:30500/sre/demo-app:v14-change-risk-bad
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v13"
+          value: "v14"
         - name: RELEASE_TAG
-          value: "v13-good-retry"
+          value: "v14-change-risk-bad"
         - name: FAULT_RATE
-          value: "0"
+          value: "0.8"
         - name: LATENCY_MS
-          value: "0"
+          value: "800"
         readinessProbe:
           httpGet:
             path: /healthz
