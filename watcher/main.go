@@ -656,18 +656,33 @@ func watchRolloutLoop(ctx context.Context, client dynamic.Interface, target Targ
 		default:
 		}
 
-		w, err := client.Resource(rolloutGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{})
+		list, err := client.Resource(rolloutGVR).Namespace(target.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			incWatcherErrors()
 			incWatcherWatchRestarts()
-			log.Printf("watch rollout failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
+			log.Printf("list rollout before watch failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
 			if !sleepWithContext(ctx, 5*time.Second) {
 				return
 			}
 			continue
 		}
 
-		log.Printf("watch started: resource=rollout namespace=%s rollout=%s", target.Namespace, target.Rollout)
+		resourceVersion := list.GetResourceVersion()
+
+		w, err := client.Resource(rolloutGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{
+			ResourceVersion: resourceVersion,
+		})
+		if err != nil {
+			incWatcherErrors()
+			incWatcherWatchRestarts()
+			log.Printf("watch rollout failed: namespace=%s rollout=%s resourceVersion=%s error=%v", target.Namespace, target.Rollout, resourceVersion, err)
+			if !sleepWithContext(ctx, 5*time.Second) {
+				return
+			}
+			continue
+		}
+
+		log.Printf("watch started: resource=rollout namespace=%s rollout=%s resourceVersion=%s", target.Namespace, target.Rollout, resourceVersion)
 
 		for event := range w.ResultChan() {
 			incWatcherWatchEvents()
@@ -709,18 +724,33 @@ func watchAnalysisRunLoop(ctx context.Context, client dynamic.Interface, target 
 		default:
 		}
 
-		w, err := client.Resource(analysisRunGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{})
+		list, err := client.Resource(analysisRunGVR).Namespace(target.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			incWatcherErrors()
 			incWatcherWatchRestarts()
-			log.Printf("watch analysisrun failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
+			log.Printf("list analysisrun before watch failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
 			if !sleepWithContext(ctx, 5*time.Second) {
 				return
 			}
 			continue
 		}
 
-		log.Printf("watch started: resource=analysisrun namespace=%s rollout=%s", target.Namespace, target.Rollout)
+		resourceVersion := list.GetResourceVersion()
+
+		w, err := client.Resource(analysisRunGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{
+			ResourceVersion: resourceVersion,
+		})
+		if err != nil {
+			incWatcherErrors()
+			incWatcherWatchRestarts()
+			log.Printf("watch analysisrun failed: namespace=%s rollout=%s resourceVersion=%s error=%v", target.Namespace, target.Rollout, resourceVersion, err)
+			if !sleepWithContext(ctx, 5*time.Second) {
+				return
+			}
+			continue
+		}
+
+		log.Printf("watch started: resource=analysisrun namespace=%s rollout=%s resourceVersion=%s", target.Namespace, target.Rollout, resourceVersion)
 
 		for event := range w.ResultChan() {
 			incWatcherWatchEvents()
