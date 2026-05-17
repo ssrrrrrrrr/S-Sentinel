@@ -19,6 +19,18 @@ on:
         description: "Latency ms"
         required: true
         default: "0"
+      slo_error_rate_threshold:
+        description: "SLO error-rate threshold (%)"
+        required: true
+        default: "5"
+      slo_p95_seconds_threshold:
+        description: "SLO p95 latency threshold (seconds)"
+        required: true
+        default: "0.3"
+      slo_min_request_count:
+        description: "SLO minimum request count (per 1m window)"
+        required: true
+        default: "20"
 
 permissions:
   contents: write
@@ -56,6 +68,10 @@ jobs:
           git config user.email "github-actions@github.com"
 
       - name: Run GitOps release script
+        env:
+          SLO_ERROR_RATE_THRESHOLD: "${{ github.event.inputs.slo_error_rate_threshold }}"
+          SLO_P95_SECONDS_THRESHOLD: "${{ github.event.inputs.slo_p95_seconds_threshold }}"
+          SLO_MIN_REQUEST_COUNT: "${{ github.event.inputs.slo_min_request_count }}"
         run: |
           cd "$GITHUB_WORKSPACE/demo-app"
           chmod +x release-gitops.sh
@@ -64,7 +80,6 @@ jobs:
             "${{ github.event.inputs.app_version }}" \
             "${{ github.event.inputs.fault_rate }}" \
             "${{ github.event.inputs.latency_ms }}"
-
 
       - name: Push GitOps manifest changes
         run: |
@@ -81,5 +96,3 @@ jobs:
           else
             echo "/root/slo-rollout-demo is not a git repository, skip sync"
           fi
-
-
