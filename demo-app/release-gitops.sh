@@ -226,6 +226,10 @@ NAMESPACE="slo-rollout" \
 }
 
 echo "ChangeContext output dir: $CHANGE_CONTEXT_OUTPUT_DIR"
+
+METRICS_ENV="$(IMAGE_TAG="$IMAGE_TAG" NAMESPACE="$NAMESPACE" ./scripts/collect-release-metrics.sh || true)"
+eval "$METRICS_ENV"
+echo "Observed: req_1m=${OBS_REQUEST_COUNT_1M:-unknown}, err_rate=${OBS_ERROR_RATE_PERCENT:-unknown}, p95=${OBS_P95_LATENCY_SECONDS:-unknown}"
 RELEASE_RESULT="PRECHECK_OK" \
 RELEASE_REASON="GitOps manifests rendered and committed" \
 IMAGE_TAG="$IMAGE_TAG" \
@@ -235,6 +239,9 @@ ROLLOUT_NAME="$ROLLOUT_NAME" \
 SLO_ERROR_RATE_THRESHOLD="$SLO_ERROR_RATE_THRESHOLD" \
 SLO_P95_SECONDS_THRESHOLD="$SLO_P95_SECONDS_THRESHOLD" \
 SLO_MIN_REQUEST_COUNT="$SLO_MIN_REQUEST_COUNT" \
+  OBS_REQUEST_COUNT_1M="${OBS_REQUEST_COUNT_1M:-unknown}" \
+  OBS_ERROR_RATE_PERCENT="${OBS_ERROR_RATE_PERCENT:-unknown}" \
+  OBS_P95_LATENCY_SECONDS="${OBS_P95_LATENCY_SECONDS:-unknown}" \
 OUTPUT_DIR="$CHANGE_CONTEXT_OUTPUT_DIR" \
 ./scripts/write-release-report.sh || {
   echo "WARN: write-release-report.sh failed, continue release"
