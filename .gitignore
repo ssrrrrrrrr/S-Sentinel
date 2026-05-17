@@ -29,3 +29,5 @@ watcher/config.yaml
 # local editor/system files
 *.swp
 .DS_Store
+
+!docs/release-reports/TEMPLATE.md

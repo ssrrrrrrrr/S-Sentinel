@@ -13,6 +13,10 @@ APP_VERSION="$2"
 FAULT_RATE="$3"
 LATENCY_MS="$4"
 
+SLO_ERROR_RATE_THRESHOLD="${SLO_ERROR_RATE_THRESHOLD:-5}"
+SLO_P95_SECONDS_THRESHOLD="${SLO_P95_SECONDS_THRESHOLD:-0.3}"
+SLO_MIN_REQUEST_COUNT="${SLO_MIN_REQUEST_COUNT:-20}"
+
 REGISTRY="192.168.30.11:30500"
 IMAGE_NAME="sre/demo-app"
 NAMESPACE="slo-rollout"
@@ -32,6 +36,9 @@ echo "IMAGE_TAG:    ${IMAGE_TAG}"
 echo "APP_VERSION:  ${APP_VERSION}"
 echo "FAULT_RATE:   ${FAULT_RATE}"
 echo "LATENCY_MS:   ${LATENCY_MS}"
+echo "SLO_ERROR_RATE_THRESHOLD: ${SLO_ERROR_RATE_THRESHOLD}"
+echo "SLO_P95_SECONDS_THRESHOLD: ${SLO_P95_SECONDS_THRESHOLD}"
+echo "SLO_MIN_REQUEST_COUNT: ${SLO_MIN_REQUEST_COUNT}"
 echo "REMOTE_IMAGE: ${REMOTE_IMAGE}"
 echo "BASE_DIR:     ${BASE_DIR}"
 echo "========================================="
@@ -73,7 +80,7 @@ spec:
     interval: 20s
     count: 3
     failureLimit: 1
-    successCondition: result[0] >= 20
+    successCondition: result[0] >= ${SLO_MIN_REQUEST_COUNT}
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
@@ -87,7 +94,7 @@ spec:
     interval: 20s
     count: 3
     failureLimit: 1
-    successCondition: result[0] < 5
+    successCondition: result[0] < ${SLO_ERROR_RATE_THRESHOLD}
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
@@ -111,7 +118,7 @@ spec:
     interval: 20s
     count: 3
     failureLimit: 1
-    successCondition: isNaN(result[0]) || result[0] < 0.3
+    successCondition: isNaN(result[0]) || result[0] < ${SLO_P95_SECONDS_THRESHOLD}
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
@@ -219,7 +226,6 @@ NAMESPACE="slo-rollout" \
 }
 
 echo "ChangeContext output dir: $CHANGE_CONTEXT_OUTPUT_DIR"
-
 
 git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
 
