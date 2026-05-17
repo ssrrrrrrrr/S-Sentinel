@@ -200,6 +200,27 @@ grep -q "version=\"${IMAGE_TAG}\"" /tmp/slo-rollout-rendered.yaml
 echo "Kustomize render OK."
 
 echo "[7/7] Commit and push GitOps changes..."
+
+echo "===== Generate ChangeContext ====="
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+CHANGE_CONTEXT_OUTPUT_DIR="${CHANGE_CONTEXT_OUTPUT_DIR:-docs/release-reports}"
+if [ -d /data/nfs/slo-rollout-watcher/reports ] && [ -z "${CHANGE_CONTEXT_OUTPUT_DIR_OVERRIDE:-}" ]; then
+  CHANGE_CONTEXT_OUTPUT_DIR="/data/nfs/slo-rollout-watcher/reports"
+fi
+
+BASE_REF="${CHANGE_CONTEXT_BASE_REF:-HEAD}" \
+OUTPUT_DIR="$CHANGE_CONTEXT_OUTPUT_DIR" \
+APP_NAME="demo-app" \
+NAMESPACE="slo-rollout" \
+./scripts/generate-change-context.sh || {
+  echo "WARN: generate-change-context.sh failed, continue release"
+}
+
+echo "ChangeContext output dir: $CHANGE_CONTEXT_OUTPUT_DIR"
+
+
 git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
 
 if git diff --cached --quiet; then
