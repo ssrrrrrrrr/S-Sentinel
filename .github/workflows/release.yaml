@@ -83,12 +83,18 @@ jobs:
           git push origin main
 
       - name: Sync local working repository
+        continue-on-error: true
         run: |
           echo "Sync /root/slo-rollout-demo with origin/main"
 
           if [ -d /root/slo-rollout-demo/.git ]; then
             git -C /root/slo-rollout-demo fetch origin main
-            git -C /root/slo-rollout-demo pull --ff-only origin main
+
+            if ! git -C /root/slo-rollout-demo pull --ff-only origin main; then
+              echo "WARN: local repo diverged, resetting mirror to origin/main"
+              git -C /root/slo-rollout-demo checkout main
+              git -C /root/slo-rollout-demo reset --hard origin/main
+            fi
           else
             echo "/root/slo-rollout-demo is not a git repository, skip sync"
           fi
