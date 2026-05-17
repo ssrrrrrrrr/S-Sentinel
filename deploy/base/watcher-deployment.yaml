@@ -9,6 +9,7 @@ metadata:
 data:
   config.yaml: |
     interval: 10s
+    mode: watch
     healthAddr: ":8080"
     repoDir: /app
     stateFile: /app/docs/release-reports/go-rollout-watcher-state.json
@@ -41,7 +42,7 @@ spec:
       serviceAccountName: release-rollout-watcher
       containers:
         - name: watcher
-          image: 192.168.30.11:5000/release-rollout-watcher:v1.4
+          image: 192.168.30.11:5000/release-rollout-watcher:v1.5
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

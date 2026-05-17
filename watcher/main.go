@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	watchpkg "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -626,6 +627,175 @@ func processTarget(ctx context.Context, client dynamic.Interface, cfg Config, ta
 	saveState(cfg.StateFile, state)
 }
 
+func sleepWithContext(ctx context.Context, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
+}
+
+func notifyWatchEvent(ctx context.Context, ch chan<- string, reason string) {
+	select {
+	case ch <- reason:
+	case <-ctx.Done():
+	default:
+		log.Printf("watch event skipped because trigger queue is full: reason=%s", reason)
+	}
+}
+
+func watchRolloutLoop(ctx context.Context, client dynamic.Interface, target Target, triggerCh chan<- string) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		w, err := client.Resource(rolloutGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{})
+		if err != nil {
+			incWatcherErrors()
+			incWatcherWatchRestarts()
+			log.Printf("watch rollout failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
+			if !sleepWithContext(ctx, 5*time.Second) {
+				return
+			}
+			continue
+		}
+
+		log.Printf("watch started: resource=rollout namespace=%s rollout=%s", target.Namespace, target.Rollout)
+
+		for event := range w.ResultChan() {
+			incWatcherWatchEvents()
+
+			if event.Type == watchpkg.Error {
+				incWatcherErrors()
+				log.Printf("watch rollout error event: namespace=%s rollout=%s", target.Namespace, target.Rollout)
+				continue
+			}
+
+			obj, ok := event.Object.(*unstructured.Unstructured)
+			if !ok || obj == nil {
+				log.Printf("watch rollout skipped non-unstructured event: type=%s", event.Type)
+				continue
+			}
+
+			if obj.GetName() != target.Rollout {
+				continue
+			}
+
+			log.Printf("watch event: resource=rollout type=%s namespace=%s name=%s", event.Type, target.Namespace, obj.GetName())
+			notifyWatchEvent(ctx, triggerCh, fmt.Sprintf("rollout/%s/%s/%s", target.Namespace, target.Rollout, event.Type))
+		}
+
+		incWatcherWatchRestarts()
+		log.Printf("watch rollout channel closed: namespace=%s rollout=%s; restarting watch", target.Namespace, target.Rollout)
+
+		if !sleepWithContext(ctx, 2*time.Second) {
+			return
+		}
+	}
+}
+
+func watchAnalysisRunLoop(ctx context.Context, client dynamic.Interface, target Target, triggerCh chan<- string) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		w, err := client.Resource(analysisRunGVR).Namespace(target.Namespace).Watch(ctx, metav1.ListOptions{})
+		if err != nil {
+			incWatcherErrors()
+			incWatcherWatchRestarts()
+			log.Printf("watch analysisrun failed: namespace=%s rollout=%s error=%v", target.Namespace, target.Rollout, err)
+			if !sleepWithContext(ctx, 5*time.Second) {
+				return
+			}
+			continue
+		}
+
+		log.Printf("watch started: resource=analysisrun namespace=%s rollout=%s", target.Namespace, target.Rollout)
+
+		for event := range w.ResultChan() {
+			incWatcherWatchEvents()
+
+			if event.Type == watchpkg.Error {
+				incWatcherErrors()
+				log.Printf("watch analysisrun error event: namespace=%s rollout=%s", target.Namespace, target.Rollout)
+				continue
+			}
+
+			obj, ok := event.Object.(*unstructured.Unstructured)
+			if !ok || obj == nil {
+				log.Printf("watch analysisrun skipped non-unstructured event: type=%s", event.Type)
+				continue
+			}
+
+			name := obj.GetName()
+			if !strings.HasPrefix(name, target.Rollout+"-") {
+				continue
+			}
+
+			log.Printf("watch event: resource=analysisrun type=%s namespace=%s name=%s", event.Type, target.Namespace, name)
+			notifyWatchEvent(ctx, triggerCh, fmt.Sprintf("analysisrun/%s/%s/%s", target.Namespace, name, event.Type))
+		}
+
+		incWatcherWatchRestarts()
+		log.Printf("watch analysisrun channel closed: namespace=%s rollout=%s; restarting watch", target.Namespace, target.Rollout)
+
+		if !sleepWithContext(ctx, 2*time.Second) {
+			return
+		}
+	}
+}
+
+func runWatchLoop(ctx context.Context, client dynamic.Interface, cfg Config, interval time.Duration) {
+	resyncInterval := interval * 6
+	if resyncInterval < 30*time.Second {
+		resyncInterval = 30 * time.Second
+	}
+
+	log.Printf("watch loop started: targets=%d resyncInterval=%s", len(cfg.Targets), resyncInterval.String())
+
+	triggerCh := make(chan string, 32)
+
+	for _, target := range cfg.Targets {
+		go watchRolloutLoop(ctx, client, target, triggerCh)
+		go watchAnalysisRunLoop(ctx, client, target, triggerCh)
+	}
+
+	log.Printf("watch initial sync started")
+	for _, target := range cfg.Targets {
+		processTarget(ctx, client, cfg, target)
+	}
+
+	ticker := time.NewTicker(resyncInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case reason := <-triggerCh:
+			log.Printf("watch trigger received: reason=%s", reason)
+			for _, target := range cfg.Targets {
+				processTarget(ctx, client, cfg, target)
+			}
+		case <-ticker.C:
+			log.Printf("watch fallback resync started")
+			for _, target := range cfg.Targets {
+				processTarget(ctx, client, cfg, target)
+			}
+		}
+	}
+}
+
 func normalizeMode(mode string) string {
 	mode = strings.TrimSpace(strings.ToLower(mode))
 	if mode == "" {
@@ -641,8 +811,7 @@ func runPollLoop(ctx context.Context, client dynamic.Interface, cfg Config, inte
 	case "poll":
 		runPollLoop(ctx, client, cfg, interval)
 	case "watch":
-		log.Printf("watch mode is not implemented yet; fallback to poll mode")
-		runPollLoop(ctx, client, cfg, interval)
+		runWatchLoop(ctx, client, cfg, interval)
 	default:
 		log.Fatalf("invalid watcher mode %q: expected poll or watch", cfg.Mode)
 	}
