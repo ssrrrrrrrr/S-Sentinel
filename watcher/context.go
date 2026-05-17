@@ -21,25 +21,30 @@ type MetricResult struct {
 }
 
 type ReleaseContext struct {
-	GeneratedAt           string         `json:"generatedAt"`
-	Namespace             string         `json:"namespace"`
-	Rollout               string         `json:"rollout"`
-	RolloutPhase          string         `json:"rolloutPhase"`
-	RolloutAbort          bool           `json:"rolloutAbort"`
-	RolloutMessage        string         `json:"rolloutMessage"`
-	StableReplicaSet      string         `json:"stableReplicaSet"`
-	CurrentDesiredVersion string         `json:"currentDesiredVersion"`
-	AnalysisRun           string         `json:"analysisRun"`
-	AnalysisRunPhase      string         `json:"analysisRunPhase"`
-	FailedMetric          string         `json:"failedMetric"`
-	FailedMetrics         []string       `json:"failedMetrics"`
-	AnalysisRunMetrics    []MetricResult `json:"analysisRunMetrics"`
-	Severity              string         `json:"severity"`
-	RiskScore             int            `json:"riskScore"`
-	RiskReasons           []string       `json:"riskReasons"`
-	Reason                string         `json:"reason"`
-	Decision              string         `json:"decision"`
-	RecommendedAction     string         `json:"recommendedAction"`
+	GeneratedAt           string                `json:"generatedAt"`
+	Namespace             string                `json:"namespace"`
+	Rollout               string                `json:"rollout"`
+	RolloutPhase          string                `json:"rolloutPhase"`
+	RolloutAbort          bool                  `json:"rolloutAbort"`
+	RolloutMessage        string                `json:"rolloutMessage"`
+	StableReplicaSet      string                `json:"stableReplicaSet"`
+	CurrentDesiredVersion string                `json:"currentDesiredVersion"`
+	AnalysisRun           string                `json:"analysisRun"`
+	AnalysisRunPhase      string                `json:"analysisRunPhase"`
+	FailedMetric          string                `json:"failedMetric"`
+	FailedMetrics         []string              `json:"failedMetrics"`
+	AnalysisRunMetrics    []MetricResult        `json:"analysisRunMetrics"`
+	Severity              string                `json:"severity"`
+	RiskScore             int                   `json:"riskScore"`
+	RiskReasons           []string              `json:"riskReasons"`
+	ChangeContextFile     string                `json:"changeContextFile,omitempty"`
+	ChangeRiskLevel       string                `json:"changeRiskLevel,omitempty"`
+	ChangeRiskScore       int                   `json:"changeRiskScore,omitempty"`
+	ChangeRiskHints       []string              `json:"changeRiskHints,omitempty"`
+	ChangeContext         *ChangeContextSummary `json:"changeContext,omitempty"`
+	Reason                string                `json:"reason"`
+	Decision              string                `json:"decision"`
+	RecommendedAction     string                `json:"recommendedAction"`
 }
 
 type ReleaseEventArchiveRecord struct {
@@ -276,6 +281,14 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 
 func writeReleaseContext(cfg Config, e WatchEvent) (string, error) {
 	ctx := buildReleaseContext(e)
+
+	if changeCtx, _ := loadLatestChangeContext(cfg); changeCtx != nil {
+		ctx.ChangeContextFile = changeCtx.File
+		ctx.ChangeRiskLevel = changeCtx.RiskLevel
+		ctx.ChangeRiskScore = changeCtx.RiskScore
+		ctx.ChangeRiskHints = changeCtx.RiskHints
+		ctx.ChangeContext = changeCtx
+	}
 
 	reportDir := filepath.Join(cfg.RepoDir, "docs", "release-reports")
 	if err := os.MkdirAll(reportDir, 0755); err != nil {
