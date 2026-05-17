@@ -247,6 +247,7 @@ fi
 
 echo "Rollout phase: ${ROLLOUT_PHASE:-unknown}, mapped result: ${RELEASE_RESULT}"
 echo "DEBUG report inputs: RELEASE_RESULT=${RELEASE_RESULT}, RELEASE_REASON=${RELEASE_REASON}"
+export RELEASE_RESULT RELEASE_REASON
 
 METRICS_ENV="$(IMAGE_TAG="$IMAGE_TAG" NAMESPACE="$NAMESPACE" ./scripts/collect-release-metrics.sh || true)"
 eval "$METRICS_ENV"

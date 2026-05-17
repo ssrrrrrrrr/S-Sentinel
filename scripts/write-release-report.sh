@@ -39,8 +39,8 @@ cat > "${report_file}" <<REPORT
 - p95_latency_seconds: ${OBS_P95_LATENCY_SECONDS:-unknown}
 
 ## 5) Decision
-- result: ${RELEASE_RESULT:-UNKNOWN}
-- reason: ${RELEASE_REASON:-not provided}
+- result: ${RELEASE_RESULT:-IN_PROGRESS}
+- reason: ${RELEASE_REASON:-Rollout result not provided by caller}
 - rollback_action: ${ROLLBACK_ACTION:-none}
 - promotion_action: ${PROMOTION_ACTION:-none}
 
