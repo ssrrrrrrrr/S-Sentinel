@@ -783,7 +783,25 @@ func runWatchLoop(ctx context.Context, client dynamic.Interface, cfg Config, int
 		case <-ctx.Done():
 			return
 		case reason := <-triggerCh:
-			log.Printf("watch trigger received: reason=%s", reason)
+			reasons := []string{reason}
+
+			debounceTimer := time.NewTimer(500 * time.Millisecond)
+			collecting := true
+
+			for collecting {
+				select {
+				case extraReason := <-triggerCh:
+					reasons = append(reasons, extraReason)
+				case <-debounceTimer.C:
+					collecting = false
+				case <-ctx.Done():
+					debounceTimer.Stop()
+					return
+				}
+			}
+
+			log.Printf("watch trigger batch received: count=%d first=%s", len(reasons), reasons[0])
+
 			for _, target := range cfg.Targets {
 				processTarget(ctx, client, cfg, target)
 			}
