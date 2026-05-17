@@ -40,16 +40,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository by SSH
-        run: |
-          cd /
-          mkdir -p "$GITHUB_WORKSPACE"
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-
-          mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          timeout 120 git clone --depth 1 --branch main git@github.com:ssrrrrrrrr/slo-rollout-demo.git "$GITHUB_WORKSPACE"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
 
       - name: Show environment
         run: |
@@ -72,6 +67,7 @@ jobs:
           SLO_ERROR_RATE_THRESHOLD: "${{ github.event.inputs.slo_error_rate_threshold }}"
           SLO_P95_SECONDS_THRESHOLD: "${{ github.event.inputs.slo_p95_seconds_threshold }}"
           SLO_MIN_REQUEST_COUNT: "${{ github.event.inputs.slo_min_request_count }}"
+          PROM_ADDR: "http://10.102.31.98:9090"
         run: |
           cd "$GITHUB_WORKSPACE/demo-app"
           chmod +x release-gitops.sh
