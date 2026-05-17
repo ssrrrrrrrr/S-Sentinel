@@ -15,11 +15,11 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v1-m1-check
+        version: v1-m2-check
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v1-m1-check
+        image: 192.168.30.11:30500/sre/demo-app:v1-m2-check
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -28,7 +28,7 @@ spec:
         - name: VERSION
           value: "v1"
         - name: RELEASE_TAG
-          value: "v1-m1-check"
+          value: "v1-m2-check"
         - name: FAULT_RATE
           value: "0"
         - name: LATENCY_MS
