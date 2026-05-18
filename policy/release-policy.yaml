@@ -1,0 +1,63 @@
+schemaVersion: release.policy/v1alpha1
+
+# Global safety mode.
+executionMode: advisory_only
+autoExecute: false
+
+# Actions that must be blocked even if an AI decision proposes them.
+blockedActions:
+  - ROLLBACK
+  - PROMOTE
+  - DELETE_RESOURCE
+  - PATCH_RESOURCE
+  - APPLY_MANIFEST
+
+# Actions considered dangerous by default policy.
+dangerousActions:
+  - ROLLBACK
+  - PROMOTE
+  - DELETE_RESOURCE
+  - PATCH_GITOPS
+  - SCALE_DOWN
+  - RESTART_WORKLOAD
+
+# Allowed advisory actions.
+allowedActions:
+  - NOOP
+  - OBSERVE
+  - RETRY_WITH_MORE_TRAFFIC
+  - STOP_PROMOTION
+  - INVESTIGATE
+  - MANUAL_REVIEW
+  - WAIT
+
+# Rule outputs. These values intentionally preserve the previous evaluator behavior.
+rule.pass.policyDecision: ALLOW
+rule.pass.finalAction: NOOP
+rule.pass.requiresHumanApproval: false
+rule.pass.reason: Release passed and no action is required
+rule.pass.matchedRule: pass_release_no_action
+
+rule.multipleSlo.policyDecision: ALLOW_ADVISORY_ONLY
+rule.multipleSlo.finalAction: STOP_PROMOTION
+rule.multipleSlo.requiresHumanApproval: true
+rule.multipleSlo.reason: Multiple SLO gates failed; action is advisory only and requires human approval
+rule.multipleSlo.matchedRule: multiple_slo_failure_requires_human_approval
+
+rule.failedStopPromotion.policyDecision: ALLOW_ADVISORY_ONLY
+rule.failedStopPromotion.finalAction: STOP_PROMOTION
+rule.failedStopPromotion.requiresHumanApproval: true
+rule.failedStopPromotion.reason: Release failed; stop promotion is advisory only and requires human approval
+rule.failedStopPromotion.matchedRule: failed_release_stop_promotion_requires_human_approval
+
+rule.inProgress.policyDecision: ALLOW_ADVISORY_ONLY
+rule.inProgress.defaultFinalAction: WAIT
+rule.inProgress.reason: Release is still in progress; policy remains advisory only
+rule.inProgress.matchedRule: release_in_progress_advisory_only
+
+rule.fallback.policyDecision: ALLOW_ADVISORY_ONLY
+rule.fallback.reason: No specific policy rule matched; fallback to advisory-only mode
+rule.fallback.matchedRule: fallback_advisory_only
+
+rule.autoExecuteDisabled.matchedRule: auto_execute_disabled
+rule.advisoryOnly.matchedRule: guardrail_advisory_only
