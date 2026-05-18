@@ -42,6 +42,7 @@ type ReleaseContext struct {
 	ChangeRiskScore       int                   `json:"changeRiskScore,omitempty"`
 	ChangeRiskHints       []string              `json:"changeRiskHints,omitempty"`
 	ChangeContext         *ChangeContextSummary `json:"changeContext,omitempty"`
+	Result                string                `json:"result"`
 	Reason                string                `json:"reason"`
 	Decision              string                `json:"decision"`
 	RecommendedAction     string                `json:"recommendedAction"`
@@ -59,6 +60,7 @@ type ReleaseEventArchiveRecord struct {
 	AnalysisRun           string   `json:"analysisRun"`
 	AnalysisRunPhase      string   `json:"analysisRunPhase"`
 	FailedMetrics         []string `json:"failedMetrics"`
+	Result                string   `json:"result"`
 	Severity              string   `json:"severity"`
 	RiskScore             int      `json:"riskScore"`
 	Decision              string   `json:"decision"`
@@ -86,6 +88,7 @@ func appendReleaseEventArchive(cfg Config, ctx ReleaseContext, contextFile strin
 		AnalysisRun:           ctx.AnalysisRun,
 		AnalysisRunPhase:      ctx.AnalysisRunPhase,
 		FailedMetrics:         ctx.FailedMetrics,
+		Result:                ctx.Result,
 		Severity:              ctx.Severity,
 		RiskScore:             ctx.RiskScore,
 		Decision:              ctx.Decision,
@@ -231,6 +234,50 @@ func calculateRisk(e WatchEvent) (string, int, []string) {
 	return severity, score, reasons
 }
 
+func calculateReleaseResult(e WatchEvent, failedMetrics []string) (string, string) {
+	if e.RolloutAbort {
+		return "FAIL_BY_ROLLOUT_ABORT", "Rollout has been aborted"
+	}
+
+	if len(failedMetrics) > 1 {
+		return "FAIL_BY_MULTIPLE_SLO", "Multiple SLO gates failed: " + strings.Join(failedMetrics, ",")
+	}
+
+	if hasMetric(failedMetrics, "request-count") {
+		return "FAIL_BY_REQUEST_COUNT", "AnalysisRun metric request-count failed, canary traffic sample is insufficient"
+	}
+
+	if hasMetric(failedMetrics, "error-rate") {
+		return "FAIL_BY_ERROR_RATE", "AnalysisRun metric error-rate failed"
+	}
+
+	if hasMetric(failedMetrics, "p95-latency") {
+		return "FAIL_BY_P95_LATENCY", "AnalysisRun metric p95-latency failed"
+	}
+
+	if strings.EqualFold(e.AnalysisRunPhase, "Failed") || strings.EqualFold(e.AnalysisRunPhase, "Error") {
+		return "FAIL_BY_MULTIPLE_SLO", "AnalysisRun phase is " + e.AnalysisRunPhase + " but failed metric is unknown"
+	}
+
+	if strings.EqualFold(e.RolloutPhase, "Degraded") {
+		return "FAIL_BY_ROLLOUT_DEGRADED", "Rollout phase is Degraded"
+	}
+
+	if strings.EqualFold(e.RolloutPhase, "Healthy") {
+		return "PASS", "Rollout is Healthy"
+	}
+
+	if strings.EqualFold(e.RolloutPhase, "Progressing") || strings.EqualFold(e.RolloutPhase, "Paused") {
+		return "IN_PROGRESS", "Rollout phase is " + e.RolloutPhase
+	}
+
+	if e.RolloutPhase == "" {
+		return "UNKNOWN", "Rollout phase is empty"
+	}
+
+	return "UNKNOWN", "Rollout phase is " + e.RolloutPhase
+}
+
 func buildReleaseContext(e WatchEvent) ReleaseContext {
 	decision := "unknown"
 	action := "manual_check"
@@ -255,6 +302,15 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 	}
 
 	severity, riskScore, riskReasons := calculateRisk(e)
+	result, resultReason := calculateReleaseResult(e, failedMetrics)
+	reason := e.Reason
+	if resultReason != "" {
+		if reason != "" {
+			reason = resultReason + "; " + reason
+		} else {
+			reason = resultReason
+		}
+	}
 
 	return ReleaseContext{
 		GeneratedAt:           time.Now().Format(time.RFC3339),
@@ -273,7 +329,8 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		Severity:              severity,
 		RiskScore:             riskScore,
 		RiskReasons:           riskReasons,
-		Reason:                e.Reason,
+		Result:                result,
+		Reason:                reason,
 		Decision:              decision,
 		RecommendedAction:     action,
 	}
