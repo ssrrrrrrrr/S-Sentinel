@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v20-new
+        version: v21-result-latency-bad
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v20-new
+        image: 192.168.30.11:30500/sre/demo-app:v21-result-latency-bad
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v20"
+          value: "v21"
         - name: RELEASE_TAG
-          value: "v20-new"
+          value: "v21-result-latency-bad"
         - name: FAULT_RATE
           value: "0"
         - name: LATENCY_MS
-          value: "0"
+          value: "800"
         readinessProbe:
           httpGet:
             path: /healthz
