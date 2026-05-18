@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v25-result-multiple-bad
+        version: v26-pass-report
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v25-result-multiple-bad
+        image: 192.168.30.11:30500/sre/demo-app:v26-pass-report
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v25"
+          value: "v26"
         - name: RELEASE_TAG
-          value: "v25-result-multiple-bad"
+          value: "v26-pass-report"
         - name: FAULT_RATE
-          value: "0.8"
+          value: "0"
         - name: LATENCY_MS
-          value: "800"
+          value: "0"
         readinessProbe:
           httpGet:
             path: /healthz
