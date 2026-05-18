@@ -300,6 +300,7 @@ main() {
   bash -n scripts/collect-failure-evidence.sh
   bash -n scripts/agent-tool-router.sh
   bash -n scripts/build-action-plan.sh
+  bash -n scripts/test-advisor-action-plan.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -315,6 +316,7 @@ main() {
 
   assert_change_risk_case
   assert_failure_evidence_case
+  ./scripts/test-advisor-action-plan.sh "$TEST_TMP/advisor-action-plan"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }

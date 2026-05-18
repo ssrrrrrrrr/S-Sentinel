@@ -614,6 +614,70 @@ LINK_FAILURE_EVIDENCE_PY
       else
         echo "Failure evidence collector skipped: release is not a failure"
       fi
+
+      ACTION_PLAN_BUILDER=""
+
+      if [ -x "./scripts/build-action-plan.sh" ]; then
+        ACTION_PLAN_BUILDER="./scripts/build-action-plan.sh"
+      elif [ -x "/app/scripts/build-action-plan.sh" ]; then
+        ACTION_PLAN_BUILDER="/app/scripts/build-action-plan.sh"
+      fi
+
+      if [ -n "$ACTION_PLAN_BUILDER" ] && [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running action plan builder: $ACTION_PLAN_BUILDER"
+        RESOLVED_ACTION_PLAN_OUTPUT_DIR="${ACTION_PLAN_OUTPUT_DIR:-$OUT_DIR}"
+
+        ACTION_PLAN_OUTPUT_DIR="$RESOLVED_ACTION_PLAN_OUTPUT_DIR" \
+          "$ACTION_PLAN_BUILDER" "$EVIDENCE_OUT" || {
+            echo "WARN: build-action-plan.sh failed, continue release advice pipeline" >&2
+          }
+
+        ACTION_PLAN_JSON="$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-${DECISION_SUFFIX}"
+        ACTION_PLAN_MD="$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-${DECISION_SUFFIX%.json}.md"
+
+        if [ ! -f "$ACTION_PLAN_JSON" ] && [ -f "$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-latest.json" ]; then
+          ACTION_PLAN_JSON="$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-latest.json"
+        fi
+
+        if [ ! -f "$ACTION_PLAN_MD" ] && [ -f "$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-latest.md" ]; then
+          ACTION_PLAN_MD="$RESOLVED_ACTION_PLAN_OUTPUT_DIR/action-plan-latest.md"
+        fi
+
+        if [ -f "$EVIDENCE_OUT" ] && [ -f "$ACTION_PLAN_JSON" ] && [ -f "$ACTION_PLAN_MD" ]; then
+          echo "Linking action plan into release evidence: $EVIDENCE_OUT"
+          python3 - "$EVIDENCE_OUT" "$ACTION_PLAN_JSON" "$ACTION_PLAN_MD" <<'LINK_ACTION_PLAN_PY'
+import json
+import sys
+from pathlib import Path
+
+release_evidence_path = Path(sys.argv[1])
+action_plan_json = Path(sys.argv[2])
+action_plan_md = Path(sys.argv[3])
+
+data = json.loads(release_evidence_path.read_text(encoding="utf-8"))
+artifacts = data.setdefault("artifacts", {})
+artifacts["actionPlan"] = str(action_plan_json)
+artifacts["actionPlanReport"] = str(action_plan_md)
+
+data["actionPlanRef"] = {
+    "generated": True,
+    "json": str(action_plan_json),
+    "markdown": str(action_plan_md),
+    "executionMode": "dry_run",
+    "willExecute": False
+}
+
+release_evidence_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(f"Action plan linked into release evidence: {release_evidence_path}")
+LINK_ACTION_PLAN_PY
+        else
+          echo "WARN: action plan files not found or release evidence missing, skip linking action plan" >&2
+        fi
+      elif [ -z "$ACTION_PLAN_BUILDER" ]; then
+        echo "WARN: action plan builder not found, skip action plan generation" >&2
+      else
+        echo "WARN: expected release evidence file not found, skip action plan generation: $EVIDENCE_OUT" >&2
+      fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
     fi
