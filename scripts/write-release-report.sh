@@ -2,11 +2,28 @@
 set -euo pipefail
 
 OUTPUT_DIR="${OUTPUT_DIR:-docs/release-reports}"
+RELEASE_CONTEXT_FILE="${RELEASE_CONTEXT_FILE:-}"
 mkdir -p "${OUTPUT_DIR}"
 
 ts="$(date +%Y%m%d-%H%M%S)"
 release_id="${RELEASE_ID:-${IMAGE_TAG:-unknown}-${ts}}"
 report_file="${OUTPUT_DIR}/${release_id}.md"
+
+report_result="${RELEASE_RESULT:-IN_PROGRESS}"
+report_reason="${RELEASE_REASON:-Rollout result not provided by caller}"
+
+if [ -n "${RELEASE_CONTEXT_FILE}" ] && [ -f "${RELEASE_CONTEXT_FILE}" ]; then
+  context_result="$(python3 -c 'import json,sys; print((json.load(open(sys.argv[1])).get("result") or "").strip())' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || true)"
+  context_reason="$(python3 -c 'import json,sys; print((json.load(open(sys.argv[1])).get("reason") or "").strip())' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || true)"
+
+  if [ -n "${context_result}" ]; then
+    report_result="${context_result}"
+  fi
+
+  if [ -n "${context_reason}" ]; then
+    report_reason="${context_reason}"
+  fi
+fi
 
 cat > "${report_file}" <<REPORT
 # Release Report
@@ -39,8 +56,8 @@ cat > "${report_file}" <<REPORT
 - p95_latency_seconds: ${OBS_P95_LATENCY_SECONDS:-unknown}
 
 ## 5) Decision
-- result: ${RELEASE_RESULT:-IN_PROGRESS}
-- reason: ${RELEASE_REASON:-Rollout result not provided by caller}
+- result: ${report_result}
+- reason: ${report_reason}
 - rollback_action: ${ROLLBACK_ACTION:-none}
 - promotion_action: ${PROMOTION_ACTION:-none}
 
