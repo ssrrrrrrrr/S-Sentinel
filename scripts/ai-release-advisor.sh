@@ -559,11 +559,53 @@ if [ -n "$POLICY_EVALUATOR" ]; then
       if [ "$SHOULD_COLLECT_FAILURE_EVIDENCE" = "true" ]; then
         if [ -n "$FAILURE_EVIDENCE_COLLECTOR" ] && [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
           echo "Running failure evidence collector: $FAILURE_EVIDENCE_COLLECTOR"
-          FAILURE_EVIDENCE_OUTPUT_DIR="${FAILURE_EVIDENCE_OUTPUT_DIR:-$OUT_DIR}" \
+          RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR="${FAILURE_EVIDENCE_OUTPUT_DIR:-$OUT_DIR}"
+
+          FAILURE_EVIDENCE_OUTPUT_DIR="$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR" \
           COLLECT_K8S_EVIDENCE="${COLLECT_K8S_EVIDENCE:-false}" \
             "$FAILURE_EVIDENCE_COLLECTOR" "$CONTEXT_FILE" || {
               echo "WARN: collect-failure-evidence.sh failed, continue release advice pipeline" >&2
             }
+
+          FAILURE_EVIDENCE_JSON="$(ls -t "$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR"/failure-evidence-*.json 2>/dev/null | grep -v 'failure-evidence-latest.json' | head -1 || true)"
+          FAILURE_EVIDENCE_MD="$(ls -t "$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR"/failure-evidence-*.md 2>/dev/null | grep -v 'failure-evidence-latest.md' | head -1 || true)"
+
+          if [ -z "$FAILURE_EVIDENCE_JSON" ] && [ -f "$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR/failure-evidence-latest.json" ]; then
+            FAILURE_EVIDENCE_JSON="$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR/failure-evidence-latest.json"
+          fi
+
+          if [ -z "$FAILURE_EVIDENCE_MD" ] && [ -f "$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR/failure-evidence-latest.md" ]; then
+            FAILURE_EVIDENCE_MD="$RESOLVED_FAILURE_EVIDENCE_OUTPUT_DIR/failure-evidence-latest.md"
+          fi
+
+          if [ -f "$EVIDENCE_OUT" ] && [ -n "$FAILURE_EVIDENCE_JSON" ] && [ -n "$FAILURE_EVIDENCE_MD" ]; then
+            echo "Linking failure evidence into release evidence: $EVIDENCE_OUT"
+            python3 - "$EVIDENCE_OUT" "$FAILURE_EVIDENCE_JSON" "$FAILURE_EVIDENCE_MD" <<'LINK_FAILURE_EVIDENCE_PY'
+import json
+import sys
+from pathlib import Path
+
+release_evidence_path = Path(sys.argv[1])
+failure_json = Path(sys.argv[2])
+failure_md = Path(sys.argv[3])
+
+data = json.loads(release_evidence_path.read_text(encoding="utf-8"))
+artifacts = data.setdefault("artifacts", {})
+artifacts["failureEvidence"] = str(failure_json)
+artifacts["failureEvidenceReport"] = str(failure_md)
+
+data.setdefault("failureEvidenceRef", {
+    "generated": True,
+    "json": str(failure_json),
+    "markdown": str(failure_md),
+})
+
+release_evidence_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(f"Failure evidence linked into release evidence: {release_evidence_path}")
+LINK_FAILURE_EVIDENCE_PY
+          else
+            echo "WARN: failure evidence files not found or release evidence missing, skip linking failure evidence" >&2
+          fi
         elif [ -z "$FAILURE_EVIDENCE_COLLECTOR" ]; then
           echo "WARN: failure evidence collector not found, skip failure evidence generation" >&2
         else

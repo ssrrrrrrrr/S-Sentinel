@@ -160,6 +160,11 @@ assert "p95-latency" in failure["release"]["failedMetrics"], failure["release"]
 assert failure["guardrails"]["doesNotRollback"] is True, failure["guardrails"]
 assert "故障诊断证据" in failure_md
 
+assert evidence["artifacts"].get("failureEvidence"), evidence["artifacts"]
+assert evidence["artifacts"].get("failureEvidenceReport"), evidence["artifacts"]
+assert Path(evidence["artifacts"]["failureEvidence"]).exists(), evidence["artifacts"]
+assert Path(evidence["artifacts"]["failureEvidenceReport"]).exists(), evidence["artifacts"]
+
 print("P95 failure policy test passed")
 PY
 }
@@ -204,6 +209,11 @@ assert failure["executionMode"] == "advisory_only", failure
 assert set(failure["release"]["failedMetrics"]) == {"error-rate", "p95-latency"}, failure["release"]
 assert failure["guardrails"]["doesNotRollback"] is True, failure["guardrails"]
 assert "多 SLO 失败" in failure_md
+
+assert evidence["artifacts"].get("failureEvidence"), evidence["artifacts"]
+assert evidence["artifacts"].get("failureEvidenceReport"), evidence["artifacts"]
+assert Path(evidence["artifacts"]["failureEvidence"]).exists(), evidence["artifacts"]
+assert Path(evidence["artifacts"]["failureEvidenceReport"]).exists(), evidence["artifacts"]
 
 print("Multiple SLO failure policy test passed")
 PY
