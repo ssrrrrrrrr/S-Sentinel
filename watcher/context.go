@@ -281,18 +281,6 @@ func calculateReleaseResult(e WatchEvent, failedMetrics []string) (string, strin
 }
 
 func buildReleaseContext(e WatchEvent) ReleaseContext {
-	decision := "unknown"
-	action := "manual_check"
-
-	reasonLower := strings.ToLower(e.Reason)
-
-	if strings.Contains(reasonLower, "degraded") ||
-		strings.Contains(reasonLower, "failed") ||
-		e.RolloutAbort {
-		decision = "release_failed_or_aborted"
-		action = "stop_promotion_and_investigate"
-	}
-
 	failedMetric := e.FailedMetric
 	if failedMetric == "" {
 		failedMetric = "unknown"
@@ -305,6 +293,22 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 
 	severity, riskScore, riskReasons := calculateRisk(e)
 	result, resultReason := calculateReleaseResult(e, failedMetrics)
+
+	decision := "unknown"
+	action := "manual_check"
+
+	switch {
+	case result == "PASS":
+		decision = "release_succeeded"
+		action = "no_action_required"
+	case strings.HasPrefix(result, "FAIL"):
+		decision = "release_failed_or_aborted"
+		action = "stop_promotion_and_investigate"
+	case result == "IN_PROGRESS":
+		decision = "release_in_progress"
+		action = "continue_observing"
+	}
+
 	reason := e.Reason
 	if resultReason != "" {
 		if reason != "" {
