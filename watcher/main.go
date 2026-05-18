@@ -524,7 +524,14 @@ func extractAnalysisMetrics(ar *unstructured.Unstructured) ([]MetricResult, []st
 }
 
 func shouldTrigger(e WatchEvent) bool {
-	return e.Reason != ""
+	if e.Reason != "" {
+		return true
+	}
+
+	// Generate release reports for successful releases as well.
+	// This makes PASS releases first-class records for future Release Memory.
+	return strings.EqualFold(e.RolloutPhase, "Healthy") &&
+		strings.EqualFold(e.AnalysisRunPhase, "Successful")
 }
 
 func runScript(repoDir string, env []string, script string) error {
