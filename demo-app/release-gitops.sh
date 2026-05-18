@@ -268,9 +268,9 @@ OUTPUT_DIR="$CHANGE_CONTEXT_OUTPUT_DIR" \
 }
 
 git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
-if [ -d "${CHANGE_CONTEXT_OUTPUT_DIR}" ]; then
-  git add -f "${CHANGE_CONTEXT_OUTPUT_DIR}"/*.md 2>/dev/null || true
-fi
+
+# Release reports and ChangeContext files are runtime artifacts.
+# They are written to NFS or local ignored directories and should not be committed.
 
 if git diff --cached --quiet; then
   echo "No GitOps changes to commit."
