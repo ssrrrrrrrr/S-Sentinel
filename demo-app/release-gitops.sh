@@ -206,7 +206,7 @@ grep -q "name: request-count" /tmp/slo-rollout-rendered.yaml
 grep -q "version=\"${IMAGE_TAG}\"" /tmp/slo-rollout-rendered.yaml
 echo "Kustomize render OK."
 
-echo "[7/7] Commit and push GitOps changes..."
+echo "[7/7] Commit GitOps changes..."
 
 echo "===== Generate ChangeContext ====="
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -278,7 +278,6 @@ else
   git config user.name "sre-demo"
   git config user.email "sre-demo@example.com"
   git commit -m "release: ${IMAGE_TAG}"
-  git push origin main
 fi
 
-echo "Release GitOps update finished."
+echo "Release GitOps commit finished. Push is handled by GitHub Actions or manually by the operator."
