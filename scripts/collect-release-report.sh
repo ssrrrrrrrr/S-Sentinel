@@ -6,6 +6,7 @@ ROLLOUT_NAME="${ROLLOUT_NAME:-demo-app}"
 ARGO_NS="${ARGO_NS:-argocd}"
 ARGO_APP="${ARGO_APP:-slo-rollout-demo}"
 PROM_URL="${PROM_URL:-http://127.0.0.1:9090}"
+RELEASE_CONTEXT_FILE="${RELEASE_CONTEXT_FILE:-}"
 
 TS="$(date +%Y%m%d-%H%M%S)"
 OUT="docs/release-reports/release-report-${TS}.md"
@@ -60,6 +61,24 @@ CURRENT_POD_HASH="$(kubectl get rollout "$ROLLOUT_NAME" -n "$NAMESPACE" -o jsonp
 ARGO_REVISION="$(kubectl get application "$ARGO_APP" -n "$ARGO_NS" -o jsonpath='{.status.sync.revision}' 2>/dev/null || true)"
 GIT_COMMIT="$(git log -1 --oneline 2>/dev/null || true)"
 
+CONTEXT_RESULT="unknown"
+CONTEXT_REASON="not provided"
+CONTEXT_FAILED_METRICS="none"
+CONTEXT_SEVERITY="unknown"
+CONTEXT_RISK_SCORE="unknown"
+CONTEXT_DECISION="unknown"
+CONTEXT_RECOMMENDED_ACTION="unknown"
+
+if [ -n "${RELEASE_CONTEXT_FILE}" ] && [ -f "${RELEASE_CONTEXT_FILE}" ]; then
+  CONTEXT_RESULT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("result") or "unknown")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo unknown)"
+  CONTEXT_REASON="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("reason") or "not provided")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo "not provided")"
+  CONTEXT_FAILED_METRICS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1])).get("failedMetrics") or []; print(",".join(map(str,v)) if isinstance(v,list) else str(v))' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo none)"
+  CONTEXT_SEVERITY="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("severity") or "unknown")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo unknown)"
+  CONTEXT_RISK_SCORE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("riskScore") or "unknown")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo unknown)"
+  CONTEXT_DECISION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("decision") or "unknown")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo unknown)"
+  CONTEXT_RECOMMENDED_ACTION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("recommendedAction") or "unknown")' "${RELEASE_CONTEXT_FILE}" 2>/dev/null || echo unknown)"
+fi
+
 cat > "$OUT" <<REPORT
 # SLO Rollout Release Report
 
@@ -79,6 +98,19 @@ Generated At: ${TS}
 | Target AnalysisRun | ${TARGET_AR:-none} |
 | Argo CD Revision | ${ARGO_REVISION:-unknown} |
 | Git Commit | ${GIT_COMMIT:-unknown} |
+
+## Structured Release Result
+
+| Item | Value |
+|---|---|
+| Result | ${CONTEXT_RESULT} |
+| Reason | ${CONTEXT_REASON} |
+| Failed Metrics | ${CONTEXT_FAILED_METRICS} |
+| Severity | ${CONTEXT_SEVERITY} |
+| Risk Score | ${CONTEXT_RISK_SCORE} |
+| Decision | ${CONTEXT_DECISION} |
+| Recommended Action | ${CONTEXT_RECOMMENDED_ACTION} |
+| Release Context File | ${RELEASE_CONTEXT_FILE:-not provided} |
 
 REPORT
 
