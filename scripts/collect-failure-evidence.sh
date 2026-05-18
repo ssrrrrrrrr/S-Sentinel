@@ -123,10 +123,18 @@ def is_failure_context():
 
 is_failure = is_failure_context()
 
+k8s_freshness_warning = "Kubernetes live evidence is collected at diagnosis time and may differ from the original failure time."
+k8s_freshness_human_warning = "K8s 现场证据是在诊断时采集的，可能与故障发生时的状态不同。如果 ReleaseContext 来自历史失败记录，而当前集群已经恢复，则 kubectl 结果可能显示当前健康状态。"
+
 k8s = {
     "enabled": collect_k8s,
     "available": False,
-    "commands": []
+    "commands": [],
+    "freshness": {
+        "type": "live_kubernetes_snapshot",
+        "warning": k8s_freshness_warning,
+        "humanWarning": k8s_freshness_human_warning
+    }
 }
 
 if collect_k8s:
@@ -305,11 +313,15 @@ Source release context: {ctx_path}
 {output_json}
 ~~~
 
-## 8. 建议下一步
+## 8. K8s 现场证据时效性说明
+
+{k8s_freshness_human_warning}
+
+## 9. 建议下一步
 
 {next_action_text()}
 
-## 9. 安全边界
+## 10. 安全边界
 
 本故障证据仅用于人工诊断和 Agent 分析，不会自动执行 Rollback、Promote、Patch、Delete 或 GitOps 变更。当前系统仍保持 `advisory_only` 模式。
 """
