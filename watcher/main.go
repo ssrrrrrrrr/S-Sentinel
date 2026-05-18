@@ -84,7 +84,6 @@ var (
 func defaultConfig() Config {
 	return Config{
 		Interval:   "10s",
-		Mode:       "poll",
 		RepoDir:    "/root/slo-rollout-demo",
 		StateFile:  "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
 		OllamaURL:  "http://192.168.30.1:11434",
@@ -117,9 +116,6 @@ func loadConfig(path string) (Config, error) {
 
 	if cfg.Interval == "" {
 		cfg.Interval = def.Interval
-	}
-	if cfg.Mode == "" {
-		cfg.Mode = def.Mode
 	}
 	if cfg.RepoDir == "" {
 		cfg.RepoDir = def.RepoDir
@@ -844,34 +840,12 @@ func runWatchLoop(ctx context.Context, client dynamic.Interface, cfg Config, int
 	}
 }
 
-func normalizeMode(mode string) string {
-	mode = strings.TrimSpace(strings.ToLower(mode))
-	if mode == "" {
-		return "poll"
-	}
-	return mode
-}
-
-func runPollLoop(ctx context.Context, client dynamic.Interface, cfg Config, interval time.Duration) {
-	log.Printf("poll loop started: interval=%s targets=%d", interval.String(), len(cfg.Targets))
-
-	switch cfg.Mode {
-	case "poll":
-		runPollLoop(ctx, client, cfg, interval)
-	case "watch":
-		runWatchLoop(ctx, client, cfg, interval)
-	default:
-		log.Fatalf("invalid watcher mode %q: expected poll or watch", cfg.Mode)
-	}
-}
-
 func main() {
 	configPath := flag.String("config", "", "config yaml path")
 
 	namespaceOverride := flag.String("namespace", "", "override single rollout namespace")
 	rolloutOverride := flag.String("rollout", "", "override single rollout name")
-	intervalOverride := flag.String("interval", "", "override poll interval, example: 10s")
-	modeOverride := flag.String("mode", "", "override watcher mode: poll or watch")
+	intervalOverride := flag.String("interval", "", "override fallback resync interval, example: 10s")
 	repoDirOverride := flag.String("repo-dir", "", "override repository directory")
 	stateFileOverride := flag.String("state-file", "", "override state file")
 	ollamaURLOverride := flag.String("ollama-url", "", "override ollama api url")
@@ -898,9 +872,6 @@ func main() {
 	if *intervalOverride != "" {
 		cfg.Interval = *intervalOverride
 	}
-	if *modeOverride != "" {
-		cfg.Mode = *modeOverride
-	}
 	if *repoDirOverride != "" {
 		cfg.RepoDir = *repoDirOverride
 	}
@@ -916,8 +887,6 @@ func main() {
 	if *healthAddrOverride != "" {
 		cfg.HealthAddr = *healthAddrOverride
 	}
-
-	cfg.Mode = normalizeMode(cfg.Mode)
 
 	interval, err := time.ParseDuration(cfg.Interval)
 	if err != nil {
@@ -935,9 +904,8 @@ func main() {
 	}
 
 	log.Printf(
-		"go rollout watcher started: targets=%d mode=%s interval=%s repoDir=%s stateFile=%s model=%s ollamaURL=%s healthAddr=%s",
+		"go rollout watcher started: targets=%d mode=watch-only interval=%s repoDir=%s stateFile=%s model=%s ollamaURL=%s healthAddr=%s",
 		len(cfg.Targets),
-		cfg.Mode,
 		interval.String(),
 		cfg.RepoDir,
 		cfg.StateFile,
@@ -954,14 +922,6 @@ func main() {
 
 	go startHealthServer(cfg.HealthAddr)
 
-	log.Printf("watcher mode dispatcher: mode=%s", cfg.Mode)
-
-	switch cfg.Mode {
-	case "poll":
-		runPollLoop(ctx, client, cfg, interval)
-	case "watch":
-		runWatchLoop(ctx, client, cfg, interval)
-	default:
-		log.Fatalf("invalid watcher mode %q: expected poll or watch", cfg.Mode)
-	}
+	log.Printf("watcher is running in watch-only mode")
+	runWatchLoop(ctx, client, cfg, interval)
 }

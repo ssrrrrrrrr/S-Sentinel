@@ -1,5 +1,4 @@
 interval: 10s
-mode: poll
 healthAddr: ":8080"
 repoDir: /root/slo-rollout-demo
 stateFile: /root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json

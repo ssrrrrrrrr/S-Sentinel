@@ -9,7 +9,6 @@ metadata:
 data:
   config.yaml: |
     interval: 10s
-    mode: watch
     healthAddr: ":8080"
     repoDir: /app
     stateFile: /app/docs/release-reports/go-rollout-watcher-state.json
