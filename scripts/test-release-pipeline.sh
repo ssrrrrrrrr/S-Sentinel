@@ -39,6 +39,7 @@ run_advisor_case() {
   OLLAMA_NUM_CTX=256 \
   OLLAMA_NUM_PREDICT=64 \
   ADVISOR_REPORT_TEXT_LIMIT=1000 \
+  FAILURE_EVIDENCE_OUTPUT_DIR="$TEST_TMP/${name}-failure-evidence" \
   ./scripts/ai-release-advisor.sh "$REPORT_FIXTURE" >"$TEST_TMP/${name}-advisor.log" 2>&1
 
   cat "$TEST_TMP/${name}-advisor.log"
@@ -62,6 +63,21 @@ run_advisor_case() {
   echo "$policy_decision" >"$TEST_TMP/${name}.policy"
   echo "$release_evidence" >"$TEST_TMP/${name}.evidence"
   echo "$release_summary" >"$TEST_TMP/${name}.summary"
+
+  local failure_evidence_json="$TEST_TMP/${name}-failure-evidence/failure-evidence-latest.json"
+  local failure_evidence_md="$TEST_TMP/${name}-failure-evidence/failure-evidence-latest.md"
+
+  if [ -f "$failure_evidence_json" ]; then
+    echo "$failure_evidence_json" >"$TEST_TMP/${name}.failure.json"
+  else
+    echo "" >"$TEST_TMP/${name}.failure.json"
+  fi
+
+  if [ -f "$failure_evidence_md" ]; then
+    echo "$failure_evidence_md" >"$TEST_TMP/${name}.failure.md"
+  else
+    echo "" >"$TEST_TMP/${name}.failure.md"
+  fi
 }
 
 assert_pass_case() {
@@ -104,12 +120,17 @@ PY
 }
 
 assert_p95_case() {
-  local ai policy evidence
+  local ai policy evidence failure_json failure_md
   ai="$(cat "$TEST_TMP/p95.ai")"
   policy="$(cat "$TEST_TMP/p95.policy")"
   evidence="$(cat "$TEST_TMP/p95.evidence")"
+  failure_json="$(cat "$TEST_TMP/p95.failure.json")"
+  failure_md="$(cat "$TEST_TMP/p95.failure.md")"
 
-  python3 - "$ai" "$policy" "$evidence" <<'PY'
+  [ -f "$failure_json" ] || fail "p95 failure evidence json not generated"
+  [ -f "$failure_md" ] || fail "p95 failure evidence md not generated"
+
+  python3 - "$ai" "$policy" "$evidence" "$failure_json" "$failure_md" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -117,6 +138,8 @@ from pathlib import Path
 ai = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 policy = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
 evidence = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+failure = json.loads(Path(sys.argv[4]).read_text(encoding="utf-8"))
+failure_md = Path(sys.argv[5]).read_text(encoding="utf-8")
 
 assert ai["releaseResult"] == "FAIL_BY_P95_LATENCY", ai["releaseResult"]
 assert ai["agentAction"]["type"] == "STOP_PROMOTION", ai["agentAction"]
@@ -131,17 +154,28 @@ assert evidence["releaseResult"] == "FAIL_BY_P95_LATENCY", evidence
 assert evidence["finalAction"] == "STOP_PROMOTION", evidence
 assert "p95-latency" in evidence["summary"]["failedMetrics"], evidence["summary"]
 
+assert failure["isFailure"] is True, failure
+assert failure["executionMode"] == "advisory_only", failure
+assert "p95-latency" in failure["release"]["failedMetrics"], failure["release"]
+assert failure["guardrails"]["doesNotRollback"] is True, failure["guardrails"]
+assert "故障诊断证据" in failure_md
+
 print("P95 failure policy test passed")
 PY
 }
 
 assert_multiple_slo_case() {
-  local ai policy evidence
+  local ai policy evidence failure_json failure_md
   ai="$(cat "$TEST_TMP/multiple.ai")"
   policy="$(cat "$TEST_TMP/multiple.policy")"
   evidence="$(cat "$TEST_TMP/multiple.evidence")"
+  failure_json="$(cat "$TEST_TMP/multiple.failure.json")"
+  failure_md="$(cat "$TEST_TMP/multiple.failure.md")"
 
-  python3 - "$ai" "$policy" "$evidence" <<'PY'
+  [ -f "$failure_json" ] || fail "multiple failure evidence json not generated"
+  [ -f "$failure_md" ] || fail "multiple failure evidence md not generated"
+
+  python3 - "$ai" "$policy" "$evidence" "$failure_json" "$failure_md" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -149,6 +183,8 @@ from pathlib import Path
 ai = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 policy = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
 evidence = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+failure = json.loads(Path(sys.argv[4]).read_text(encoding="utf-8"))
+failure_md = Path(sys.argv[5]).read_text(encoding="utf-8")
 
 assert ai["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", ai["releaseResult"]
 assert ai["agentAction"]["type"] == "STOP_PROMOTION", ai["agentAction"]
@@ -162,6 +198,12 @@ assert "multiple_slo_failure_requires_human_approval" in policy["matchedRules"],
 
 assert evidence["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", evidence
 assert set(evidence["summary"]["failedMetrics"]) == {"error-rate", "p95-latency"}, evidence["summary"]
+
+assert failure["isFailure"] is True, failure
+assert failure["executionMode"] == "advisory_only", failure
+assert set(failure["release"]["failedMetrics"]) == {"error-rate", "p95-latency"}, failure["release"]
+assert failure["guardrails"]["doesNotRollback"] is True, failure["guardrails"]
+assert "多 SLO 失败" in failure_md
 
 print("Multiple SLO failure policy test passed")
 PY

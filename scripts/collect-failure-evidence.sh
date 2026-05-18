@@ -50,7 +50,8 @@ if [ -z "$RELEASE_CONTEXT_FILE" ] || [ ! -f "$RELEASE_CONTEXT_FILE" ]; then
   exit 1
 fi
 
-OUTPUT_DIR="$(dirname "$RELEASE_CONTEXT_FILE")"
+OUTPUT_DIR="${FAILURE_EVIDENCE_OUTPUT_DIR:-$(dirname "$RELEASE_CONTEXT_FILE")}"
+mkdir -p "$OUTPUT_DIR"
 TS="$(date +%Y%m%d-%H%M%S)"
 OUTPUT_JSON="$OUTPUT_DIR/failure-evidence-${TS}.json"
 OUTPUT_MD="$OUTPUT_DIR/failure-evidence-${TS}.md"

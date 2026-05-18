@@ -545,6 +545,33 @@ if [ -n "$POLICY_EVALUATOR" ]; then
       else
         echo "WARN: expected release evidence file not found: $EVIDENCE_OUT" >&2
       fi
+
+      FAILURE_EVIDENCE_COLLECTOR=""
+
+      if [ -x "./scripts/collect-failure-evidence.sh" ]; then
+        FAILURE_EVIDENCE_COLLECTOR="./scripts/collect-failure-evidence.sh"
+      elif [ -x "/app/scripts/collect-failure-evidence.sh" ]; then
+        FAILURE_EVIDENCE_COLLECTOR="/app/scripts/collect-failure-evidence.sh"
+      fi
+
+      SHOULD_COLLECT_FAILURE_EVIDENCE="$(python3 -c 'import json, sys; from pathlib import Path; ai=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")); policy=json.loads(Path(sys.argv[2]).read_text(encoding="utf-8")); rr=str(ai.get("releaseResult","UNKNOWN")); fa=str(policy.get("finalAction","UNKNOWN")); rha=bool(policy.get("requiresHumanApproval", False)); print("true" if rr.startswith("FAIL_") or fa == "STOP_PROMOTION" or (rha and rr != "PASS") else "false")' "$DECISION_OUT" "$POLICY_OUT")"
+
+      if [ "$SHOULD_COLLECT_FAILURE_EVIDENCE" = "true" ]; then
+        if [ -n "$FAILURE_EVIDENCE_COLLECTOR" ] && [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
+          echo "Running failure evidence collector: $FAILURE_EVIDENCE_COLLECTOR"
+          FAILURE_EVIDENCE_OUTPUT_DIR="${FAILURE_EVIDENCE_OUTPUT_DIR:-$OUT_DIR}" \
+          COLLECT_K8S_EVIDENCE="${COLLECT_K8S_EVIDENCE:-false}" \
+            "$FAILURE_EVIDENCE_COLLECTOR" "$CONTEXT_FILE" || {
+              echo "WARN: collect-failure-evidence.sh failed, continue release advice pipeline" >&2
+            }
+        elif [ -z "$FAILURE_EVIDENCE_COLLECTOR" ]; then
+          echo "WARN: failure evidence collector not found, skip failure evidence generation" >&2
+        else
+          echo "WARN: release context file not found, skip failure evidence generation: ${CONTEXT_FILE:-not provided}" >&2
+        fi
+      else
+        echo "Failure evidence collector skipped: release is not a failure"
+      fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
     fi
