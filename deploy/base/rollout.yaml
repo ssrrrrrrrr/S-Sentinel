@@ -15,20 +15,20 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v26-pass-report
+        version: v27-pass-decision
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v26-pass-report
+        image: 192.168.30.11:30500/sre/demo-app:v27-pass-decision
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v26"
+          value: "v27"
         - name: RELEASE_TAG
-          value: "v26-pass-report"
+          value: "v27-pass-decision"
         - name: FAULT_RATE
           value: "0"
         - name: LATENCY_MS
