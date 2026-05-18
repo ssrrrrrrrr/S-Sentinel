@@ -527,6 +527,24 @@ if [ -n "$POLICY_EVALUATOR" ]; then
     if [ -n "$EVIDENCE_BUILDER" ]; then
       echo "Running release evidence builder: $EVIDENCE_BUILDER"
       "$EVIDENCE_BUILDER" "$DECISION_OUT" "$POLICY_OUT"
+
+      EVIDENCE_OUT="${OUT_DIR}/release-evidence-${DECISION_SUFFIX}"
+      SUMMARY_BUILDER=""
+
+      if [ -x "./scripts/build-release-summary.sh" ]; then
+        SUMMARY_BUILDER="./scripts/build-release-summary.sh"
+      elif [ -x "/app/scripts/build-release-summary.sh" ]; then
+        SUMMARY_BUILDER="/app/scripts/build-release-summary.sh"
+      fi
+
+      if [ -n "$SUMMARY_BUILDER" ] && [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running release summary builder: $SUMMARY_BUILDER"
+        "$SUMMARY_BUILDER" "$EVIDENCE_OUT"
+      elif [ -z "$SUMMARY_BUILDER" ]; then
+        echo "WARN: release summary builder not found, skip release summary generation" >&2
+      else
+        echo "WARN: expected release evidence file not found: $EVIDENCE_OUT" >&2
+      fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
     fi
