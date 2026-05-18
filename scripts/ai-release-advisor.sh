@@ -66,6 +66,7 @@ env_changes = change.get("envChanges") or []
 slo_changes = change.get("sloGateChanges") or {}
 
 failed_metrics = arr(ctx.get("failedMetrics"))
+release_result = ctx.get("result") or "UNKNOWN"
 risk_reasons = arr(ctx.get("riskReasons"))
 change_hints = arr(ctx.get("changeRiskHints"))
 
@@ -78,12 +79,28 @@ change_risk_level = ctx.get("changeRiskLevel")
 change_risk_score = ctx.get("changeRiskScore")
 
 conclusion = "本次发布需要人工介入。"
-if rollout_phase == "Degraded" or rollout_abort is True or analysis_phase == "Failed":
-    conclusion = "本次发布失败或已被中止，不建议继续 promote。"
-if change_risk_level in ("high", "critical") and any(m in failed_metrics for m in ["error-rate", "p95-latency"]):
-    conclusion = "本次发布属于高风险变更导致质量回退的可能性较高，应停止发布并回滚或修复后重新发布。"
-if failed_metrics == ["request-count"]:
+
+if release_result == "PASS":
+    conclusion = "本次发布已通过 SLO 门禁，当前可以继续观察或进入后续发布阶段。"
+elif release_result == "IN_PROGRESS":
+    conclusion = "本次发布仍在进行中，需要继续观察 Rollout 和 AnalysisRun 状态。"
+elif release_result == "FAIL_BY_REQUEST_COUNT":
     conclusion = "本次发布失败主要表现为 request-count 样本不足，需要先补充流量再重试，不应直接判断为代码故障。"
+elif release_result == "FAIL_BY_ERROR_RATE":
+    conclusion = "本次发布因 error-rate 门禁失败，说明 canary 版本 5xx 错误比例超过阈值，不建议继续 promote。"
+elif release_result == "FAIL_BY_P95_LATENCY":
+    conclusion = "本次发布因 p95-latency 门禁失败，说明 canary 版本尾延迟超过阈值，不建议继续 promote。"
+elif release_result == "FAIL_BY_MULTIPLE_SLO":
+    conclusion = "本次发布存在多个 SLO 门禁失败，应停止发布并优先定位 canary 版本质量问题。"
+elif release_result == "FAIL_BY_ROLLOUT_ABORT":
+    conclusion = "本次发布已经被 Rollout 中止，不建议继续 promote。"
+elif release_result == "FAIL_BY_ROLLOUT_DEGRADED":
+    conclusion = "本次发布对应 Rollout 已进入 Degraded 状态，需要人工介入排查。"
+elif rollout_phase == "Degraded" or rollout_abort is True or analysis_phase == "Failed":
+    conclusion = "本次发布失败或已被中止，不建议继续 promote。"
+
+if change_risk_level in ("high", "critical") and release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULTIPLE_SLO"):
+    conclusion = "本次发布属于高风险变更导致质量回退的可能性较高，应停止发布并回滚或修复后重新发布。"
 
 deterministic = f"""# AI Release Advisor
 
@@ -118,6 +135,7 @@ deterministic = f"""# AI Release Advisor
 - Rollout Abort: {rollout_abort}
 - AnalysisRun: {ctx.get("analysisRun")}
 - AnalysisRun Phase: {analysis_phase}
+- Release Result: {release_result}
 - Failed Metrics: {", ".join(failed_metrics) if failed_metrics else "无"}
 - Release Severity: {severity}
 - Release Risk Score: {risk_score}
@@ -134,6 +152,9 @@ if change_risk_level in ("high", "critical"):
     deterministic += "本次变更风险较高，需要优先检查 ChangeContext 中的高风险项。\n\n"
 else:
     deterministic += "本次变更风险不高，需要结合 AnalysisRun 失败指标继续判断。\n\n"
+
+if release_result and release_result != "UNKNOWN":
+    deterministic += f"- 平台标准发布结果为 `{release_result}`，AI 分析应以该结构化结果为第一判断依据。\n"
 
 if any(x.get("name") == "FAULT_RATE" for x in env_changes):
     deterministic += "- FAULT_RATE 发生变化，若 failedMetrics 包含 error-rate，则说明新版本错误率升高与本次变更存在较强关联。\n"
