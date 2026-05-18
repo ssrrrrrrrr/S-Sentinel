@@ -4,9 +4,9 @@
 
 SLO Rollout Demo 是一个基于 Kubernetes 的云原生发布可靠性项目。
 
-项目早期目标是：在应用发布过程中，不只判断 Pod 是否运行成功，而是通过业务指标判断新版本是否真的健康，并在异常时自动中止发布。
+项目最初的目标是：在应用发布过程中，不只判断 Pod 是否启动成功，而是通过业务指标判断新版本是否真正健康，并在异常时自动中止发布。
 
-随着功能演进，项目已经从一个：
+随着功能持续演进，项目已经从一个：
 
 - 基于 GitOps 的 SLO 灰度发布 Demo
 
@@ -14,231 +14,192 @@ SLO Rollout Demo 是一个基于 Kubernetes 的云原生发布可靠性项目。
 
 - 具备云原生部署形态的发布可靠性智能分析平台雏形
 
-项目当前主链路如下：
+项目当前的主链路如下：
 
 ```text
-GitHub Actions 发布新版本
+GitHub Actions 手动触发发布
 ↓
-GitOps Manifest 更新
+release-gitops.sh 构建镜像并生成 GitOps Manifest
 ↓
-Argo CD 同步到 Kubernetes
+Git Repository 更新 deploy/base 下的目标状态
+↓
+Argo CD 从 Git 拉取并同步到 Kubernetes
 ↓
 Argo Rollouts 执行 Canary 发布
 ↓
-Prometheus 采集业务指标
+Prometheus 采集业务指标并执行 AnalysisRun
 ↓
-AnalysisRun 判断 SLO 是否达标
+异常版本自动中止，正常版本继续放量
 ↓
-异常版本自动中止发布
+Release Watcher 感知发布与分析状态
 ↓
-Release Watcher 感知发布状态
-↓
-ChangeContext / Release Report / AI Advisor 生成
-```
+生成 ChangeContext / Release Report / AI Advisor
+项目的目标已经不再只是“把应用发布出去”，而是在发布过程中逐步具备：
 
-整体目标不再只是“把应用发布出去”，而是逐步建设一套：
+变更感知能力
+风险判断能力
+发布过程结构化记录能力
+发布观测值回填能力
+智能分析与辅助决策能力
+从而向一个面向云原生变更可靠性的长期平台演进。
 
-- 能感知变更
-- 能判断风险
-- 能沉淀上下文
-- 能辅助决策
-
-的云原生发布可靠性平台。
-
----
-
-## 2. 实现能力
-
-### 2.1 GitOps 发布能力
-
+2. 实现能力
+2.1 GitOps 发布能力
 项目支持通过 GitHub Actions 手动触发发布。
 
-发布时可以指定：
+发布参数当前支持：
 
-- 镜像版本
-- 应用版本
-- 故障率
-- 延迟参数
-- SLO 错误率阈值
-- SLO P95 延迟阈值
-- SLO 最小请求量阈值
+image_tag
+app_version
+fault_rate
+latency_ms
+slo_error_rate_threshold
+slo_p95_seconds_threshold
+slo_min_request_count
+GitHub Actions 会根据输入参数执行发布脚本，构建镜像、推送镜像，并渲染新的 GitOps Manifest 到仓库中。Argo CD 会感知 Git 变化并同步 Kubernetes 目标状态。
 
-GitHub Actions 会根据输入参数生成新的 Kubernetes YAML，并提交到 Git 仓库。Argo CD 监听 Git 仓库变化后，将期望状态同步到 Kubernetes 集群。
+2.2 Canary 灰度发布能力
+项目使用 Argo Rollouts 实现 Canary 发布，而不是直接使用原生 Deployment 全量替换。
 
-当前 GitOps 主部署入口为：
+当前发布流程中：
 
-- `deploy/base/analysis.yaml`
-- `deploy/base/rollout.yaml`
-- `deploy/base/service.yaml`
-- `deploy/base/servicemonitor.yaml`
-- `deploy/base/watcher-*.yaml`
+新版本先按 Canary 步进进入集群
+每个阶段会经过 AnalysisRun 检查
+指标达标才继续放量
+指标异常则中止或停留在当前阶段
+这样可以把“发版”从一次性替换升级为可观测、可中止、可回退的渐进式发布过程。
 
-发布职责已经收敛为：
+2.3 SLO 发布门禁能力
+项目当前已实现基于业务指标的发布门禁，核心指标包括：
 
-- `demo-app/release-gitops.sh`：生成镜像、更新 GitOps Manifest、生成本地或 NFS 报告、创建 release commit
-- `.github/workflows/release.yaml`：调用发布脚本并负责 `git push`
-- Argo CD：监听 `main` 分支并同步 Kubernetes 资源
+request-count
+error-rate
+p95-latency
+其中：
 
-Release Report、ChangeContext 和 AI Advice 属于运行时产物，会写入 NFS 或本地 ignored 目录，不进入 GitOps commit。
+request-count 用于避免低流量样本不足造成误判
+error-rate 用于判断新版本是否出现异常错误
+p95-latency 用于判断新版本是否出现性能退化
+这些门禁阈值已经支持参数化输入，不再完全写死在发布脚本里。
 
----
+2.4 应用级故障注入与实验能力
+demo-app 当前支持发布级别的可控实验参数：
 
-### 2.2 Canary 灰度发布能力
+FAULT_RATE
+LATENCY_MS
+这使项目不仅能验证“正常发布”，还可以主动制造：
 
-项目使用 Argo Rollouts 代替普通 Deployment，实现 Canary 发布。
+高错误率版本
+高延迟版本
+从而演示发布门禁、Rollout 中止和后续报告生成是否正常工作。
 
-新版本不会一次性替换所有 Pod，而是先进入灰度阶段。只有当新版本通过 SLO 检查后，才继续放量。
+2.5 可观测能力
+项目当前接入了完整的观测链路：
 
-如果新版本指标异常，Rollout 会自动中止发布，并保留稳定版本。
+Prometheus
+Grafana
+Alertmanager
+Grafana 可用于观察：
 
----
+各版本请求量
+各版本错误率
+各版本延迟情况
+Alertmanager 可用于接收发布异常告警。
 
-### 2.3 SLO 发布门禁能力
+这意味着发布不再只是看 kubectl rollout status，而是有完整的业务指标支持。
 
-项目使用 Prometheus 指标作为发布质量判断依据。
-
-当前主要有三个发布门禁：
-
-- `request-count`：最小请求量门禁，避免样本量不足时误判
-- `error-rate`：5xx 错误率门禁，用于判断新版本是否产生大量错误
-- `p95-latency`：P95 延迟门禁，用于判断新版本是否存在明显性能劣化
-
-这些门禁阈值已经支持参数化，不再完全写死在脚本中。
-
----
-
-### 2.4 可观测能力
-
-项目接入了 Prometheus、Grafana 和 Alertmanager。
-
-Grafana Dashboard 展示：
-
-- 各版本请求量
-- 各版本 5xx 错误率
-- 各版本 P95 延迟
-
-Alertmanager 用于接收发布异常告警，例如 Canary 版本错误率过高、延迟过高等。
-
----
-
-### 2.5 Dashboard as Code
-
-Grafana Dashboard 不再只通过页面手动创建，而是以 JSON 文件形式存放在 Git 仓库中，并通过 ConfigMap 由 Argo CD 同步到集群。
+2.6 Dashboard as Code
+Grafana Dashboard 已经纳入仓库，以配置文件形式进行管理，并通过 GitOps 同步到集群。
 
 这样可以保证：
 
-- Dashboard 可以版本化管理
-- Grafana 重启后 Dashboard 不丢失
-- 换环境后可以自动恢复观测面板
+Dashboard 可版本化管理
+观测面板可跟随环境自动恢复
+Grafana 重建后面板不丢失
+发布平台的观测层也具备 IaC / GitOps 能力
+2.7 Release Watcher 能力
+项目已经具备独立的 Release Watcher 组件。
 
----
+Watcher 当前职责包括：
 
-### 2.6 Release Watcher 能力
+感知 Rollout 状态变化
+感知 AnalysisRun 结果
+汇总发布上下文
+生成发布报告相关产物
+将结果落盘到持久化目录
+暴露自身指标供 Prometheus 采集
+这使项目从“只做发布执行”升级为“能持续跟踪发布生命周期”。
 
-项目提供独立的 Release Watcher 组件，用于感知发布过程中的 Rollout、AnalysisRun 和相关状态变化。
-
-Watcher 已经收敛为 watch-only 模式，基于 Kubernetes Watch 机制监听 Rollout / AnalysisRun 事件变化，不再保留早期 poll 模式。Watcher 内部仍保留 fallback resync，用于处理 watch 断开、事件丢失或状态不同步等兜底场景。
-
-Watcher 当前承担的职责包括：
-
-- 感知发布阶段变化
-- 采集发布上下文
-- 生成发布报告相关产物
-- 将产物落盘到 NFS / 持久化目录
-- 暴露自身指标供 Prometheus 采集
-
-这使项目从“只会发版”升级到“能持续跟踪发布过程”。
-
----
-
-### 2.7 ChangeContext 生成能力
-
-项目已经具备生成 `ChangeContext` 的能力，用于描述一次发布的结构化上下文。
+2.8 ChangeContext 生成能力
+项目已支持生成 ChangeContext，用于描述一次发布的结构化变更上下文。
 
 当前可覆盖的信息包括：
 
-- 镜像是否变化
-- 环境变量是否变化
-- SLO 门禁参数是否变化
-- 风险级别与风险提示
-- 发布前后上下文摘要
+镜像是否变化
+环境变量是否变化
+SLO 门禁参数是否变化
+风险级别
+风险提示
+发布前后上下文摘要
+这为后续做 Release Memory、AI 决策结构化输出和 Controller 化演进提供了基础。
 
-这为后续的 AI 分析、Release Memory 和控制器化演进打下了基础。
+2.9 Release Report 自动生成能力
+项目当前可以自动生成标准化 Release Report。
 
----
+报告中可写入的信息包括：
 
-### 2.8 Release Report 自动生成能力
+release_id
+image_tag
+app_version
+namespace
+rollout_name
+SLO 输入参数
+发布观测值
+发布结果字段
+原因字段
+这意味着发布期间的关键信息不再散落在日志与终端中，而是被统一沉淀为结构化报告。
 
-项目提供标准化的 Release Report 生成能力。
-
-报告中当前可以写入：
-
-- `release_id`
-- `image_tag`
-- `app_version`
-- `namespace`
-- `rollout_name`
-- SLO 输入参数
-- 观测指标值
-- 发布结果字段
-- 原因字段
-
-这样发布过程中的关键信息不再只是散落在日志、kubectl 命令和 Prometheus 图表中，而是被统一收敛成结构化报告。
-
-Release Report 当前被定位为运行时产物，默认写入 NFS 持久化目录或本地 `docs/release-reports/` ignored 目录，不再通过 `git add -f` 强制提交到 Git 仓库。GitOps commit 只记录 Kubernetes 期望状态变化。
-
----
-
-### 2.9 发布观测值自动写入能力
-
+2.10 发布观测值自动写入能力
 项目已经实现将 Prometheus 观测值自动写入 Release Report。
 
-当前已写入的核心指标包括：
+当前已回填的核心指标包括：
 
-- `request_count_1m`
-- `error_rate_percent`
-- `p95_latency_seconds`
+request_count_1m
+error_rate_percent
+p95_latency_seconds
+这使报告从“描述性文档”升级为“带真实观测数据的发布事实记录”。
 
-这意味着报告已经不再只是描述性文档，而是开始承载发布时的真实数据事实。
+2.11 发布结果阶段化写入能力
+项目当前已经开始将发布结果写入报告中的 result 和 reason 字段。
 
----
+目前已实现：
 
-### 2.10 发布结果阶段化写入能力
+可以写入阶段性结果，例如 IN_PROGRESS
+可以写入阶段性原因，例如 Rollout phase not available yet
+这说明项目已经从“只记录发布现象”迈向“开始表达发布判断”。
 
-项目已经开始将发布结果写入报告中的 `result` 和 `reason` 字段。
+当前这一能力仍在继续增强，后续将进一步演进为稳定的终态判断，例如：
 
-当前能力是：
+PASS
+FAIL
+2.12 AI Release Advisor
+项目已接入 AI Release Advisor 分析链路，用于对发布报告和变更上下文做进一步解释。
 
-- 可以写入阶段性结果，例如 `IN_PROGRESS`
-- 可以写入阶段性原因，例如 `Rollout phase not available yet`
+当前 AI Advisor 的定位是：
 
-这说明项目已经从“只输出观测值”演进到“开始输出发布判断结果”。
+读取发布报告
+读取变更上下文
+输出辅助分析结论
+提供建议动作
+目前 AI 主要提供只读分析能力，不直接对集群执行高风险写操作。
 
----
-
-### 2.11 AI Release Advisor
-
-项目接入本地 AI 分析链路，用于对 Release Report 做进一步解释和建议生成。
-
-AI Advisor 当前定位是：
-
-- 读取发布报告
-- 读取变更上下文
-- 输出辅助分析结论
-- 提供建议动作
-
-当前 AI 只做只读分析，不直接执行回滚、删 Pod 或修改集群状态。
-
----
-
-## 3. 项目架构
-
-### 3.1 整体架构
-
-```text
+3. 项目架构
+3.1 整体架构
 Developer / SRE
 ↓
 GitHub Actions
+↓
+release-gitops.sh
 ↓
 Git Repository
 ↓
@@ -257,11 +218,8 @@ Abort / Continue Decision
 Release Watcher
 ↓
 ChangeContext / Release Report / AI Advisor
-```
+观测与分析链路如下：
 
-观测与分析链路：
-
-```text
 demo-app metrics
 ↓
 Prometheus
@@ -277,43 +235,18 @@ ChangeContext JSON
 Release Report
 ↓
 AI Release Advisor
-```
-
----
-
-### 3.2 组件职责
-
-| 组件 | 职责 |
-|---|---|
-| GitHub Actions | 发布入口，负责构建和生成 GitOps Manifest |
-| Git Repository | 保存应用期望状态和配置 |
-| Argo CD | 监听 Git 仓库并同步 Kubernetes 资源 |
-| Argo Rollouts | 执行 Canary 发布和发布中止 |
-| Prometheus | 采集业务指标并提供查询能力 |
-| AnalysisRun | 根据 Prometheus 指标判断新版本是否健康 |
-| Grafana | 展示发布过程中的请求量、错误率和延迟 |
-| Alertmanager | 接收发布异常告警 |
-| Release Watcher | 感知发布状态并生成上下文与报告 |
-| ChangeContext | 描述一次发布的结构化变更信息 |
-| Release Report | 收敛发布期间的观测值与判断结果 |
-| AI Release Advisor | 基于发布报告生成分析建议 |
-
----
-
-## 4. 目录收敛说明
-
-当前项目目录已经按“主链路”和“历史样例”进行收敛：
-
-- `deploy/base/`：当前 GitOps 主部署入口
-- `demo-app/`：应用代码、Dockerfile、镜像构建脚本和 GitOps 发布脚本
-- `watcher/`：Release Watcher 源码
-- `scripts/`：ChangeContext、Release Report、AI Advisor 等辅助脚本
-- `examples/legacy/`：早期 standalone YAML 和命令式 `kubectl apply` 发布脚本，仅作为历史参考
-
-当前发布入口是：
-
-- `.github/workflows/release.yaml`
-- `demo-app/release-gitops.sh`
-
-`examples/legacy/` 下的文件不是当前发布入口。
-
+3.2 组件职责
+组件	职责
+GitHub Actions	发布入口，负责接收参数并启动发布流程
+release-gitops.sh	构建镜像、生成 Manifest、触发报告链路
+Git Repository	保存应用目标状态与发布配置
+Argo CD	监听 Git 仓库并同步 Kubernetes 资源
+Argo Rollouts	执行 Canary 发布与发布中止
+Prometheus	采集业务指标并提供查询能力
+AnalysisRun	根据业务指标判断新版本是否健康
+Grafana	展示发布过程中的请求量、错误率和延迟
+Alertmanager	接收发布异常告警
+Release Watcher	感知发布状态并生成上下文与报告
+ChangeContext	描述一次发布的结构化变更信息
+Release Report	收敛发布期间的观测值与判断结果
+AI Release Advisor	基于发布报告和上下文生成分析建议
