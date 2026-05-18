@@ -51,6 +51,7 @@ fi
 
 AI_BASENAME="$(basename "$AI_DECISION_FILE")"
 AI_SUFFIX="${AI_BASENAME#ai-decision-}"
+SUMMARY_FILE="$REPORT_DIR/release-summary-${AI_SUFFIX%.json}.md"
 
 if [ -z "$POLICY_DECISION_FILE" ]; then
   POLICY_DECISION_FILE="$REPORT_DIR/policy-decision-$AI_SUFFIX"
@@ -63,7 +64,7 @@ fi
 
 OUTPUT_FILE="$REPORT_DIR/release-evidence-$AI_SUFFIX"
 
-python3 - "$AI_DECISION_FILE" "$POLICY_DECISION_FILE" "$OUTPUT_FILE" <<'PY'
+python3 - "$AI_DECISION_FILE" "$POLICY_DECISION_FILE" "$OUTPUT_FILE" "$SUMMARY_FILE" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -71,6 +72,7 @@ from pathlib import Path
 ai_path = Path(sys.argv[1])
 policy_path = Path(sys.argv[2])
 output_path = Path(sys.argv[3])
+summary_path = Path(sys.argv[4])
 
 ai = json.loads(ai_path.read_text(encoding="utf-8"))
 policy = json.loads(policy_path.read_text(encoding="utf-8"))
@@ -106,6 +108,7 @@ bundle = {
         "aiAdvice": sources.get("aiAdvice"),
         "aiDecision": str(ai_path),
         "policyDecision": str(policy_path),
+        "releaseSummary": str(summary_path),
     },
     "decisionRefs": {
         "aiDecision": {
