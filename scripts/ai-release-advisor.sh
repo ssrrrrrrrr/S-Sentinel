@@ -250,11 +250,187 @@ if release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULT
 
 summary = conclusion
 
+decision_source = "deterministic_rule"
+confidence = "high"
+
+if release_result == "UNKNOWN":
+    decision_source = "insufficient_context"
+    confidence = "low"
+
+policy_hints = []
+
+if release_result == "PASS":
+    policy_hints.extend([
+        "release_result_passed",
+        "no_human_approval_required",
+        "safe_to_continue",
+    ])
+elif release_result == "IN_PROGRESS":
+    policy_hints.extend([
+        "release_in_progress",
+        "continue_observing",
+        "no_human_approval_required",
+    ])
+elif release_result == "FAIL_BY_REQUEST_COUNT":
+    policy_hints.extend([
+        "request_count_insufficient",
+        "retry_with_more_traffic_allowed",
+        "no_human_approval_required",
+    ])
+elif release_result == "FAIL_BY_MULTIPLE_SLO":
+    policy_hints.extend([
+        "multiple_slo_gates_failed",
+        "human_approval_required",
+        "unsafe_to_retry_without_fix",
+        "stop_promotion_recommended",
+    ])
+elif release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY"):
+    policy_hints.extend([
+        "single_slo_gate_failed",
+        "human_approval_required",
+        "unsafe_to_retry_without_fix",
+        "stop_promotion_recommended",
+    ])
+elif release_result in ("FAIL_BY_ROLLOUT_ABORT", "FAIL_BY_ROLLOUT_DEGRADED"):
+    policy_hints.extend([
+        "rollout_unhealthy",
+        "human_approval_required",
+        "investigation_required",
+    ])
+else:
+    policy_hints.extend([
+        "insufficient_context",
+        "manual_review_required",
+    ])
+
+if requires_human_approval and "human_approval_required" not in policy_hints:
+    policy_hints.append("human_approval_required")
+
+if not safe_to_retry and "unsafe_to_retry_without_fix" not in policy_hints:
+    policy_hints.append("unsafe_to_retry_without_fix")
+
+agent_action = {
+    "type": "MANUAL_REVIEW",
+    "allowed": False,
+    "requiresApproval": True,
+    "reason": "Release result is unknown and requires manual review",
+}
+
+if release_result == "PASS":
+    agent_action = {
+        "type": "NOOP",
+        "allowed": True,
+        "requiresApproval": False,
+        "reason": "Release passed all SLO gates",
+    }
+elif release_result == "IN_PROGRESS":
+    agent_action = {
+        "type": "OBSERVE",
+        "allowed": True,
+        "requiresApproval": False,
+        "reason": "Release is still in progress",
+    }
+elif release_result == "FAIL_BY_REQUEST_COUNT":
+    agent_action = {
+        "type": "RETRY_WITH_MORE_TRAFFIC",
+        "allowed": True,
+        "requiresApproval": False,
+        "reason": "Canary traffic sample is insufficient",
+    }
+elif release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULTIPLE_SLO"):
+    agent_action = {
+        "type": "STOP_PROMOTION",
+        "allowed": True,
+        "requiresApproval": True,
+        "reason": "Release failed SLO gates and requires human investigation",
+    }
+elif release_result in ("FAIL_BY_ROLLOUT_ABORT", "FAIL_BY_ROLLOUT_DEGRADED"):
+    agent_action = {
+        "type": "INVESTIGATE",
+        "allowed": True,
+        "requiresApproval": True,
+        "reason": "Rollout is aborted or degraded and requires investigation",
+    }
+
+execution_mode = "advisory_only"
+
+next_steps = []
+if release_result == "PASS":
+    next_steps = [
+        "archive_release_record",
+        "continue_observing",
+    ]
+elif release_result == "IN_PROGRESS":
+    next_steps = [
+        "continue_observing_rollout",
+        "wait_for_analysisrun_result",
+    ]
+elif release_result == "FAIL_BY_REQUEST_COUNT":
+    next_steps = [
+        "continue_generating_canary_traffic",
+        "rerun_release_with_sufficient_request_count",
+    ]
+elif release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULTIPLE_SLO"):
+    next_steps = [
+        "stop_promotion",
+        "inspect_canary_logs",
+        "compare_change_context",
+        "publish_fixed_version_with_new_tag",
+    ]
+elif release_result in ("FAIL_BY_ROLLOUT_ABORT", "FAIL_BY_ROLLOUT_DEGRADED"):
+    next_steps = [
+        "inspect_rollout_events",
+        "inspect_analysisrun_details",
+        "keep_promotion_stopped_until_review",
+    ]
+else:
+    next_steps = [
+        "manual_review_release_context",
+        "inspect_rollout_and_analysisrun",
+    ]
+
+guardrails = {
+    "autoExecute": False,
+    "executionMode": execution_mode,
+    "requiresGitOpsChange": True,
+    "requiresHumanApprovalForRiskyAction": True,
+    "allowedActions": [
+        "NOOP",
+        "OBSERVE",
+        "RETRY_WITH_MORE_TRAFFIC",
+        "STOP_PROMOTION",
+        "INVESTIGATE",
+        "MANUAL_REVIEW",
+    ],
+    "blockedActions": [
+        "ROLLBACK",
+        "PROMOTE",
+        "DELETE_RESOURCE",
+        "PATCH_RESOURCE",
+        "APPLY_MANIFEST",
+    ],
+}
+
+evidence = {
+    "failedMetrics": failed_metrics,
+    "rolloutPhase": rollout_phase,
+    "rolloutAbort": rollout_abort,
+    "analysisRunPhase": analysis_phase,
+    "riskLevel": severity,
+    "riskScore": risk_score,
+    "riskReasons": risk_reasons,
+    "changeRiskLevel": change_risk_level,
+    "changeRiskScore": change_risk_score,
+}
+
 decision_json = {
     "schemaVersion": "ai.release.advisor/v1alpha1",
     "generatedBy": "ai-release-advisor.sh",
     "model": model,
     "releaseResult": release_result,
+    "decisionSource": decision_source,
+    "confidence": confidence,
+    "executionMode": execution_mode,
     "summary": summary,
     "conclusion": conclusion,
     "failedMetrics": failed_metrics,
@@ -268,6 +444,11 @@ decision_json = {
     "recommendedAction": ctx.get("recommendedAction"),
     "requiresHumanApproval": requires_human_approval,
     "safeToRetry": safe_to_retry,
+    "policyHints": policy_hints,
+    "agentAction": agent_action,
+    "guardrails": guardrails,
+    "evidence": evidence,
+    "nextSteps": next_steps,
     "rollout": {
         "namespace": ctx.get("namespace"),
         "name": ctx.get("rollout"),
