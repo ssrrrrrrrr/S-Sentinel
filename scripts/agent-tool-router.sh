@@ -20,6 +20,7 @@ Safe tools:
   get-latest-failure-evidence [json|markdown]
   collect-failure-evidence [latest|RELEASE_CONTEXT_JSON]
   evaluate-change-risk [latest|CHANGE_CONTEXT_JSON]
+  build-action-plan [latest|RELEASE_EVIDENCE_JSON]
   run-offline-eval
 
 Safety:
@@ -36,6 +37,7 @@ get-latest-release-evidence
 get-latest-failure-evidence [json|markdown]
 collect-failure-evidence [latest|RELEASE_CONTEXT_JSON]
 evaluate-change-risk [latest|CHANGE_CONTEXT_JSON]
+build-action-plan [latest|RELEASE_EVIDENCE_JSON]
 run-offline-eval
 TOOLS
 }
@@ -87,6 +89,17 @@ resolve_change_context() {
   fi
 
   require_file "$input" "change context"
+  echo "$input"
+}
+
+resolve_release_evidence() {
+  local input="${1:-latest}"
+
+  if [ "$input" = "latest" ]; then
+    input="$(latest_file "$REPORT_DIR/release-evidence-*.json")"
+  fi
+
+  require_file "$input" "release evidence"
   echo "$input"
 }
 
@@ -154,6 +167,19 @@ case "$TOOL" in
     echo
 
     ./scripts/evaluate-change-risk.sh "$change_context_file"
+    ;;
+
+  build-action-plan)
+    release_evidence_file="$(resolve_release_evidence "${1:-latest}")"
+
+    echo "toolStatus: running"
+    echo "toolName: $TOOL"
+    echo "releaseEvidence: $release_evidence_file"
+    echo "executionMode: dry_run"
+    echo "willExecute: false"
+    echo
+
+    ./scripts/build-action-plan.sh "$release_evidence_file"
     ;;
 
   run-offline-eval)

@@ -299,6 +299,7 @@ main() {
   bash -n scripts/evaluate-change-risk.sh
   bash -n scripts/collect-failure-evidence.sh
   bash -n scripts/agent-tool-router.sh
+  bash -n scripts/build-action-plan.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
