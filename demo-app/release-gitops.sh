@@ -267,6 +267,16 @@ OUTPUT_DIR="$CHANGE_CONTEXT_OUTPUT_DIR" \
   echo "WARN: write-release-report.sh failed, continue release"
 }
 
+echo "===== Evaluate Pre-Release Change Risk ====="
+LATEST_CHANGE_CONTEXT="${CHANGE_CONTEXT_OUTPUT_DIR}/change-context-latest.json"
+if [ -x ./scripts/evaluate-change-risk.sh ]; then
+  ./scripts/evaluate-change-risk.sh "$LATEST_CHANGE_CONTEXT" || {
+    echo "WARN: evaluate-change-risk.sh failed, continue release"
+  }
+else
+  echo "WARN: evaluate-change-risk.sh not found, skip pre-release change risk evaluation"
+fi
+
 git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
 
 # Release reports and ChangeContext files are runtime artifacts.
