@@ -235,10 +235,8 @@ func calculateRisk(e WatchEvent) (string, int, []string) {
 }
 
 func calculateReleaseResult(e WatchEvent, failedMetrics []string) (string, string) {
-	if e.RolloutAbort {
-		return "FAIL_BY_ROLLOUT_ABORT", "Rollout has been aborted"
-	}
-
+	// Prefer concrete SLO root cause over rollout final state.
+	// Rollout abort/degraded is usually the consequence, not the root cause.
 	if len(failedMetrics) > 1 {
 		return "FAIL_BY_MULTIPLE_SLO", "Multiple SLO gates failed: " + strings.Join(failedMetrics, ",")
 	}
@@ -255,8 +253,12 @@ func calculateReleaseResult(e WatchEvent, failedMetrics []string) (string, strin
 		return "FAIL_BY_P95_LATENCY", "AnalysisRun metric p95-latency failed"
 	}
 
+	if e.RolloutAbort {
+		return "FAIL_BY_ROLLOUT_ABORT", "Rollout has been aborted"
+	}
+
 	if strings.EqualFold(e.AnalysisRunPhase, "Failed") || strings.EqualFold(e.AnalysisRunPhase, "Error") {
-		return "FAIL_BY_MULTIPLE_SLO", "AnalysisRun phase is " + e.AnalysisRunPhase + " but failed metric is unknown"
+		return "UNKNOWN", "AnalysisRun phase is " + e.AnalysisRunPhase + " but failed metric is unknown"
 	}
 
 	if strings.EqualFold(e.RolloutPhase, "Degraded") {
