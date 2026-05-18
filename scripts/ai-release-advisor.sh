@@ -28,8 +28,9 @@ fi
 
 mkdir -p "$OUT_DIR"
 OUT="${OUT_DIR}/ai-advice-${TS}.md"
+DECISION_OUT="${OUT_DIR}/ai-decision-${TS}.json"
 
-python3 - "$OLLAMA_URL" "$MODEL" "$REPORT_FILE" "$CONTEXT_FILE" "$OUT" <<'PY'
+python3 - "$OLLAMA_URL" "$MODEL" "$REPORT_FILE" "$CONTEXT_FILE" "$OUT" "$DECISION_OUT" <<'PY'
 import json
 import sys
 import urllib.request
@@ -40,6 +41,7 @@ model = sys.argv[2]
 report_file = Path(sys.argv[3])
 context_file = Path(sys.argv[4])
 out_file = Path(sys.argv[5])
+decision_out_file = Path(sys.argv[6])
 
 ctx = json.loads(context_file.read_text(encoding="utf-8"))
 report_text = report_file.read_text(encoding="utf-8", errors="ignore")[:12000]
@@ -237,8 +239,60 @@ Change Risk Score: {change_risk_score}
 {llm_text}
 """
 
+def bool_from_result(value):
+    return bool(value)
+
+requires_human_approval = release_result.startswith("FAIL_") or release_result == "UNKNOWN"
+safe_to_retry = release_result in ("PASS", "FAIL_BY_REQUEST_COUNT", "IN_PROGRESS")
+
+if release_result in ("FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULTIPLE_SLO"):
+    safe_to_retry = False
+
+summary = conclusion
+
+decision_json = {
+    "schemaVersion": "ai.release.advisor/v1alpha1",
+    "generatedBy": "ai-release-advisor.sh",
+    "model": model,
+    "releaseResult": release_result,
+    "summary": summary,
+    "conclusion": conclusion,
+    "failedMetrics": failed_metrics,
+    "riskLevel": severity,
+    "riskScore": risk_score,
+    "riskReasons": risk_reasons,
+    "changeRiskLevel": change_risk_level,
+    "changeRiskScore": change_risk_score,
+    "changeRiskHints": change_hints,
+    "decision": ctx.get("decision"),
+    "recommendedAction": ctx.get("recommendedAction"),
+    "requiresHumanApproval": requires_human_approval,
+    "safeToRetry": safe_to_retry,
+    "rollout": {
+        "namespace": ctx.get("namespace"),
+        "name": ctx.get("rollout"),
+        "phase": rollout_phase,
+        "abort": rollout_abort,
+        "message": ctx.get("rolloutMessage"),
+        "stableReplicaSet": ctx.get("stableReplicaSet"),
+        "currentDesiredVersion": ctx.get("currentDesiredVersion"),
+    },
+    "analysisRun": {
+        "name": ctx.get("analysisRun"),
+        "phase": analysis_phase,
+        "metrics": ctx.get("analysisRunMetrics") or [],
+    },
+    "sources": {
+        "releaseContext": str(context_file),
+        "releaseReport": str(report_file),
+        "aiAdvice": str(out_file),
+    },
+}
+
 out_file.write_text(final, encoding="utf-8")
+decision_out_file.write_text(json.dumps(decision_json, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(f"AI advisor report generated: {out_file}")
+print(f"AI decision generated: {decision_out_file}")
 print(f"Source context: {context_file}")
 print(f"Source report: {report_file}")
 print(f"Change risk: {change_risk_level} score={change_risk_score}")
