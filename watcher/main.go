@@ -87,7 +87,7 @@ func defaultConfig() Config {
 		RepoDir:    "/root/slo-rollout-demo",
 		StateFile:  "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
 		OllamaURL:  "http://192.168.30.1:11434",
-		Model:      "qwen2.5:3b",
+		Model:      "qwen2.5:0.5b",
 		HealthAddr: ":8080",
 		Targets: []Target{
 			{

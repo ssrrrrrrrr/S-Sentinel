@@ -4,7 +4,11 @@ set -euo pipefail
 REPORT_FILE="${1:-}"
 CONTEXT_FILE="${RELEASE_CONTEXT_FILE:-}"
 OLLAMA_URL="${OLLAMA_URL:-http://192.168.30.1:11434}"
-MODEL="${MODEL:-qwen2.5:3b}"
+MODEL="${MODEL:-qwen2.5:0.5b}"
+OLLAMA_TIMEOUT_SECONDS="${OLLAMA_TIMEOUT_SECONDS:-30}"
+OLLAMA_NUM_CTX="${OLLAMA_NUM_CTX:-1024}"
+OLLAMA_NUM_PREDICT="${OLLAMA_NUM_PREDICT:-512}"
+ADVISOR_REPORT_TEXT_LIMIT="${ADVISOR_REPORT_TEXT_LIMIT:-4000}"
 OUT_DIR="${AI_ADVICE_OUTPUT_DIR:-docs/release-reports}"
 TS="$(date +%Y%m%d-%H%M%S)"
 
@@ -12,8 +16,12 @@ if [ -z "$REPORT_FILE" ]; then
   REPORT_FILE="$(ls -t docs/release-reports/release-report-*.md 2>/dev/null | head -n 1 || true)"
 fi
 
-if [ -z "$CONTEXT_FILE" ]; then
-  CONTEXT_FILE="$(ls -t docs/release-reports/release-context-*.json 2>/dev/null | head -n 1 || true)"
+if [ -z "$CONTEXT_FILE" ] && [ -n "$REPORT_FILE" ] && [ -f "$REPORT_FILE" ]; then
+  CONTEXT_FILE="$(awk -F'|' '/Release Context File/ {gsub(/^[ \\t]+|[ \\t]+$/, "", $3); print $3; exit}' "$REPORT_FILE" 2>/dev/null || true)"
+
+  if [ "$CONTEXT_FILE" = "not provided" ]; then
+    CONTEXT_FILE=""
+  fi
 fi
 
 if [ -z "$REPORT_FILE" ] || [ ! -f "$REPORT_FILE" ]; then
@@ -30,7 +38,7 @@ mkdir -p "$OUT_DIR"
 OUT="${OUT_DIR}/ai-advice-${TS}.md"
 DECISION_OUT="${OUT_DIR}/ai-decision-${TS}.json"
 
-python3 - "$OLLAMA_URL" "$MODEL" "$REPORT_FILE" "$CONTEXT_FILE" "$OUT" "$DECISION_OUT" <<'PY'
+python3 - "$OLLAMA_URL" "$MODEL" "$OLLAMA_TIMEOUT_SECONDS" "$OLLAMA_NUM_CTX" "$OLLAMA_NUM_PREDICT" "$ADVISOR_REPORT_TEXT_LIMIT" "$REPORT_FILE" "$CONTEXT_FILE" "$OUT" "$DECISION_OUT" <<'PY'
 import json
 import sys
 import urllib.request
@@ -38,13 +46,17 @@ from pathlib import Path
 
 ollama_url = sys.argv[1].rstrip("/")
 model = sys.argv[2]
-report_file = Path(sys.argv[3])
-context_file = Path(sys.argv[4])
-out_file = Path(sys.argv[5])
-decision_out_file = Path(sys.argv[6])
+ollama_timeout_seconds = int(sys.argv[3])
+ollama_num_ctx = int(sys.argv[4])
+ollama_num_predict = int(sys.argv[5])
+advisor_report_text_limit = int(sys.argv[6])
+report_file = Path(sys.argv[7])
+context_file = Path(sys.argv[8])
+out_file = Path(sys.argv[9])
+decision_out_file = Path(sys.argv[10])
 
 ctx = json.loads(context_file.read_text(encoding="utf-8"))
-report_text = report_file.read_text(encoding="utf-8", errors="ignore")[:12000]
+report_text = report_file.read_text(encoding="utf-8", errors="ignore")[:advisor_report_text_limit]
 
 def arr(v):
     if v is None:
@@ -209,6 +221,10 @@ try:
             {"role": "user", "content": user_prompt},
         ],
         "stream": False,
+        "options": {
+            "num_ctx": ollama_num_ctx,
+            "num_predict": ollama_num_predict,
+        },
     }
     req = urllib.request.Request(
         f"{ollama_url}/api/chat",
@@ -216,7 +232,7 @@ try:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=90) as resp:
+    with urllib.request.urlopen(req, timeout=ollama_timeout_seconds) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         llm_text = data.get("message", {}).get("content", "").strip()
 except Exception as e:
@@ -228,6 +244,10 @@ Source context: {context_file}
 Source report: {report_file}
 Model: {model}
 Ollama URL: {ollama_url}
+Ollama Timeout Seconds: {ollama_timeout_seconds}
+Ollama Num Ctx: {ollama_num_ctx}
+Ollama Num Predict: {ollama_num_predict}
+Advisor Report Text Limit: {advisor_report_text_limit}
 Change Risk Level: {change_risk_level}
 Change Risk Score: {change_risk_score}
 -->
@@ -478,3 +498,77 @@ print(f"Source context: {context_file}")
 print(f"Source report: {report_file}")
 print(f"Change risk: {change_risk_level} score={change_risk_score}")
 PY
+
+POLICY_EVALUATOR=""
+
+if [ -x "./scripts/evaluate-agent-decision.sh" ]; then
+  POLICY_EVALUATOR="./scripts/evaluate-agent-decision.sh"
+elif [ -x "/app/scripts/evaluate-agent-decision.sh" ]; then
+  POLICY_EVALUATOR="/app/scripts/evaluate-agent-decision.sh"
+fi
+
+if [ -n "$POLICY_EVALUATOR" ]; then
+  echo "Running policy evaluator: $POLICY_EVALUATOR"
+  "$POLICY_EVALUATOR" "$DECISION_OUT"
+
+  DECISION_BASENAME="$(basename "$DECISION_OUT")"
+  DECISION_SUFFIX="${DECISION_BASENAME#ai-decision-}"
+  POLICY_OUT="${OUT_DIR}/policy-decision-${DECISION_SUFFIX}"
+
+  if [ -f "$POLICY_OUT" ]; then
+    EVIDENCE_BUILDER=""
+
+    if [ -x "./scripts/build-release-evidence.sh" ]; then
+      EVIDENCE_BUILDER="./scripts/build-release-evidence.sh"
+    elif [ -x "/app/scripts/build-release-evidence.sh" ]; then
+      EVIDENCE_BUILDER="/app/scripts/build-release-evidence.sh"
+    fi
+
+    if [ -n "$EVIDENCE_BUILDER" ]; then
+      echo "Running release evidence builder: $EVIDENCE_BUILDER"
+      "$EVIDENCE_BUILDER" "$DECISION_OUT" "$POLICY_OUT"
+    else
+      echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
+    fi
+
+    python3 - "$OUT" "$POLICY_OUT" <<'POLICY_SUMMARY_PY'
+import json
+import sys
+from pathlib import Path
+
+advice_file = Path(sys.argv[1])
+policy_file = Path(sys.argv[2])
+
+policy = json.loads(policy_file.read_text(encoding="utf-8"))
+
+summary = f"""
+
+## 8. Policy Evaluator Decision
+
+- Policy Decision: `{policy.get("policyDecision", "UNKNOWN")}`
+- Final Action: `{policy.get("finalAction", "UNKNOWN")}`
+- Execution Mode: `{policy.get("executionMode", "unknown")}`
+- Requires Human Approval: `{str(policy.get("requiresHumanApproval", False)).lower()}`
+- Reason: {policy.get("reason", "not provided")}
+- Policy Decision File: `{policy_file}`
+
+### Matched Policy Rules
+
+"""
+
+for rule in policy.get("matchedRules", []):
+    summary += f"- `{rule}`\n"
+
+summary += "\n"
+
+with advice_file.open("a", encoding="utf-8") as f:
+    f.write(summary)
+
+print(f"Policy summary appended to AI advice: {advice_file}")
+POLICY_SUMMARY_PY
+  else
+    echo "WARN: expected policy decision file not found: $POLICY_OUT" >&2
+  fi
+else
+  echo "WARN: policy evaluator not found, skip policy decision generation" >&2
+fi

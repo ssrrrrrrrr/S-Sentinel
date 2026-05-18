@@ -4,7 +4,7 @@ healthAddr: ":8080"
 repoDir: /app
 stateFile: /app/docs/release-reports/go-rollout-watcher-state.json
 ollamaUrl: http://192.168.30.1:11434
-model: qwen2.5:3b
+model: qwen2.5:0.5b
 
 targets:
   - namespace: slo-rollout

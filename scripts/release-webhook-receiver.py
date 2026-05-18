@@ -66,7 +66,7 @@ def run_release_advisor(payload: dict):
 
         env = os.environ.copy()
         env.setdefault("OLLAMA_URL", "http://192.168.30.1:11434")
-        env.setdefault("MODEL", "qwen2.5:3b")
+        env.setdefault("MODEL", "qwen2.5:0.5b")
 
         subprocess.run(
             ["bash", "scripts/collect-release-report.sh"],
