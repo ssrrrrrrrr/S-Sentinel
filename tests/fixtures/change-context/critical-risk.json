@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "change-context/v1",
+  "generatedAt": "2026-05-18T00:00:00Z",
+  "changeType": "gitops_release",
+  "app": "demo-app",
+  "namespace": "slo-rollout",
+  "git": {
+    "baseRef": "HEAD",
+    "previousCommit": "old",
+    "currentCommit": "new",
+    "commitMessage": "test critical change risk"
+  },
+  "image": {
+    "previous": "192.168.30.11:30500/sre/demo-app:v1",
+    "current": "192.168.30.11:30500/sre/demo-app:v2",
+    "changed": true
+  },
+  "env": {
+    "previous": {
+      "FAULT_RATE": "0",
+      "LATENCY_MS": "0"
+    },
+    "current": {
+      "FAULT_RATE": "0.8",
+      "LATENCY_MS": "800"
+    },
+    "changes": [
+      {
+        "name": "FAULT_RATE",
+        "previous": "0",
+        "current": "0.8",
+        "changed": true,
+        "risk": "critical"
+      },
+      {
+        "name": "LATENCY_MS",
+        "previous": "0",
+        "current": "800",
+        "changed": true,
+        "risk": "high"
+      }
+    ]
+  },
+  "rolloutStrategy": {
+    "previousSetWeights": [
+      20,
+      50,
+      100
+    ],
+    "currentSetWeights": [
+      20,
+      50,
+      100
+    ],
+    "changed": false
+  },
+  "sloGates": {
+    "changes": []
+  },
+  "risk": {
+    "level": "critical",
+    "score": 100,
+    "hints": [
+      "image tag changed",
+      "FAULT_RATE is 0.8",
+      "LATENCY_MS is 800"
+    ]
+  }
+}

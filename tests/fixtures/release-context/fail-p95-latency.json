@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-05-18T00:00:00+08:00",
+  "namespace": "slo-rollout",
+  "rollout": "demo-app",
+  "rolloutPhase": "Degraded",
+  "rolloutAbort": true,
+  "rolloutMessage": "RolloutAborted: Metric \"p95-latency\" assessed Failed",
+  "stableReplicaSet": "stable-rs",
+  "currentDesiredVersion": "v-p95-bad",
+  "analysisRun": "demo-app-p95-analysis",
+  "analysisRunPhase": "Failed",
+  "result": "FAIL_BY_P95_LATENCY",
+  "failedMetric": "p95-latency",
+  "failedMetrics": [
+    "p95-latency"
+  ],
+  "analysisRunMetrics": [
+    {
+      "name": "request-count",
+      "phase": "Successful",
+      "message": "",
+      "value": "[100]",
+      "successful": 3,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "p95-latency",
+      "phase": "Failed",
+      "message": "",
+      "value": "[0.95]",
+      "successful": 0,
+      "failed": 2,
+      "inconclusive": 0,
+      "error": 0
+    }
+  ],
+  "severity": "high",
+  "riskScore": 70,
+  "riskReasons": [
+    "p95-latency is 0.95s, above 0.3s threshold"
+  ],
+  "reason": "p95 latency gate failed",
+  "decision": "release_failed_or_aborted",
+  "recommendedAction": "stop_promotion_and_investigate"
+}

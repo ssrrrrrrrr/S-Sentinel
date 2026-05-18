@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-05-18T00:00:00+08:00",
+  "namespace": "slo-rollout",
+  "rollout": "demo-app",
+  "rolloutPhase": "Degraded",
+  "rolloutAbort": true,
+  "rolloutMessage": "RolloutAborted: multiple SLO gates failed",
+  "stableReplicaSet": "stable-rs",
+  "currentDesiredVersion": "v-multiple-bad",
+  "analysisRun": "demo-app-multiple-analysis",
+  "analysisRunPhase": "Failed",
+  "result": "FAIL_BY_MULTIPLE_SLO",
+  "failedMetric": "error-rate",
+  "failedMetrics": [
+    "error-rate",
+    "p95-latency"
+  ],
+  "analysisRunMetrics": [
+    {
+      "name": "error-rate",
+      "phase": "Failed",
+      "message": "",
+      "value": "[88.23]",
+      "successful": 0,
+      "failed": 2,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "request-count",
+      "phase": "Successful",
+      "message": "",
+      "value": "[100]",
+      "successful": 3,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "p95-latency",
+      "phase": "Failed",
+      "message": "",
+      "value": "[0.975]",
+      "successful": 0,
+      "failed": 2,
+      "inconclusive": 0,
+      "error": 0
+    }
+  ],
+  "severity": "critical",
+  "riskScore": 100,
+  "riskReasons": [
+    "error-rate is 88.23%, above 5% threshold",
+    "p95-latency is 0.975s, above 0.3s threshold",
+    "multiple SLO gates failed in the same rollout"
+  ],
+  "reason": "multiple SLO gates failed",
+  "decision": "release_failed_or_aborted",
+  "recommendedAction": "stop_promotion_and_investigate"
+}

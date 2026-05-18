@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-05-18T00:00:00+08:00",
+  "namespace": "slo-rollout",
+  "rollout": "demo-app",
+  "rolloutPhase": "Healthy",
+  "rolloutAbort": false,
+  "rolloutMessage": "Rollout is healthy",
+  "stableReplicaSet": "pass-rs",
+  "currentDesiredVersion": "v-pass",
+  "analysisRun": "demo-app-pass-analysis",
+  "analysisRunPhase": "Successful",
+  "result": "PASS",
+  "failedMetrics": [],
+  "analysisRunMetrics": [
+    {
+      "name": "request-count",
+      "phase": "Successful",
+      "message": "",
+      "value": "[100]",
+      "successful": 3,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "error-rate",
+      "phase": "Successful",
+      "message": "",
+      "value": "[0]",
+      "successful": 3,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "p95-latency",
+      "phase": "Successful",
+      "message": "",
+      "value": "[0.05]",
+      "successful": 3,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    }
+  ],
+  "severity": "low",
+  "riskScore": 0,
+  "riskReasons": [],
+  "reason": "Rollout is Healthy and AnalysisRun is Successful",
+  "decision": "release_succeeded",
+  "recommendedAction": "no_action_required"
+}
