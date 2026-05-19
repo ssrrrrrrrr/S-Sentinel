@@ -756,6 +756,13 @@ data["releaseIntelligenceRef"] = {
 release_evidence_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(f"Release intelligence linked into release evidence: {release_evidence_path}")
 LINK_RELEASE_INTELLIGENCE_PY
+
+          if [ -n "${SUMMARY_BUILDER:-}" ] && [ -f "$EVIDENCE_OUT" ]; then
+            echo "Rebuilding release summary with intelligence: $SUMMARY_BUILDER"
+            "$SUMMARY_BUILDER" "$EVIDENCE_OUT" || {
+              echo "WARN: rebuild release summary with intelligence failed, continue release advice pipeline" >&2
+            }
+          fi
         else
           echo "WARN: release intelligence files not found or release evidence missing, skip linking release intelligence" >&2
         fi

@@ -320,6 +320,7 @@ main() {
   bash -n scripts/test-release-intelligence.sh
   bash -n scripts/test-agent-tool-router-intelligence.sh
   bash -n scripts/test-advisor-release-intelligence.sh
+  bash -n scripts/test-release-summary-intelligence.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -340,6 +341,7 @@ main() {
   ./scripts/test-release-intelligence.sh "$TEST_TMP/release-intelligence"
   ./scripts/test-agent-tool-router-intelligence.sh "$TEST_TMP/router-intelligence"
   ./scripts/test-advisor-release-intelligence.sh "$TEST_TMP/advisor-release-intelligence"
+  ./scripts/test-release-summary-intelligence.sh "$TEST_TMP/release-summary-intelligence"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }
