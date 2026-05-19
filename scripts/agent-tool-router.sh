@@ -23,6 +23,7 @@ Safe tools:
   build-action-plan [latest|RELEASE_EVIDENCE_JSON]
   build-release-memory
   query-release-memory [summary|latest|failures|similar-failure METRICS]
+  build-release-intelligence [latest|RELEASE_EVIDENCE_JSON]
   run-offline-eval
 
 Safety:
@@ -42,6 +43,7 @@ evaluate-change-risk [latest|CHANGE_CONTEXT_JSON]
 build-action-plan [latest|RELEASE_EVIDENCE_JSON]
 build-release-memory
 query-release-memory [summary|latest|failures|similar-failure METRICS]
+build-release-intelligence [latest|RELEASE_EVIDENCE_JSON]
 run-offline-eval
 TOOLS
 }
@@ -202,6 +204,19 @@ case "$TOOL" in
     echo
 
     ./scripts/query-release-memory.sh "${1:-summary}" "${2:-}" "${3:-}"
+    ;;
+
+  build-release-intelligence)
+    release_evidence_file="$(resolve_release_evidence "${1:-latest}")"
+
+    echo "toolStatus: running"
+    echo "toolName: $TOOL"
+    echo "releaseEvidence: $release_evidence_file"
+    echo "executionMode: advisory_only"
+    echo "readOnlyAnalysis: true"
+    echo
+
+    ./scripts/build-release-intelligence.sh "$release_evidence_file"
     ;;
 
   run-offline-eval)

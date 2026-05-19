@@ -306,6 +306,7 @@ main() {
   bash -n scripts/test-advisor-release-memory.sh
   bash -n scripts/build-release-intelligence.sh
   bash -n scripts/test-release-intelligence.sh
+  bash -n scripts/test-agent-tool-router-intelligence.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -324,6 +325,7 @@ main() {
   ./scripts/test-advisor-action-plan.sh "$TEST_TMP/advisor-action-plan"
   ./scripts/test-advisor-release-memory.sh "$TEST_TMP/advisor-release-memory"
   ./scripts/test-release-intelligence.sh "$TEST_TMP/release-intelligence"
+  ./scripts/test-agent-tool-router-intelligence.sh "$TEST_TMP/router-intelligence"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }
