@@ -41,7 +41,7 @@ spec:
       serviceAccountName: release-rollout-watcher
       containers:
         - name: watcher
-          image: 192.168.30.11:5000/release-rollout-watcher:v1.20
+          image: 192.168.30.11:5000/release-rollout-watcher:v1.21
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
