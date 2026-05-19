@@ -116,6 +116,8 @@ approval_record_only
 
 它不会自动执行 Rollback、Promote、Patch、Delete 等高风险操作。
 
+Release Portal API 文档见：[`docs/release-portal-api.md`](docs/release-portal-api.md)。
+
 ### 2.7 Release Evidence
 
 Release Evidence 是一次发布的证据总索引。
