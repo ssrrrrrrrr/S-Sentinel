@@ -301,6 +301,8 @@ main() {
   bash -n scripts/agent-tool-router.sh
   bash -n scripts/build-action-plan.sh
   bash -n scripts/test-advisor-action-plan.sh
+  bash -n scripts/build-release-memory.sh
+  bash -n scripts/query-release-memory.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
