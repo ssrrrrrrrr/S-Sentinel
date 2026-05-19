@@ -324,6 +324,7 @@ main() {
   bash -n scripts/test-ai-advice-intelligence.sh
   bash -n scripts/create-approval-record.sh
   bash -n scripts/test-approval-record.sh
+  bash -n scripts/test-agent-tool-router-approval.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -347,6 +348,7 @@ main() {
   ./scripts/test-release-summary-intelligence.sh "$TEST_TMP/release-summary-intelligence"
   ./scripts/test-ai-advice-intelligence.sh "$TEST_TMP/ai-advice-intelligence"
   ./scripts/test-approval-record.sh "$TEST_TMP/approval-record"
+  ./scripts/test-agent-tool-router-approval.sh "$TEST_TMP/router-approval"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }

@@ -24,6 +24,8 @@ Safe tools:
   build-release-memory
   query-release-memory [summary|latest|failures|similar-failure METRICS]
   build-release-intelligence [latest|RELEASE_EVIDENCE_JSON]
+  create-approval-record [latest|ACTION_PLAN_JSON] <APPROVAL_DECISION> [REASON]
+  get-latest-approval-record [json|markdown]
   run-offline-eval
 
 Safety:
@@ -44,6 +46,8 @@ build-action-plan [latest|RELEASE_EVIDENCE_JSON]
 build-release-memory
 query-release-memory [summary|latest|failures|similar-failure METRICS]
 build-release-intelligence [latest|RELEASE_EVIDENCE_JSON]
+create-approval-record [latest|ACTION_PLAN_JSON] <APPROVAL_DECISION> [REASON]
+get-latest-approval-record [json|markdown]
 run-offline-eval
 TOOLS
 }
@@ -217,6 +221,42 @@ case "$TOOL" in
     echo
 
     ./scripts/build-release-intelligence.sh "$release_evidence_file"
+    ;;
+
+  create-approval-record)
+    action_plan_file="${1:-latest}"
+    approval_decision="${2:-}"
+    approval_reason="${3:-}"
+
+    echo "toolStatus: running"
+    echo "toolName: $TOOL"
+    echo "actionPlan: $action_plan_file"
+    echo "approvalDecision: ${approval_decision:-not provided}"
+    echo "executionMode: approval_record_only"
+    echo "willExecute: false"
+    echo
+
+    ./scripts/create-approval-record.sh "$action_plan_file" "$approval_decision" "$approval_reason"
+    ;;
+
+  get-latest-approval-record)
+    format="${1:-json}"
+
+    case "$format" in
+      json)
+        file="$(latest_file "$REPORT_DIR/approval-record-*.json")"
+        ;;
+      markdown|md)
+        file="$(latest_file "$REPORT_DIR/approval-record-*.md")"
+        ;;
+      *)
+        echo "ERROR: unsupported approval record format: $format" >&2
+        echo "Supported formats: json, markdown" >&2
+        exit 1
+        ;;
+    esac
+
+    print_file_with_header "latest approval record" "$file"
     ;;
 
   run-offline-eval)
