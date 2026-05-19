@@ -15,24 +15,24 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v32-watcher-v120-healthy-pass
+        version: v33-watcher-v120-multi-slo-fail
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v32-watcher-v120-healthy-pass
+        image: 192.168.30.11:30500/sre/demo-app:v33-watcher-v120-multi-slo-fail
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v32-watcher-v120-healthy-pass"
+          value: "v33-watcher-v120-multi-slo-fail"
         - name: RELEASE_TAG
-          value: "v32-watcher-v120-healthy-pass"
+          value: "v33-watcher-v120-multi-slo-fail"
         - name: FAULT_RATE
-          value: "0"
+          value: "0.8"
         - name: LATENCY_MS
-          value: "0"
+          value: "800"
         readinessProbe:
           httpGet:
             path: /healthz
