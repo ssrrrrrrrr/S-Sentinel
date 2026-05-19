@@ -47,20 +47,32 @@ type portalLatestResponse struct {
 	Safety        map[string]interface{}          `json:"safety"`
 }
 
-type portalReleaseListItem struct {
-	File       string `json:"file"`
-	BaseName   string `json:"baseName"`
-	Kind       string `json:"kind"`
-	SizeBytes  int64  `json:"sizeBytes"`
-	ModifiedAt string `json:"modifiedAt"`
+type portalReleaseResource struct {
+	Kind         string `json:"kind"`
+	File         string `json:"file"`
+	BaseName     string `json:"baseName"`
+	ReleaseID    string `json:"resourceId"`
+	SizeBytes    int64  `json:"sizeBytes"`
+	ModifiedAt   string `json:"modifiedAt"`
+	ModifiedUnix int64  `json:"-"`
+}
+
+type portalReleaseGroup struct {
+	ReleaseID     string                           `json:"releaseId"`
+	GeneratedAt   string                           `json:"generatedAt,omitempty"`
+	ModifiedAt    string                           `json:"modifiedAt,omitempty"`
+	ModifiedUnix  int64                            `json:"-"`
+	ResourceCount int                              `json:"resourceCount"`
+	Summary       map[string]interface{}           `json:"summary,omitempty"`
+	Resources     map[string]portalReleaseResource `json:"resources"`
 }
 
 type portalReleaseListResponse struct {
-	SchemaVersion string                  `json:"schemaVersion"`
-	GeneratedAt   string                  `json:"generatedAt"`
-	ReportDir     string                  `json:"reportDir"`
-	Count         int                     `json:"count"`
-	Items         []portalReleaseListItem `json:"items"`
+	SchemaVersion string               `json:"schemaVersion"`
+	GeneratedAt   string               `json:"generatedAt"`
+	ReportDir     string               `json:"reportDir"`
+	Count         int                  `json:"count"`
+	Items         []portalReleaseGroup `json:"items"`
 }
 
 func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
@@ -211,42 +223,58 @@ func (api *portalAPI) handleReleaseList(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	items := []portalReleaseListItem{}
+	resources := api.listPortalReportResources()
 
-	patterns := []string{
-		"release-evidence-*.json",
-		"release-summary-*.md",
-		"action-plan-*.json",
-		"release-intelligence-*.json",
-		"approval-record-*.json",
-		"failure-evidence-*.json",
-	}
+	resourceByBase := map[string]portalReleaseResource{}
+	evidenceIDByBase := map[string]string{}
+	groups := map[string]*portalReleaseGroup{}
 
-	for _, pattern := range patterns {
-		matches, _ := filepath.Glob(filepath.Join(api.reportDir, pattern))
-		for _, path := range matches {
-			base := filepath.Base(path)
-			if strings.Contains(base, "-latest.") {
-				continue
-			}
-
-			info, err := os.Stat(path)
-			if err != nil || info.IsDir() {
-				continue
-			}
-
-			items = append(items, portalReleaseListItem{
-				File:       path,
-				BaseName:   base,
-				Kind:       kindFromReportFile(base),
-				SizeBytes:  info.Size(),
-				ModifiedAt: info.ModTime().Format(time.RFC3339),
-			})
+	for _, res := range resources {
+		resourceByBase[res.BaseName] = res
+		if res.Kind == "releaseEvidence" && res.ReleaseID != "" {
+			evidenceIDByBase[res.BaseName] = res.ReleaseID
+			addResourceToReleaseGroup(groups, res.ReleaseID, res)
 		}
 	}
 
+	for _, res := range resources {
+		if res.Kind == "releaseEvidence" {
+			continue
+		}
+
+		if targetID := api.sourceReleaseIDFromJSON(res.File, evidenceIDByBase); targetID != "" {
+			addResourceToReleaseGroup(groups, targetID, res)
+			continue
+		}
+
+		addResourceToReleaseGroup(groups, res.ReleaseID, res)
+	}
+
+	for _, res := range resources {
+		if res.Kind != "releaseEvidence" || res.ReleaseID == "" {
+			continue
+		}
+
+		group := groups[res.ReleaseID]
+		api.attachReferencedResourcesFromJSON(group, res.File, resourceByBase)
+		api.decorateReleaseGroupSummary(group, res.File)
+	}
+
+	items := []portalReleaseGroup{}
+	for _, group := range groups {
+		if _, ok := group.Resources["releaseEvidence"]; !ok {
+			continue
+		}
+
+		group.ResourceCount = len(group.Resources)
+		items = append(items, *group)
+	}
+
 	sort.Slice(items, func(i, j int) bool {
-		return items[i].BaseName > items[j].BaseName
+		if items[i].ModifiedUnix == items[j].ModifiedUnix {
+			return items[i].ReleaseID > items[j].ReleaseID
+		}
+		return items[i].ModifiedUnix > items[j].ModifiedUnix
 	})
 
 	if len(items) > 50 {
@@ -260,6 +288,256 @@ func (api *portalAPI) handleReleaseList(w http.ResponseWriter, r *http.Request) 
 		Count:         len(items),
 		Items:         items,
 	})
+}
+
+func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
+	patterns := []string{
+		"release-evidence-*.json",
+		"release-summary-*.md",
+		"action-plan-*.json",
+		"release-intelligence-*.json",
+		"approval-record-*.json",
+		"failure-evidence-*.json",
+		"ai-advice-*.md",
+		"ai-decision-*.json",
+		"policy-decision-*.json",
+		"release-context-*.json",
+	}
+
+	seen := map[string]bool{}
+	resources := []portalReleaseResource{}
+
+	for _, pattern := range patterns {
+		matches, _ := filepath.Glob(filepath.Join(api.reportDir, pattern))
+		for _, path := range matches {
+			base := filepath.Base(path)
+			if seen[base] || strings.Contains(base, "-latest.") {
+				continue
+			}
+			seen[base] = true
+
+			res, ok := api.reportResourceFromPath(path)
+			if ok {
+				resources = append(resources, res)
+			}
+		}
+	}
+
+	return resources
+}
+
+func (api *portalAPI) reportResourceFromPath(path string) (portalReleaseResource, bool) {
+	base := filepath.Base(path)
+	kind := kindFromReportFile(base)
+	releaseID := releaseIDFromReportFile(base)
+
+	if kind == "unknown" || releaseID == "" {
+		return portalReleaseResource{}, false
+	}
+
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return portalReleaseResource{}, false
+	}
+
+	return portalReleaseResource{
+		Kind:         kind,
+		File:         path,
+		BaseName:     base,
+		ReleaseID:    releaseID,
+		SizeBytes:    info.Size(),
+		ModifiedAt:   info.ModTime().Format(time.RFC3339),
+		ModifiedUnix: info.ModTime().Unix(),
+	}, true
+}
+
+func addResourceToReleaseGroup(groups map[string]*portalReleaseGroup, releaseID string, res portalReleaseResource) {
+	if releaseID == "" {
+		return
+	}
+
+	group, ok := groups[releaseID]
+	if !ok {
+		group = &portalReleaseGroup{
+			ReleaseID:   releaseID,
+			GeneratedAt: releaseID,
+			Summary:     map[string]interface{}{},
+			Resources:   map[string]portalReleaseResource{},
+		}
+		groups[releaseID] = group
+	}
+
+	existing, exists := group.Resources[res.Kind]
+	if !exists || res.ModifiedUnix >= existing.ModifiedUnix {
+		group.Resources[res.Kind] = res
+	}
+
+	if res.ModifiedUnix >= group.ModifiedUnix {
+		group.ModifiedUnix = res.ModifiedUnix
+		group.ModifiedAt = res.ModifiedAt
+	}
+}
+
+func (api *portalAPI) sourceReleaseIDFromJSON(path string, evidenceIDByBase map[string]string) string {
+	doc, ok := readPortalJSONDocument(path)
+	if !ok {
+		return ""
+	}
+
+	values := []string{}
+	collectPortalStringValues(doc, &values)
+
+	for _, value := range values {
+		base := filepath.Base(value)
+		if id, ok := evidenceIDByBase[base]; ok {
+			return id
+		}
+
+		for evidenceBase, id := range evidenceIDByBase {
+			if strings.Contains(value, evidenceBase) {
+				return id
+			}
+		}
+	}
+
+	return ""
+}
+
+func (api *portalAPI) attachReferencedResourcesFromJSON(group *portalReleaseGroup, path string, resourceByBase map[string]portalReleaseResource) {
+	if group == nil {
+		return
+	}
+
+	doc, ok := readPortalJSONDocument(path)
+	if !ok {
+		return
+	}
+
+	values := []string{}
+	collectPortalStringValues(doc, &values)
+
+	for _, value := range values {
+		base := filepath.Base(value)
+		if res, ok := resourceByBase[base]; ok {
+			addResourceToReleaseGroup(map[string]*portalReleaseGroup{group.ReleaseID: group}, group.ReleaseID, res)
+			continue
+		}
+
+		for knownBase, res := range resourceByBase {
+			if strings.Contains(value, knownBase) {
+				addResourceToReleaseGroup(map[string]*portalReleaseGroup{group.ReleaseID: group}, group.ReleaseID, res)
+			}
+		}
+	}
+}
+
+func (api *portalAPI) decorateReleaseGroupSummary(group *portalReleaseGroup, evidenceFile string) {
+	if group == nil {
+		return
+	}
+
+	doc, ok := readPortalJSONDocument(evidenceFile)
+	if !ok {
+		return
+	}
+
+	keys := []string{
+		"releaseResult",
+		"policyDecision",
+		"finalAction",
+		"executionMode",
+		"requiresHumanApproval",
+		"safeToRetry",
+		"riskLevel",
+		"riskScore",
+	}
+
+	for _, key := range keys {
+		if value, ok := findPortalJSONValue(doc, key); ok {
+			group.Summary[key] = value
+		}
+	}
+}
+
+func readPortalJSONDocument(path string) (interface{}, bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false
+	}
+
+	var doc interface{}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, false
+	}
+
+	return doc, true
+}
+
+func collectPortalStringValues(value interface{}, out *[]string) {
+	switch v := value.(type) {
+	case string:
+		*out = append(*out, v)
+	case []interface{}:
+		for _, item := range v {
+			collectPortalStringValues(item, out)
+		}
+	case map[string]interface{}:
+		for _, item := range v {
+			collectPortalStringValues(item, out)
+		}
+	}
+}
+
+func findPortalJSONValue(value interface{}, key string) (interface{}, bool) {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		if found, ok := v[key]; ok {
+			return found, true
+		}
+
+		for _, item := range v {
+			if found, ok := findPortalJSONValue(item, key); ok {
+				return found, true
+			}
+		}
+	case []interface{}:
+		for _, item := range v {
+			if found, ok := findPortalJSONValue(item, key); ok {
+				return found, true
+			}
+		}
+	}
+
+	return nil, false
+}
+
+func releaseIDFromReportFile(base string) string {
+	prefixes := []string{
+		"release-evidence-",
+		"release-summary-",
+		"action-plan-",
+		"release-intelligence-",
+		"approval-record-",
+		"failure-evidence-",
+		"ai-advice-",
+		"ai-decision-",
+		"policy-decision-",
+		"release-context-",
+	}
+
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(base, prefix) {
+			id := strings.TrimPrefix(base, prefix)
+			id = strings.TrimSuffix(id, ".json")
+			id = strings.TrimSuffix(id, ".md")
+			if id == "latest" {
+				return ""
+			}
+			return id
+		}
+	}
+
+	return ""
 }
 
 func (api *portalAPI) handleLatestResource(name string) http.HandlerFunc {
@@ -422,6 +700,14 @@ func kindFromReportFile(base string) string {
 		return "approvalRecord"
 	case strings.HasPrefix(base, "failure-evidence-"):
 		return "failureEvidence"
+	case strings.HasPrefix(base, "ai-advice-"):
+		return "aiAdvice"
+	case strings.HasPrefix(base, "ai-decision-"):
+		return "aiDecision"
+	case strings.HasPrefix(base, "policy-decision-"):
+		return "policyDecision"
+	case strings.HasPrefix(base, "release-context-"):
+		return "releaseContext"
 	default:
 		return "unknown"
 	}
