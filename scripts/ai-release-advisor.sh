@@ -699,6 +699,71 @@ LINK_ACTION_PLAN_PY
       else
         echo "WARN: expected release evidence file not found, skip release memory generation: $EVIDENCE_OUT" >&2
       fi
+
+      RELEASE_INTELLIGENCE_BUILDER=""
+
+      if [ -x "./scripts/build-release-intelligence.sh" ]; then
+        RELEASE_INTELLIGENCE_BUILDER="./scripts/build-release-intelligence.sh"
+      elif [ -x "/app/scripts/build-release-intelligence.sh" ]; then
+        RELEASE_INTELLIGENCE_BUILDER="/app/scripts/build-release-intelligence.sh"
+      fi
+
+      if [ -n "$RELEASE_INTELLIGENCE_BUILDER" ] && [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running release intelligence builder: $RELEASE_INTELLIGENCE_BUILDER"
+        RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR="${RELEASE_INTELLIGENCE_OUTPUT_DIR:-$OUT_DIR}"
+
+        RELEASE_REPORT_DIR="$OUT_DIR" \
+        RELEASE_MEMORY_FILE="${RELEASE_MEMORY_FILE:-$OUT_DIR/release-memory.jsonl}" \
+        RELEASE_INTELLIGENCE_OUTPUT_DIR="$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR" \
+          "$RELEASE_INTELLIGENCE_BUILDER" "$EVIDENCE_OUT" || {
+            echo "WARN: build-release-intelligence.sh failed, continue release advice pipeline" >&2
+          }
+
+        RELEASE_INTELLIGENCE_JSON="$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-${DECISION_SUFFIX}"
+        RELEASE_INTELLIGENCE_MD="$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-${DECISION_SUFFIX%.json}.md"
+
+        if [ ! -f "$RELEASE_INTELLIGENCE_JSON" ] && [ -f "$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-latest.json" ]; then
+          RELEASE_INTELLIGENCE_JSON="$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-latest.json"
+        fi
+
+        if [ ! -f "$RELEASE_INTELLIGENCE_MD" ] && [ -f "$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-latest.md" ]; then
+          RELEASE_INTELLIGENCE_MD="$RESOLVED_RELEASE_INTELLIGENCE_OUTPUT_DIR/release-intelligence-latest.md"
+        fi
+
+        if [ -f "$EVIDENCE_OUT" ] && [ -f "$RELEASE_INTELLIGENCE_JSON" ] && [ -f "$RELEASE_INTELLIGENCE_MD" ]; then
+          echo "Linking release intelligence into release evidence: $EVIDENCE_OUT"
+          python3 - "$EVIDENCE_OUT" "$RELEASE_INTELLIGENCE_JSON" "$RELEASE_INTELLIGENCE_MD" <<'LINK_RELEASE_INTELLIGENCE_PY'
+import json
+import sys
+from pathlib import Path
+
+release_evidence_path = Path(sys.argv[1])
+release_intelligence_json = Path(sys.argv[2])
+release_intelligence_md = Path(sys.argv[3])
+
+data = json.loads(release_evidence_path.read_text(encoding="utf-8"))
+artifacts = data.setdefault("artifacts", {})
+artifacts["releaseIntelligence"] = str(release_intelligence_json)
+artifacts["releaseIntelligenceReport"] = str(release_intelligence_md)
+
+data["releaseIntelligenceRef"] = {
+    "generated": True,
+    "json": str(release_intelligence_json),
+    "markdown": str(release_intelligence_md),
+    "readOnlyAnalysis": True
+}
+
+release_evidence_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(f"Release intelligence linked into release evidence: {release_evidence_path}")
+LINK_RELEASE_INTELLIGENCE_PY
+        else
+          echo "WARN: release intelligence files not found or release evidence missing, skip linking release intelligence" >&2
+        fi
+      elif [ -z "$RELEASE_INTELLIGENCE_BUILDER" ]; then
+        echo "WARN: release intelligence builder not found, skip release intelligence generation" >&2
+      else
+        echo "WARN: expected release evidence file not found, skip release intelligence generation: $EVIDENCE_OUT" >&2
+      fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
     fi

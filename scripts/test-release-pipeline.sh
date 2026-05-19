@@ -23,7 +23,19 @@ fail() {
 
 latest_file() {
   local pattern="$1"
-  ls -t $pattern 2>/dev/null | head -1
+
+  python3 - "$pattern" <<'LATEST_FILE_PY'
+import glob
+import os
+import sys
+
+pattern = sys.argv[1]
+files = [f for f in glob.glob(pattern) if os.path.isfile(f)]
+files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+
+if files:
+    print(files[0])
+LATEST_FILE_PY
 }
 
 run_advisor_case() {
@@ -307,6 +319,7 @@ main() {
   bash -n scripts/build-release-intelligence.sh
   bash -n scripts/test-release-intelligence.sh
   bash -n scripts/test-agent-tool-router-intelligence.sh
+  bash -n scripts/test-advisor-release-intelligence.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -326,6 +339,7 @@ main() {
   ./scripts/test-advisor-release-memory.sh "$TEST_TMP/advisor-release-memory"
   ./scripts/test-release-intelligence.sh "$TEST_TMP/release-intelligence"
   ./scripts/test-agent-tool-router-intelligence.sh "$TEST_TMP/router-intelligence"
+  ./scripts/test-advisor-release-intelligence.sh "$TEST_TMP/advisor-release-intelligence"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }
