@@ -15,20 +15,20 @@ spec:
     metadata:
       labels:
         app: demo-app
-        version: v40-actions
+        version: v11-actions
     spec:
       containers:
       - name: demo-app
-        image: 192.168.30.11:30500/sre/demo-app:v40-actions
+        image: 192.168.30.11:30500/sre/demo-app:v11-actions
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
         env:
         - name: VERSION
-          value: "v40"
+          value: "v11"
         - name: RELEASE_TAG
-          value: "v40-actions"
+          value: "v11-actions"
         - name: FAULT_RATE
           value: "0"
         - name: LATENCY_MS
