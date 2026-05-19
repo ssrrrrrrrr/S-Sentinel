@@ -75,6 +75,14 @@ type portalReleaseListResponse struct {
 	Items         []portalReleaseGroup `json:"items"`
 }
 
+type portalReleaseDetailResponse struct {
+	SchemaVersion string             `json:"schemaVersion"`
+	GeneratedAt   string             `json:"generatedAt"`
+	ReportDir     string             `json:"reportDir"`
+	Release       portalReleaseGroup `json:"release"`
+	Safety        map[string]bool    `json:"safety"`
+}
+
 func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	api := &portalAPI{
 		cfg:       cfg,
@@ -82,6 +90,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	}
 
 	mux.HandleFunc("/api/releases", api.handleReleaseList)
+	mux.HandleFunc("/api/releases/", api.handleReleaseDetail)
 	mux.HandleFunc("/api/releases/latest", api.handleLatestIndex)
 	mux.HandleFunc("/api/releases/latest/evidence", api.handleLatestResource("releaseEvidence"))
 	mux.HandleFunc("/api/releases/latest/summary", api.handleLatestResource("releaseSummary"))
@@ -223,6 +232,96 @@ func (api *portalAPI) handleReleaseList(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	groups := api.buildReleaseGroups()
+
+	items := []portalReleaseGroup{}
+	for _, group := range groups {
+		if _, ok := group.Resources["releaseEvidence"]; !ok {
+			continue
+		}
+
+		group.ResourceCount = len(group.Resources)
+		items = append(items, *group)
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].ModifiedUnix == items[j].ModifiedUnix {
+			return items[i].ReleaseID > items[j].ReleaseID
+		}
+		return items[i].ModifiedUnix > items[j].ModifiedUnix
+	})
+
+	if len(items) > 50 {
+		items = items[:50]
+	}
+
+	writePortalJSON(w, http.StatusOK, portalReleaseListResponse{
+		SchemaVersion: "release-portal/v1alpha1",
+		GeneratedAt:   time.Now().Format(time.RFC3339),
+		ReportDir:     api.reportDir,
+		Count:         len(items),
+		Items:         items,
+	})
+}
+
+func (api *portalAPI) handleReleaseDetail(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	releaseID := strings.TrimPrefix(r.URL.Path, "/api/releases/")
+	releaseID = strings.TrimSpace(releaseID)
+
+	if releaseID == "" || strings.Contains(releaseID, "/") {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error": "release not found",
+			"path":  r.URL.Path,
+		})
+		return
+	}
+
+	groups := api.buildReleaseGroups()
+	group, ok := groups[releaseID]
+	if !ok {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error":                  "release not found",
+			"releaseId":              releaseID,
+			"reportDir":              api.reportDir,
+			"availableReleaseIds":    availablePortalReleaseIDs(groups, 20),
+			"requiresEvidenceBacked": true,
+		})
+		return
+	}
+
+	if _, ok := group.Resources["releaseEvidence"]; !ok {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error":                  "release is not evidence-backed",
+			"releaseId":              releaseID,
+			"reportDir":              api.reportDir,
+			"requiresEvidenceBacked": true,
+		})
+		return
+	}
+
+	group.ResourceCount = len(group.Resources)
+
+	writePortalJSON(w, http.StatusOK, portalReleaseDetailResponse{
+		SchemaVersion: "release-portal/v1alpha1",
+		GeneratedAt:   time.Now().Format(time.RFC3339),
+		ReportDir:     api.reportDir,
+		Release:       *group,
+		Safety: map[string]bool{
+			"readOnly":         true,
+			"willExecute":      false,
+			"supportsRollback": false,
+			"supportsPromote":  false,
+			"supportsPatch":    false,
+			"supportsDelete":   false,
+		},
+	})
+}
+
+func (api *portalAPI) buildReleaseGroups() map[string]*portalReleaseGroup {
 	resources := api.listPortalReportResources()
 
 	resourceByBase := map[string]portalReleaseResource{}
@@ -260,34 +359,33 @@ func (api *portalAPI) handleReleaseList(w http.ResponseWriter, r *http.Request) 
 		api.decorateReleaseGroupSummary(group, res.File)
 	}
 
-	items := []portalReleaseGroup{}
-	for _, group := range groups {
-		if _, ok := group.Resources["releaseEvidence"]; !ok {
-			continue
-		}
+	return groups
+}
 
-		group.ResourceCount = len(group.Resources)
-		items = append(items, *group)
+func availablePortalReleaseIDs(groups map[string]*portalReleaseGroup, limit int) []string {
+	ids := []string{}
+
+	for id, group := range groups {
+		if _, ok := group.Resources["releaseEvidence"]; ok {
+			ids = append(ids, id)
+		}
 	}
 
-	sort.Slice(items, func(i, j int) bool {
-		if items[i].ModifiedUnix == items[j].ModifiedUnix {
-			return items[i].ReleaseID > items[j].ReleaseID
+	sort.Slice(ids, func(i, j int) bool {
+		left := groups[ids[i]]
+		right := groups[ids[j]]
+
+		if left.ModifiedUnix == right.ModifiedUnix {
+			return ids[i] > ids[j]
 		}
-		return items[i].ModifiedUnix > items[j].ModifiedUnix
+		return left.ModifiedUnix > right.ModifiedUnix
 	})
 
-	if len(items) > 50 {
-		items = items[:50]
+	if limit > 0 && len(ids) > limit {
+		return ids[:limit]
 	}
 
-	writePortalJSON(w, http.StatusOK, portalReleaseListResponse{
-		SchemaVersion: "release-portal/v1alpha1",
-		GeneratedAt:   time.Now().Format(time.RFC3339),
-		ReportDir:     api.reportDir,
-		Count:         len(items),
-		Items:         items,
-	})
+	return ids
 }
 
 func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
