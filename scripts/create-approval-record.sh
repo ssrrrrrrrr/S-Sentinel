@@ -92,7 +92,9 @@ LATEST_MD="$OUTPUT_DIR/approval-record-latest.md"
 
 python3 - "$ACTION_PLAN_FILE" "$OUTPUT_JSON" "$OUTPUT_MD" "$LATEST_JSON" "$LATEST_MD" "$APPROVAL_DECISION" "$APPROVAL_REASON" "$APPROVER" <<'CREATE_APPROVAL_RECORD_PY'
 import json
+import os
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -248,6 +250,88 @@ def resolve_release_evidence(ref):
 
 release_evidence_path = resolve_release_evidence(record.get("sourceReleaseEvidence"))
 
+def resolve_artifact_from_evidence(ref, evidence_path):
+    if not ref:
+        return None
+
+    p = Path(str(ref))
+    candidates = []
+
+    if p.is_absolute():
+        candidates.append(p)
+
+    candidates.append(evidence_path.parent / p.name)
+    candidates.append(p)
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    return None
+
+def find_summary_builder():
+    for candidate in [Path("./scripts/build-release-summary.sh"), Path("/app/scripts/build-release-summary.sh")]:
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+def rebuild_release_summary(evidence_path):
+    builder = find_summary_builder()
+    if not builder:
+        print("WARN: release summary builder not found, skip approval summary update", file=sys.stderr)
+        return
+
+    env = os.environ.copy()
+    env["RELEASE_REPORT_DIR"] = str(evidence_path.parent)
+
+    result = subprocess.run([str(builder), str(evidence_path)], env=env, text=True, capture_output=True)
+
+    if result.returncode == 0:
+        print(f"Release summary rebuilt with approval record: {evidence_path}")
+    else:
+        print(f"WARN: failed to rebuild release summary with approval record: {result.stderr}", file=sys.stderr)
+
+def append_approval_to_ai_advice(evidence_path, release_evidence):
+    artifacts = release_evidence.get("artifacts") or {}
+    advice_path = resolve_artifact_from_evidence(artifacts.get("aiAdvice"), evidence_path)
+
+    if not advice_path:
+        print("WARN: AI advice file not found, skip approval summary in AI advice", file=sys.stderr)
+        return
+
+    current_text = advice_path.read_text(encoding="utf-8") if advice_path.exists() else ""
+    if "## 10. Human Approval Record" in current_text:
+        print(f"Human approval record already exists in AI advice: {advice_path}")
+        return
+
+    approval_report = artifacts.get("approvalRecordReport") or str(output_md)
+
+    section = f"""
+
+## 10. Human Approval Record
+
+- Approval Decision: `{approval_decision}`
+- Approved Action: `{approved_action}`
+- Execution Mode: `approval_record_only`
+- Will Execute: `false`
+- Approver: `{approver}`
+- Reason: {approval_reason}
+
+### Approval Artifacts
+
+- Approval Record JSON: `{output_json}`
+- Approval Record Report: `{approval_report}`
+
+### Safety Boundary
+
+This approval record is audit-only. It does not execute Rollback, Promote, Patch, Delete, GitOps changes, image builds, commits, or pushes.
+"""
+
+    with advice_path.open("a", encoding="utf-8") as f:
+        f.write(section)
+
+    print(f"Human approval record appended to AI advice: {advice_path}")
+
 if release_evidence_path:
     try:
         release_evidence = json.loads(release_evidence_path.read_text(encoding="utf-8"))
@@ -268,6 +352,9 @@ if release_evidence_path:
 
         release_evidence_path.write_text(json.dumps(release_evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"Approval record linked into release evidence: {release_evidence_path}")
+
+        rebuild_release_summary(release_evidence_path)
+        append_approval_to_ai_advice(release_evidence_path, release_evidence)
     except Exception as exc:
         print(f"WARN: failed to link approval record into release evidence: {release_evidence_path}: {exc}", file=sys.stderr)
 else:
