@@ -678,6 +678,27 @@ LINK_ACTION_PLAN_PY
       else
         echo "WARN: expected release evidence file not found, skip action plan generation: $EVIDENCE_OUT" >&2
       fi
+
+      RELEASE_MEMORY_BUILDER=""
+
+      if [ -x "./scripts/build-release-memory.sh" ]; then
+        RELEASE_MEMORY_BUILDER="./scripts/build-release-memory.sh"
+      elif [ -x "/app/scripts/build-release-memory.sh" ]; then
+        RELEASE_MEMORY_BUILDER="/app/scripts/build-release-memory.sh"
+      fi
+
+      if [ -n "$RELEASE_MEMORY_BUILDER" ] && [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running release memory builder: $RELEASE_MEMORY_BUILDER"
+
+        RELEASE_REPORT_DIR="$OUT_DIR" \
+          "$RELEASE_MEMORY_BUILDER" || {
+            echo "WARN: build-release-memory.sh failed, continue release advice pipeline" >&2
+          }
+      elif [ -z "$RELEASE_MEMORY_BUILDER" ]; then
+        echo "WARN: release memory builder not found, skip release memory generation" >&2
+      else
+        echo "WARN: expected release evidence file not found, skip release memory generation: $EVIDENCE_OUT" >&2
+      fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
     fi
