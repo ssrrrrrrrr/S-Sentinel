@@ -368,48 +368,4 @@ Human Approval Record
 | Human Approval Record | 记录人工审批结果 |
 | Agent Tool Router | 提供受控工具入口 |
 
-### 3.4 安全边界
-
-当前系统坚持以下安全边界：
-
-```text
-不自动 Rollback
-不自动 Promote
-不自动 Patch
-不自动 Delete
-不自动修改 GitOps
-不自动执行 kubectl 写操作
-不自动 Commit / Push
-```
-
-系统当前定位是：
-
-```text
-辅助分析
-生成证据
-提供建议
-形成 dry-run 动作计划
-记录人工审批
-```
-
-而不是直接替代人工执行生产恢复动作。
-
-### 3.5 技术栈
-
-项目主要使用：
-
-- Kubernetes
-- Argo CD
-- Argo Rollouts
-- GitHub Actions
-- Prometheus
-- Grafana
-- Alertmanager
-- Go
-- Bash
-- Python
-- Podman
-- GitOps
-- Policy-as-Code
-- NFS 持久化报告目录
 
