@@ -269,10 +269,28 @@ func (api *portalAPI) handleReleaseDetail(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	releaseID := strings.TrimPrefix(r.URL.Path, "/api/releases/")
-	releaseID = strings.TrimSpace(releaseID)
+	rest := strings.TrimPrefix(r.URL.Path, "/api/releases/")
+	rest = strings.Trim(rest, "/")
 
-	if releaseID == "" || strings.Contains(releaseID, "/") {
+	if rest == "" {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error": "release not found",
+			"path":  r.URL.Path,
+		})
+		return
+	}
+
+	parts := strings.Split(rest, "/")
+	if len(parts) != 1 && len(parts) != 2 {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error": "release resource not found",
+			"path":  r.URL.Path,
+		})
+		return
+	}
+
+	releaseID := strings.TrimSpace(parts[0])
+	if releaseID == "" {
 		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
 			"error": "release not found",
 			"path":  r.URL.Path,
@@ -305,6 +323,11 @@ func (api *portalAPI) handleReleaseDetail(w http.ResponseWriter, r *http.Request
 
 	group.ResourceCount = len(group.Resources)
 
+	if len(parts) == 2 {
+		api.handleReleaseResourceContent(w, releaseID, group, strings.TrimSpace(parts[1]))
+		return
+	}
+
 	writePortalJSON(w, http.StatusOK, portalReleaseDetailResponse{
 		SchemaVersion: "release-portal/v1alpha1",
 		GeneratedAt:   time.Now().Format(time.RFC3339),
@@ -319,6 +342,105 @@ func (api *portalAPI) handleReleaseDetail(w http.ResponseWriter, r *http.Request
 			"supportsDelete":   false,
 		},
 	})
+}
+
+func (api *portalAPI) handleReleaseResourceContent(w http.ResponseWriter, releaseID string, group *portalReleaseGroup, resourceName string) {
+	kind, contentType, ok := portalResourceKindFromPathSegment(resourceName)
+	if !ok {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error":              "unknown release resource",
+			"releaseId":          releaseID,
+			"resource":           resourceName,
+			"availableResources": availablePortalResourceNames(group),
+		})
+		return
+	}
+
+	resource, ok := group.Resources[kind]
+	if !ok {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error":              "release resource not found",
+			"releaseId":          releaseID,
+			"resource":           resourceName,
+			"kind":               kind,
+			"availableResources": availablePortalResourceNames(group),
+		})
+		return
+	}
+
+	data, err := os.ReadFile(resource.File)
+	if err != nil {
+		writePortalJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"error":     err.Error(),
+			"releaseId": releaseID,
+			"resource":  resourceName,
+			"file":      resource.File,
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-Release-Portal-Release-ID", releaseID)
+	w.Header().Set("X-Release-Portal-Resource", kind)
+	w.Header().Set("X-Release-Portal-File", resource.BaseName)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+func portalResourceKindFromPathSegment(resourceName string) (string, string, bool) {
+	switch resourceName {
+	case "evidence":
+		return "releaseEvidence", "application/json; charset=utf-8", true
+	case "summary":
+		return "releaseSummary", "text/markdown; charset=utf-8", true
+	case "action-plan":
+		return "actionPlan", "application/json; charset=utf-8", true
+	case "intelligence":
+		return "releaseIntelligence", "application/json; charset=utf-8", true
+	case "approval":
+		return "approvalRecord", "application/json; charset=utf-8", true
+	case "failure-evidence":
+		return "failureEvidence", "application/json; charset=utf-8", true
+	case "advice":
+		return "aiAdvice", "text/markdown; charset=utf-8", true
+	case "ai-decision":
+		return "aiDecision", "application/json; charset=utf-8", true
+	case "policy-decision":
+		return "policyDecision", "application/json; charset=utf-8", true
+	case "context":
+		return "releaseContext", "application/json; charset=utf-8", true
+	default:
+		return "", "", false
+	}
+}
+
+func availablePortalResourceNames(group *portalReleaseGroup) []string {
+	if group == nil {
+		return []string{}
+	}
+
+	resourceByKind := map[string]string{
+		"releaseEvidence":     "evidence",
+		"releaseSummary":      "summary",
+		"actionPlan":          "action-plan",
+		"releaseIntelligence": "intelligence",
+		"approvalRecord":      "approval",
+		"failureEvidence":     "failure-evidence",
+		"aiAdvice":            "advice",
+		"aiDecision":          "ai-decision",
+		"policyDecision":      "policy-decision",
+		"releaseContext":      "context",
+	}
+
+	names := []string{}
+	for kind := range group.Resources {
+		if name, ok := resourceByKind[kind]; ok {
+			names = append(names, name)
+		}
+	}
+
+	sort.Strings(names)
+	return names
 }
 
 func (api *portalAPI) buildReleaseGroups() map[string]*portalReleaseGroup {
