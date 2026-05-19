@@ -40,6 +40,7 @@ Environment:
 Behavior:
   - Generates approval-record-*.json and approval-record-*.md.
   - Records human decision for an existing dry-run Action Plan.
+  - Links approval record back into source release evidence when available.
   - Does not execute kubectl, rollback, promote, patch, delete, GitOps changes, image builds, commits, or pushes.
 USAGE
 }
@@ -224,6 +225,53 @@ Source action plan: {action_plan_path}
 
 output_md.write_text(md, encoding="utf-8")
 shutil.copyfile(output_md, latest_md)
+
+def resolve_release_evidence(ref):
+    if not ref:
+        return None
+
+    p = Path(str(ref))
+    candidates = []
+
+    if p.is_absolute():
+        candidates.append(p)
+
+    candidates.append(action_plan_path.parent / p.name)
+    candidates.append(output_json.parent / p.name)
+    candidates.append(p)
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    return None
+
+release_evidence_path = resolve_release_evidence(record.get("sourceReleaseEvidence"))
+
+if release_evidence_path:
+    try:
+        release_evidence = json.loads(release_evidence_path.read_text(encoding="utf-8"))
+        artifacts = release_evidence.setdefault("artifacts", {})
+        artifacts["approvalRecord"] = str(output_json)
+        artifacts["approvalRecordReport"] = str(output_md)
+
+        release_evidence["approvalRef"] = {
+            "generated": True,
+            "decision": approval_decision,
+            "approvedAction": approved_action,
+            "executionMode": "approval_record_only",
+            "willExecute": False,
+            "approver": approver,
+            "json": str(output_json),
+            "markdown": str(output_md),
+        }
+
+        release_evidence_path.write_text(json.dumps(release_evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"Approval record linked into release evidence: {release_evidence_path}")
+    except Exception as exc:
+        print(f"WARN: failed to link approval record into release evidence: {release_evidence_path}: {exc}", file=sys.stderr)
+else:
+    print(f"WARN: source release evidence not found, skip linking approval record: {record.get('sourceReleaseEvidence')}", file=sys.stderr)
 
 print(f"Approval record JSON generated: {output_json}")
 print(f"Approval record Markdown generated: {output_md}")
