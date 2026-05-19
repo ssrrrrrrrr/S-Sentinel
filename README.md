@@ -4,70 +4,31 @@
 
 SLO Rollout Demo 是一个基于 Kubernetes 的云原生发布可靠性项目。
 
-项目最初的目标是：在应用发布过程中，不只判断 Pod 是否启动成功，而是通过业务指标判断新版本是否真正健康，并在异常时自动中止发布。
+项目最初目标是：在应用发布过程中，不只判断 Pod 是否启动成功，而是通过业务指标判断新版本是否真正健康，并在异常时自动中止发布。
 
-随着功能持续演进，项目已经从一个：
+随着功能持续演进，项目已经从一个简单的 GitOps 灰度发布 Demo，升级为一个面向云原生发布可靠性的 SLO 驱动智能分析平台原型。
 
-> 基于 GitOps 的 SLO 灰度发布 Demo
+当前项目围绕以下核心问题展开：
 
-逐步升级为一个：
+- 发布是否真的成功？
+- 新版本是否满足业务 SLO？
+- 发布失败时失败原因是什么？
+- 系统应该建议什么动作？
+- 历史上是否出现过类似失败？
+- 人工最终如何审批和留痕？
+- 整个发布过程是否可追溯、可审计？
 
-> 具备云原生部署形态的发布可靠性智能分析平台雏形
-
-项目当前主链路如下：
-
-```text
-GitHub Actions 手动触发发布
-↓
-release-gitops.sh 构建镜像并生成 GitOps Manifest
-↓
-Git Repository 更新 deploy/base 下的目标状态
-↓
-Argo CD 从 Git 拉取并同步到 Kubernetes
-↓
-Argo Rollouts 执行 Canary 发布
-↓
-Prometheus 采集业务指标并执行 AnalysisRun
-↓
-异常版本自动中止，正常版本继续放量
-↓
-Release Watcher 感知 Rollout / AnalysisRun 状态
-↓
-生成 ChangeContext / Release Report
-↓
-AI Release Advisor 生成结构化发布判断
-↓
-Policy-as-Code Guardrails 执行安全裁决
-↓
-Release Evidence 汇总证据链
-↓
-Failure Evidence 生成失败诊断证据
-↓
-Dry-run Action Plan 生成可审计动作计划
-```
-
-项目目标已经不再只是“把应用发布出去”，而是在发布过程中逐步具备：
-
-- 变更感知能力
-- 风险判断能力
-- 发布过程结构化记录能力
-- 发布观测值回填能力
-- 智能分析与辅助决策能力
-- 策略化安全边界能力
-- 失败诊断证据沉淀能力
-- dry-run 动作计划生成能力
-
-从而向一个面向云原生变更可靠性的长期平台演进。
+项目当前已经完成 watcher v1.20 版本验收，具备健康发布、故障发布、历史智能分析和人工审批记录的完整闭环。
 
 ---
 
-## 2. 实现能力
+## 2. 实现功能
 
-### 2.1 GitOps 发布能力
+### 2.1 GitOps 发布
 
 项目支持通过 GitHub Actions 手动触发发布。
 
-发布参数当前支持：
+发布参数包括：
 
 - `image_tag`
 - `app_version`
@@ -77,204 +38,89 @@ Dry-run Action Plan 生成可审计动作计划
 - `slo_p95_seconds_threshold`
 - `slo_min_request_count`
 
-GitHub Actions 会根据输入参数执行发布脚本，构建镜像、推送镜像，并渲染新的 GitOps Manifest 到仓库中。Argo CD 会感知 Git 变化并同步 Kubernetes 目标状态。
+发布流程会构建应用镜像，更新 GitOps Manifest，并由 Argo CD 将目标状态同步到 Kubernetes 集群。
 
-### 2.2 Canary 灰度发布能力
+### 2.2 Canary 灰度发布
 
-项目使用 Argo Rollouts 实现 Canary 发布，而不是直接使用原生 Deployment 全量替换。
+项目使用 Argo Rollouts 实现 Canary 发布。
 
-当前发布流程中：
+新版本不会一次性全量替换，而是逐步放量，并在发布过程中执行 AnalysisRun 检查业务指标。
 
-- 新版本先按 Canary 步进进入集群
-- 每个阶段会经过 AnalysisRun 检查
-- 指标达标才继续放量
-- 指标异常则中止或停留在当前阶段
+当指标达标时继续放量；当指标异常时停止发布或进入降级状态。
 
-这样可以把“发版”从一次性替换升级为可观测、可中止、可回退的渐进式发布过程。
+### 2.3 SLO 发布门禁
 
-### 2.3 SLO 发布门禁能力
+项目通过 Prometheus 指标判断新版本是否健康。
 
-项目当前已实现基于业务指标的发布门禁，核心指标包括：
+当前核心 SLO 指标包括：
 
 - `request-count`
 - `error-rate`
 - `p95-latency`
 
-其中：
+典型发布结果包括：
 
-- `request-count` 用于避免低流量样本不足造成误判
-- `error-rate` 用于判断新版本是否出现异常错误
-- `p95-latency` 用于判断新版本是否出现性能退化
-
-这些门禁阈值已经支持参数化输入，不再完全写死在发布脚本里。
-
-### 2.4 应用级故障注入与实验能力
-
-`demo-app` 当前支持发布级别的可控实验参数：
-
-- `FAULT_RATE`
-- `LATENCY_MS`
-
-这使项目不仅能验证正常发布，还可以主动制造：
-
-- 高错误率版本
-- 高延迟版本
-- 多 SLO 同时失败版本
-
-从而演示发布门禁、Rollout 中止和后续报告生成是否正常工作。
-
-### 2.5 可观测能力
-
-项目当前接入了完整的观测链路：
-
-- Prometheus
-- Grafana
-- Alertmanager
-
-Grafana 可用于观察：
-
-- 各版本请求量
-- 各版本错误率
-- 各版本延迟情况
-
-Alertmanager 可用于接收发布异常告警。
-
-这意味着发布不再只是看 `kubectl rollout status`，而是有完整的业务指标支持。
-
-### 2.6 Dashboard as Code
-
-Grafana Dashboard 已经纳入仓库，以配置文件形式进行管理，并通过 GitOps 同步到集群。
-
-这样可以保证：
-
-- Dashboard 可版本化管理
-- 观测面板可跟随环境自动恢复
-- Grafana 重建后面板不丢失
-- 发布平台的观测层也具备 IaC / GitOps 能力
-
-### 2.7 Release Watcher 能力
-
-项目已经具备独立的 Release Watcher 组件。
-
-Watcher 当前职责包括：
-
-- 感知 Rollout 状态变化
-- 感知 AnalysisRun 结果
-- 汇总发布上下文
-- 生成发布报告相关产物
-- 将结果落盘到持久化目录
-- 暴露自身指标供 Prometheus 采集
-
-当前线上 watcher 镜像版本为：
-
-```text
-192.168.30.11:5000/release-rollout-watcher:v1.19
-```
-
-Watcher 当前运行在 `watch-only` 模式，不直接执行 Rollback、Promote、Patch、Delete 等高风险动作。
-
-### 2.8 ChangeContext 生成能力
-
-项目已支持生成 ChangeContext，用于描述一次发布的结构化变更上下文。
-
-当前可覆盖的信息包括：
-
-- 镜像是否变化
-- 环境变量是否变化
-- SLO 门禁参数是否变化
-- 风险级别
-- 风险提示
-- 发布前后上下文摘要
-
-这为后续做 Release Memory、AI 决策结构化输出和 Controller 化演进提供了基础。
-
-### 2.9 Release Report 自动生成能力
-
-项目当前可以自动生成标准化 Release Report。
-
-报告中可写入的信息包括：
-
-- `release_id`
-- `image_tag`
-- `app_version`
-- `namespace`
-- `rollout_name`
-- SLO 输入参数
-- 发布观测值
-- 发布结果字段
-- 原因字段
-
-这意味着发布期间的关键信息不再散落在日志与终端中，而是被统一沉淀为结构化报告。
-
-### 2.10 发布观测值自动写入能力
-
-项目已经实现将 Prometheus 观测值自动写入 Release Report。
-
-当前已回填的核心指标包括：
-
-- `request_count_1m`
-- `error_rate_percent`
-- `p95_latency_seconds`
-
-这使报告从“描述性文档”升级为“带真实观测数据的发布事实记录”。
-
-### 2.11 发布结果阶段化写入能力
-
-项目当前已经开始将发布结果写入报告中的 `result` 和 `reason` 字段。
-
-目前支持的典型结果包括：
-
-- `IN_PROGRESS`
 - `PASS`
 - `FAIL_BY_ERROR_RATE`
 - `FAIL_BY_P95_LATENCY`
 - `FAIL_BY_MULTIPLE_SLO`
 
-这说明项目已经从“记录发布现象”进一步迈向“表达发布判断”。
+其中 `request-count` 用于避免低流量误判，`error-rate` 和 `p95-latency` 用于判断新版本是否出现错误率升高或性能退化。
 
-### 2.12 AI Release Advisor
+### 2.4 故障注入
 
-项目已接入 AI Release Advisor 分析链路，用于对发布报告和变更上下文做进一步解释。
+`demo-app` 支持通过发布参数注入故障：
 
-当前 AI Advisor 的定位是：
+- `FAULT_RATE`
+- `LATENCY_MS`
 
-- 读取发布报告
-- 读取变更上下文
-- 输出辅助分析结论
-- 提供建议动作
-- 生成结构化 AI Decision
+因此项目可以主动验证：
 
-目前 AI 只提供分析与建议，不直接对集群执行高风险写操作。
+- 正常健康发布
+- 高错误率发布
+- 高延迟发布
+- 多 SLO 同时失败发布
 
-### 2.13 Policy-as-Code Guardrails
+这使项目不仅能演示成功发布，也能演示异常发布时的自动分析、证据生成和审批链路。
 
-项目已经引入 Policy-as-Code 安全策略层。
+### 2.5 可观测能力
 
-策略文件位于：
+项目接入了完整观测链路：
+
+- Prometheus
+- Grafana
+- Alertmanager
+
+Grafana Dashboard 已经纳入仓库管理，具备 Dashboard as Code 能力。
+
+发布判断不只依赖 Kubernetes 资源状态，而是结合真实业务指标进行分析。
+
+### 2.6 Release Watcher
+
+项目包含独立的 Release Watcher 组件，用于感知 Rollout 和 AnalysisRun 状态变化，并生成发布相关证据。
+
+当前线上 watcher 镜像版本为：
 
 ```text
-policy/release-policy.yaml
+192.168.30.11:5000/release-rollout-watcher:v1.20
 ```
 
-它用于约束 Agent 或 AI Advisor 的动作边界。
+Watcher 当前保持安全模式：
 
-当前策略重点包括：
+```text
+watch-only
+advisory_only
+dry_run
+approval_record_only
+```
 
-- 默认 `advisory_only`
-- 禁止自动执行高风险动作
-- 禁止自动 Rollback
-- 禁止自动 Promote
-- 禁止自动 Patch Kubernetes
-- 禁止自动 Delete 资源
-- 所有高风险动作需要人工确认
+它不会自动执行 Rollback、Promote、Patch、Delete 等高风险操作。
 
-即使 AI Decision 中建议了危险动作，Policy Evaluator 也会进行二次裁决。
+### 2.7 Release Evidence
 
-### 2.14 Release Evidence 证据包
+Release Evidence 是一次发布的证据总索引。
 
-项目当前可以生成 Release Evidence 证据包。
-
-Release Evidence 用于汇总一次发布的核心证据链，包括：
+它会关联：
 
 - Release Context
 - Release Report
@@ -284,80 +130,167 @@ Release Evidence 用于汇总一次发布的核心证据链，包括：
 - Release Summary
 - Failure Evidence
 - Action Plan
+- Release Memory
+- Release Intelligence
+- Approval Record
 
-它的定位是一次发布的总索引，使发布分析、审计和复盘都可以从一个入口展开。
+通过 Release Evidence，可以追溯一次发布从触发、分析、判断、建议动作到人工审批的完整过程。
 
-### 2.15 Failure Evidence 失败诊断证据
+### 2.8 AI Release Advisor
 
-项目当前支持在失败场景自动生成 Failure Evidence。
+AI Release Advisor 用于读取发布报告和变更上下文，并生成辅助分析结论。
 
-Failure Evidence 会沉淀：
+它会输出：
 
-- 是否失败
-- 失败的 SLO 指标
-- 风险等级
-- 风险分数
-- ReleaseContext 快照
-- 可选 K8s 现场证据
-- 下一步建议
-- 安全边界说明
+- 发布结论
+- 风险判断
+- 失败指标
+- 建议动作
+- 下一步处理建议
 
-默认情况下，K8s 现场采集保持关闭，避免对集群造成额外影响。
+AI Advisor 当前只负责分析和建议，不直接执行集群写操作。
 
-### 2.16 Agent Tool Router
+### 2.9 Policy-as-Code Guardrails
 
-项目已经引入统一的 Agent 工具入口：
+项目引入了 Policy-as-Code 安全策略层。
+
+策略文件位于：
 
 ```text
-scripts/agent-tool-router.sh
+policy/release-policy.yaml
 ```
 
-当前支持的安全工具包括：
+策略层用于限制高风险动作，确保系统默认保持 advisory-only。
 
-- `list-tools`
-- `get-latest-release-summary`
-- `get-latest-release-evidence`
-- `get-latest-failure-evidence`
-- `collect-failure-evidence`
-- `evaluate-change-risk`
-- `build-action-plan`
-- `run-offline-eval`
+即使 AI 建议执行高风险动作，Policy Evaluator 也会进行二次裁决，避免自动化误操作扩大故障。
 
-这个 Router 的意义是：Agent 不直接调用分散脚本，而是通过受控工具入口调用白名单能力。
+### 2.10 Failure Evidence
 
-### 2.17 Dry-run Action Plan
+当发布失败时，系统会生成 Failure Evidence。
 
-项目已经支持生成 dry-run 动作计划。
+Failure Evidence 会记录：
 
-Action Plan 会根据 Release Evidence 生成：
+- 是否失败
+- 失败指标
+- 风险等级
+- 风险分数
+- Rollout 状态
+- AnalysisRun 状态
+- 可选 Kubernetes 现场证据
+- 安全边界说明
 
-- 建议动作
-- 是否被策略阻断
-- 是否需要人工审批
-- 候选命令
-- 人工处理步骤
-- 安全边界
+它的作用是把失败现场沉淀为结构化证据，便于后续排查和复盘。
 
-所有 Action Plan 都保持：
+### 2.11 Dry-run Action Plan
+
+Action Plan 用于把发布判断转化为可审计动作计划。
+
+例如多 SLO 失败时，Action Plan 会给出：
+
+- 查看 Rollout 的只读命令
+- 查看 AnalysisRun 的只读命令
+- 候选 abort 命令
+
+但所有动作都保持：
 
 ```text
 executionMode = dry_run
 willExecute = false
 ```
 
-即使出现类似：
+也就是说，Action Plan 只生成建议，不自动执行。
+
+### 2.12 Release Memory
+
+Release Memory 用于沉淀历史发布记录。
+
+核心产物包括：
 
 ```text
-kubectl argo rollouts abort demo-app -n slo-rollout
+release-memory.jsonl
+release-memory-latest.json
 ```
 
-也只是候选命令，不会自动执行。
+它可以记录历史上的成功发布、失败发布、失败指标、最终动作和相关证据。
+
+### 2.13 Release Intelligence
+
+Release Intelligence 基于 Release Evidence 和 Release Memory，对当前发布进行历史相似风险判断。
+
+典型风险模式包括：
+
+- `healthy_release`
+- `new_slo_failure_pattern`
+- `similar_slo_failure_pattern`
+- `repeated_slo_failure_pattern`
+
+它可以判断当前失败是否和历史失败相似，并将结论写入 Release Summary 和 AI Advice。
+
+### 2.14 Human Approval Record
+
+项目支持人工审批记录能力。
+
+审批状态包括：
+
+- `APPROVED`
+- `REJECTED`
+- `DEFERRED`
+- `NEEDS_MORE_EVIDENCE`
+
+审批记录会写回 Release Evidence，并同步汇入 Release Summary 和 AI Advice。
+
+即使人工审批为 `APPROVED`，系统仍然不会自动执行动作：
+
+```text
+executionMode = approval_record_only
+willExecute = false
+```
+
+### 2.15 v1.20 真实验收结果
+
+watcher v1.20 已完成真实环境验收。
+
+健康发布验收结果：
+
+```text
+releaseResult = PASS
+policyDecision = ALLOW
+finalAction = NOOP
+actionPlan.executionMode = dry_run
+actionPlan.willExecute = false
+releaseIntelligence.riskPattern = healthy_release
+```
+
+多 SLO 失败发布验收结果：
+
+```text
+releaseResult = FAIL_BY_MULTIPLE_SLO
+policyDecision = ALLOW_ADVISORY_ONLY
+finalAction = STOP_PROMOTION
+requiresHumanApproval = true
+failureEvidence.isFailure = true
+actionPlan.executionMode = dry_run
+actionPlan.willExecute = false
+releaseIntelligence.riskPattern = repeated_slo_failure_pattern
+```
+
+人工审批链路验收结果：
+
+```text
+approvalDecision = APPROVED
+approvedAction = STOP_PROMOTION
+executionMode = approval_record_only
+willExecute = false
+approvalRef.generated = true
+summary_has_approval = true
+advice_has_approval = true
+```
 
 ---
 
 ## 3. 项目架构
 
-### 3.1 整体架构
+### 3.1 发布主链路
 
 ```text
 Developer / SRE
@@ -376,13 +309,21 @@ Argo Rollouts
 ↓
 demo-app Canary Release
 ↓
-Prometheus SLO Analysis
+Prometheus AnalysisRun
 ↓
-Abort / Continue Decision
+PASS / FAIL 判断
+```
+
+### 3.2 分析与证据链路
+
+```text
+Rollout / AnalysisRun 状态变化
 ↓
 Release Watcher
 ↓
-ChangeContext / Release Report
+ChangeContext
+↓
+Release Report
 ↓
 AI Release Advisor
 ↓
@@ -393,59 +334,82 @@ Release Evidence
 Failure Evidence
 ↓
 Dry-run Action Plan
+↓
+Release Memory
+↓
+Release Intelligence
+↓
+Release Summary / AI Advice
+↓
+Human Approval Record
 ```
 
-观测与分析链路如下：
-
-```text
-demo-app metrics
-↓
-Prometheus
-↓
-Grafana Dashboard
-↓
-Alertmanager
-↓
-Release Watcher
-↓
-ChangeContext JSON
-↓
-Release Report
-↓
-AI Release Advisor
-↓
-Policy-as-Code
-↓
-Release Evidence
-↓
-Action Plan
-```
-
-### 3.2 组件职责
+### 3.3 组件职责
 
 | 组件 | 职责 |
 |---|---|
-| GitHub Actions | 发布入口，负责接收参数并启动发布流程 |
-| release-gitops.sh | 构建镜像、生成 Manifest、触发报告链路 |
-| Git Repository | 保存应用目标状态与发布配置 |
-| Argo CD | 监听 Git 仓库并同步 Kubernetes 资源 |
-| Argo Rollouts | 执行 Canary 发布与发布中止 |
-| Prometheus | 采集业务指标并提供查询能力 |
-| AnalysisRun | 根据业务指标判断新版本是否健康 |
-| Grafana | 展示发布过程中的请求量、错误率和延迟 |
+| GitHub Actions | 手动发布入口，接收发布参数 |
+| release-gitops.sh | 构建镜像、生成 GitOps Manifest |
+| Git Repository | 保存 Kubernetes 目标状态 |
+| Argo CD | 将 Git 中的目标状态同步到集群 |
+| Argo Rollouts | 执行 Canary 灰度发布 |
+| Prometheus | 采集业务指标并提供查询 |
+| AnalysisRun | 根据 SLO 指标判断新版本健康状态 |
+| Grafana | 展示请求量、错误率、延迟等指标 |
 | Alertmanager | 接收发布异常告警 |
-| Release Watcher | 感知发布状态并生成上下文与报告 |
-| ChangeContext | 描述一次发布的结构化变更信息 |
-| Release Report | 收敛发布期间的观测值与判断结果 |
-| AI Release Advisor | 基于发布报告和上下文生成分析建议 |
-| Policy Evaluator | 根据 Policy-as-Code 裁决 Agent 建议动作 |
-| Release Evidence | 汇总一次发布的完整证据链 |
-| Failure Evidence | 生成失败诊断证据 |
-| Agent Tool Router | 提供受控 Agent 工具入口 |
-| Dry-run Action Plan | 生成可审计、不可自动执行的动作计划 |
+| Release Watcher | 感知发布状态并生成证据链 |
+| AI Release Advisor | 生成发布分析和建议动作 |
+| Policy Evaluator | 根据策略裁决建议动作是否安全 |
+| Release Evidence | 汇总一次发布的完整证据索引 |
+| Failure Evidence | 记录失败诊断证据 |
+| Action Plan | 生成 dry-run 动作计划 |
+| Release Memory | 记录历史发布记忆 |
+| Release Intelligence | 判断历史相似风险 |
+| Human Approval Record | 记录人工审批结果 |
+| Agent Tool Router | 提供受控工具入口 |
 
+### 3.4 安全边界
 
-- Agent 工具契约
-- dry-run 执行计划
+当前系统坚持以下安全边界：
 
-最终目标是形成一个安全、可审计、可演进的云原生发布可靠性平台。
+```text
+不自动 Rollback
+不自动 Promote
+不自动 Patch
+不自动 Delete
+不自动修改 GitOps
+不自动执行 kubectl 写操作
+不自动 Commit / Push
+```
+
+系统当前定位是：
+
+```text
+辅助分析
+生成证据
+提供建议
+形成 dry-run 动作计划
+记录人工审批
+```
+
+而不是直接替代人工执行生产恢复动作。
+
+### 3.5 技术栈
+
+项目主要使用：
+
+- Kubernetes
+- Argo CD
+- Argo Rollouts
+- GitHub Actions
+- Prometheus
+- Grafana
+- Alertmanager
+- Go
+- Bash
+- Python
+- Podman
+- GitOps
+- Policy-as-Code
+- NFS 持久化报告目录
+
