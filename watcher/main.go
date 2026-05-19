@@ -151,8 +151,10 @@ func loadConfig(path string) (Config, error) {
 	return cfg, nil
 }
 
-func startHealthServer(addr string) {
+func startHealthServer(addr string, cfg Config) {
 	mux := http.NewServeMux()
+
+	registerPortalAPIHandlers(mux, cfg)
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -927,7 +929,7 @@ func main() {
 
 	ctx := context.Background()
 
-	go startHealthServer(cfg.HealthAddr)
+	go startHealthServer(cfg.HealthAddr, cfg)
 
 	log.Printf("watcher is running in watch-only mode")
 	runWatchLoop(ctx, client, cfg, interval)
