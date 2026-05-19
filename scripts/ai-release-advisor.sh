@@ -810,6 +810,126 @@ with advice_file.open("a", encoding="utf-8") as f:
 
 print(f"Policy summary appended to AI advice: {advice_file}")
 POLICY_SUMMARY_PY
+
+    if [ -f "${EVIDENCE_OUT:-}" ]; then
+      python3 - "$OUT" "$EVIDENCE_OUT" <<'INTELLIGENCE_ADVICE_PY'
+import json
+import sys
+from pathlib import Path
+
+advice_file = Path(sys.argv[1])
+evidence_file = Path(sys.argv[2])
+
+try:
+    evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
+except Exception:
+    print(f"WARN: failed to read release evidence for intelligence summary: {evidence_file}", file=sys.stderr)
+    raise SystemExit(0)
+
+artifacts = evidence.get("artifacts") or {}
+release_intelligence_ref = evidence.get("releaseIntelligenceRef") or {}
+
+def resolve_artifact(ref):
+    if not ref:
+        return None
+
+    p = Path(str(ref))
+    candidates = []
+
+    if p.is_absolute():
+        candidates.append(p)
+
+    candidates.append(evidence_file.parent / p.name)
+    candidates.append(p)
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    return None
+
+intelligence_path = resolve_artifact(
+    artifacts.get("releaseIntelligence") or release_intelligence_ref.get("json")
+)
+
+if not intelligence_path:
+    print("WARN: release intelligence file not found, skip appending intelligence to AI advice", file=sys.stderr)
+    raise SystemExit(0)
+
+try:
+    intelligence_doc = json.loads(intelligence_path.read_text(encoding="utf-8"))
+except Exception:
+    print(f"WARN: failed to parse release intelligence file: {intelligence_path}", file=sys.stderr)
+    raise SystemExit(0)
+
+current_text = advice_file.read_text(encoding="utf-8") if advice_file.exists() else ""
+if "## 9. Release Intelligence Summary" in current_text:
+    print(f"Release intelligence summary already exists in AI advice: {advice_file}")
+    raise SystemExit(0)
+
+intelligence = intelligence_doc.get("intelligence") or {}
+history = intelligence_doc.get("history") or {}
+
+risk_pattern = intelligence.get("riskPattern", "UNKNOWN")
+repeated_risk_pattern = intelligence.get("repeatedRiskPattern", False)
+recommended_next_action = intelligence.get("recommendedNextAction", "UNKNOWN")
+conclusion = intelligence.get("humanSummary") or intelligence.get("conclusion") or "not provided"
+
+similar_count = history.get("similarFailureCount", 0)
+exact_count = history.get("exactHistoricalMetricSetMatchCount", 0)
+similar_failures = history.get("similarFailures") or []
+
+if similar_failures:
+    similar_lines = []
+    for item in similar_failures[:5]:
+        metrics = ", ".join(item.get("failedMetrics") or [])
+        similarity = item.get("similarity") or {}
+        similar_lines.append(
+            f"- `{item.get('releaseId', 'unknown')}` / `{item.get('appVersion', 'unknown')}` / "
+            f"`{item.get('releaseResult', 'UNKNOWN')}` / Metrics=`{metrics or 'none'}` / "
+            f"FinalAction=`{item.get('finalAction', 'UNKNOWN')}` / "
+            f"ExactMatch=`{str(similarity.get('exactMetricSetMatch', False)).lower()}`"
+        )
+    similar_text = "\n".join(similar_lines)
+else:
+    similar_text = "未发现历史相似失败记录。"
+
+intelligence_report = artifacts.get("releaseIntelligenceReport") or release_intelligence_ref.get("markdown") or "not provided"
+
+section = f"""
+
+## 9. Release Intelligence Summary
+
+- Risk Pattern: `{risk_pattern}`
+- Repeated Risk Pattern: `{str(repeated_risk_pattern).lower()}`
+- Similar Historical Failure Count: `{similar_count}`
+- Exact Historical Metric Set Match Count: `{exact_count}`
+- Recommended Next Action: `{recommended_next_action}`
+
+{conclusion}
+
+### Similar Historical Failures
+
+{similar_text}
+
+### Release Intelligence Artifacts
+
+- Release Intelligence JSON: `{intelligence_path}`
+- Release Intelligence Report: `{intelligence_report}`
+
+### Safety Boundary
+
+This intelligence summary is read-only analysis. It does not execute Rollback, Promote, Patch, Delete, GitOps changes, image builds, commits, or pushes.
+"""
+
+with advice_file.open("a", encoding="utf-8") as f:
+    f.write(section)
+
+print(f"Release intelligence summary appended to AI advice: {advice_file}")
+INTELLIGENCE_ADVICE_PY
+    else
+      echo "WARN: release evidence not found, skip release intelligence summary in AI advice: ${EVIDENCE_OUT:-not provided}" >&2
+    fi
   else
     echo "WARN: expected policy decision file not found: $POLICY_OUT" >&2
   fi
