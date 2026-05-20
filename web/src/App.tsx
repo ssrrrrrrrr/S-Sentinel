@@ -15,6 +15,12 @@ import {
   TerminalSquare,
 } from "lucide-react"
 import { fetchLatestRelease, fetchReleases } from "@/api/releases"
+import {
+  fetchReleaseResource,
+  formatResourceBody,
+  getResourceKindByTab,
+  isMarkdownContent,
+} from "@/api/releaseResources"
 import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
 
 const tabs = ["概览", "Evidence", "Action Plan", "Intelligence", "AI Advice", "Context"]
@@ -221,6 +227,14 @@ function App() {
   const releases = useMemo(() => releasesQuery.data?.items ?? [], [releasesQuery.data?.items])
   const selected = releases.find((release) => release.releaseId === selectedId) ?? releases[0]
   const selectedSummary = selected?.summary
+  const resourceKind = getResourceKindByTab(activeTab)
+
+  const resourceQuery = useQuery({
+    queryKey: ["release-resource", selected?.releaseId, resourceKind],
+    queryFn: () => fetchReleaseResource(selected!.releaseId, resourceKind),
+    enabled: Boolean(selected?.releaseId),
+    staleTime: 10000,
+  })
 
   const isLoading = releasesQuery.isLoading || latestQuery.isLoading
   const hasError = releasesQuery.isError || latestQuery.isError
@@ -418,8 +432,8 @@ function App() {
                 </div>
 
                 <div className="p-6">
-                  {activeTab === "Action Plan" ? (
-                    <div className="space-y-5">
+                  <div className="space-y-5">
+                    {activeTab === "Action Plan" ? (
                       <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
                         <div className="flex items-center gap-2 font-semibold text-cyan-900">
                           <Sparkles className="h-4 w-4" />
@@ -429,31 +443,58 @@ function App() {
                           当前系统处于只读观察模式。Release Portal 返回的 Action Plan 仅用于辅助判断，不会修改 Kubernetes 资源。
                         </p>
                       </div>
+                    ) : null}
 
-                      <SafetyPanel latest={latestQuery.data} />
-                      <ResourceMetadataPanel selected={selected} />
-                    </div>
-                  ) : (
-                    <div className="space-y-5">
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-                          {activeTab === "AI Advice" ? <Bot className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
-                          {activeTab}
+                    {activeTab === "Action Plan" ? <SafetyPanel latest={latestQuery.data} /> : null}
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+                            {activeTab === "AI Advice" ? <Bot className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+                            {activeTab}
+                          </div>
+                          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                            正在读取 <span className="font-mono text-[#031a41]">/api/releases/{selected.releaseId}/{resourceKind}</span>
+                          </p>
                         </div>
-                        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                          当前阶段已接入发布索引真实数据。下一阶段会继续读取具体资源内容，例如 summary、evidence、action-plan、intelligence 和 advice。
-                        </p>
-                        <pre className="mt-4 overflow-auto rounded-lg bg-[#031a41] p-4 text-xs leading-6 text-cyan-50">
-{`{
-  "releaseId": "${selected.releaseId}",
-  "activeTab": "${activeTab}",
-  "resourceCount": ${selected.resourceCount},
-  "resources": ${JSON.stringify(resourceKeys(selected), null, 2)}
-}`}
-                        </pre>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                            {resourceQuery.data?.contentType ?? "loading"}
+                          </span>
+                          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                            {resourceKind}
+                          </span>
+                        </div>
                       </div>
+
+                      {resourceQuery.isLoading ? (
+                        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                          正在加载资源内容...
+                        </div>
+                      ) : resourceQuery.isError ? (
+                        <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                          资源读取失败：{resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
+                        </div>
+                      ) : resourceQuery.data ? (
+                        isMarkdownContent(resourceQuery.data.contentType) ? (
+                          <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
+                            {formatResourceBody(resourceQuery.data.contentType, resourceQuery.data.body)}
+                          </pre>
+                        ) : (
+                          <pre className="mt-4 max-h-[520px] overflow-auto rounded-lg bg-[#031a41] p-5 text-xs leading-6 text-cyan-50">
+                            {formatResourceBody(resourceQuery.data.contentType, resourceQuery.data.body)}
+                          </pre>
+                        )
+                      ) : (
+                        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                          暂无资源内容。
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {activeTab === "概览" ? <ResourceMetadataPanel selected={selected} /> : null}
+                  </div>
                 </div>
               </section>
             </section>
@@ -465,3 +506,5 @@ function App() {
 }
 
 export default App
+
+
