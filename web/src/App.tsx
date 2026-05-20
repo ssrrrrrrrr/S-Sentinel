@@ -2,17 +2,10 @@
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
-  AlertTriangle,
   Bot,
-  CheckCircle2,
-  Clock3,
-  FileText,
   GitBranch,
-  LockKeyhole,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
-  TerminalSquare,
 } from "lucide-react"
 import { fetchLatestRelease, fetchReleases } from "@/api/releases"
 import {
@@ -22,9 +15,9 @@ import {
 } from "@/api/releaseResources"
 import { Badge } from "@/components/common/Badge"
 
-import { MetricCard } from "@/components/common/MetricCard"
-
 import { RawResourceViewer } from "@/components/common/RawResourceViewer"
+import { DashboardHeader } from "@/components/layout/DashboardHeader"
+import { StageBanner } from "@/components/layout/StageBanner"
 import {
   ActionPlanProductView,
   AIAdviceProductView,
@@ -34,15 +27,12 @@ import {
   OverviewProductView,
 } from "@/components/product-views/ProductViews"
 
+import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
 import { SafetyPanel } from "@/components/release/SafetyPanel"
 
 import {
-  actionDisplay,
-  approvalRaw,
-  approvalText,
   formatTime,
   normalize,
-  policyDisplay,
   resultDisplay,
   riskText,
 } from "@/utils/format"
@@ -87,65 +77,14 @@ function App() {
 
   return (
     <main className="min-h-screen text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <img
-              src="/brand/s-sentinel-logo.svg"
-              alt="S Sentinel logo"
-              className="h-11 w-11 object-contain"
-            />
-            <div className="flex items-center leading-tight">
-              <h1 className="text-xl font-bold tracking-tight text-[#031a41]">S Sentinel</h1>
-            </div>
-          </div>
-
-          <div className="hidden items-center gap-2 md:flex">
-            <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${
-              hasError
-                ? "border-rose-200 bg-rose-50 text-rose-700"
-                : "border-emerald-200 bg-emerald-50 text-emerald-700"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${hasError ? "bg-rose-500" : "bg-emerald-500"}`} />
-              {hasError ? "Watcher 异常" : "Watcher 在线"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
-              <LockKeyhole className="h-3.5 w-3.5" />
-              {latestQuery.data?.safety?.readOnly === false ? "非只读模式" : "只读模式"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-slate-500">
-              <Clock3 className="h-3.5 w-3.5" />
-              {formatTime(releasesQuery.data?.generatedAt)}刷新
-            </span>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader
+        hasError={hasError}
+        latest={latestQuery.data}
+        generatedAt={releasesQuery.data?.generatedAt}
+      />
 
       <section className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 py-6">
-        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm shadow-slate-200/60">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">
-                阶段 22.6 · Release Portal API 联调
-              </p>
-              <h2 className="mt-2 max-w-3xl text-[1.35rem] font-semibold leading-snug tracking-tight text-[#031a41]">
-                真实读取发布证据、SLO 决策和 Action Plan，形成安全的只读发布控制台。
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                当前页面数据来自 Release Portal API：/api/releases 与 /api/releases/latest。前端不会暴露 Rollback、Promote、Patch 或 Delete 等高风险操作。
-              </p>
-            </div>
-            <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">
-              <div className="flex items-center gap-2 font-semibold">
-                <ShieldCheck className="h-4 w-4" />
-                安全边界已启用
-              </div>
-              <p className="mt-1 text-xs text-cyan-700">
-                willExecute={String(latestQuery.data?.safety?.willExecute ?? false)} · readOnly={String(latestQuery.data?.safety?.readOnly ?? true)}
-              </p>
-            </div>
-          </div>
-        </section>
+        <StageBanner latest={latestQuery.data} />
 
         {isLoading ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600 shadow-sm">
@@ -161,26 +100,7 @@ function App() {
           </section>
         ) : (
           <>
-            <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-              <MetricCard label="最新结果" value={resultDisplay(selectedSummary.releaseResult)} rawValue={selectedSummary.releaseResult} icon={CheckCircle2} hint="最近一次 evidence-backed 发布" />
-              <MetricCard
-                label="策略决策"
-                value={policyDisplay(selectedSummary.policyDecision)}
-                rawValue={selectedSummary.policyDecision}
-                icon={ShieldCheck}
-                hint="Policy Decision 结果"
-              />
-              <MetricCard
-                label="最终动作"
-                value={actionDisplay(selectedSummary.finalAction)}
-                rawValue={selectedSummary.finalAction}
-                icon={TerminalSquare}
-                hint="系统建议的最终动作"
-              />
-              <MetricCard label="风险等级" value={riskText(selectedSummary.riskLevel)} rawValue={selectedSummary.riskLevel} icon={AlertTriangle} hint={`Risk Score ${selectedSummary.riskScore}/100`} />
-              <MetricCard label="人工审批" value={approvalText(selectedSummary.requiresHumanApproval)} rawValue={approvalRaw(selectedSummary.requiresHumanApproval)} icon={LockKeyhole} hint="人工门禁状态" />
-              <MetricCard label="资源数量" value={String(selected.resourceCount)} icon={FileText} hint="关联发布证据资源" />
-            </section>
+            <ReleaseMetricGrid selected={selected} />
 
             <section className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
               <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">

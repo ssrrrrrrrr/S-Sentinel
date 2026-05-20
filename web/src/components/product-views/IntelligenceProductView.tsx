@@ -1,4 +1,5 @@
-﻿import {
+﻿import type { JsonRecord } from "./shared"
+import {
   Activity,
   AlertTriangle,
   FileText,
@@ -14,7 +15,6 @@ import {
   arrayFromPaths,
   booleanFromPaths,
   FailedMetricsPanel,
-  JsonRecord,
   numberFromPaths,
   parseJsonResource,
   stringFromPaths,
@@ -253,4 +253,5 @@ export function IntelligenceProductView({ body }: { body: string }) {
     </div>
   )
 }
+
 
