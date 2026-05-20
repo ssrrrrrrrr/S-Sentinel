@@ -377,6 +377,222 @@ function CandidateCommandsPanel({ commands }: { commands?: string[] }) {
   )
 }
 
+type EvidencePayload = {
+  schemaVersion?: string
+  generatedAt?: string
+  releaseResult?: string
+  policyDecision?: string
+  finalAction?: string
+  executionMode?: string
+  requiresHumanApproval?: boolean
+  safeToRetry?: boolean
+  summary?: {
+    rolloutPhase?: string
+    rolloutAbort?: boolean
+    analysisRunPhase?: string
+    riskLevel?: string
+    riskScore?: number
+    changeRiskLevel?: string
+    changeRiskScore?: number
+    failedMetrics?: unknown[]
+    matchedPolicyRules?: string[]
+  }
+  failedMetrics?: unknown[]
+  matchedPolicyRules?: string[]
+}
+
+function stringifyValue(value: unknown) {
+  if (value === null || value === undefined) return "-"
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+function RuleChipsPanel({ rules }: { rules?: string[] }) {
+  const items = rules ?? []
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        当前 Evidence 没有命中的策略规则。
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h4 className="text-sm font-semibold text-slate-900">命中的策略规则</h4>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {items.map((rule) => (
+          <span
+            key={rule}
+            className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-mono text-xs font-semibold text-cyan-800"
+          >
+            {rule}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FailedMetricsPanel({ metrics }: { metrics?: unknown[] }) {
+  const items = metrics ?? []
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+        没有失败的 SLO 指标，当前发布通过门禁。
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-rose-200 bg-rose-50">
+      <div className="border-b border-rose-200 px-4 py-3">
+        <h4 className="text-sm font-semibold text-rose-900">失败的 SLO 指标</h4>
+      </div>
+      <div className="divide-y divide-rose-200">
+        {items.map((metric, index) => (
+          <pre
+            key={index}
+            className="overflow-auto whitespace-pre-wrap px-4 py-3 text-xs leading-6 text-rose-900"
+          >
+            {stringifyValue(metric)}
+          </pre>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EvidenceProductView({ body }: { body: string }) {
+  const evidence = parseJsonResource<EvidencePayload>(body)
+
+  if (!evidence) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        Evidence JSON 解析失败，已保留下方原始内容用于审计。
+      </div>
+    )
+  }
+
+  const summary = evidence.summary ?? {}
+  const failedMetrics = Array.isArray(summary.failedMetrics)
+    ? summary.failedMetrics
+    : Array.isArray(evidence.failedMetrics)
+      ? evidence.failedMetrics
+      : []
+
+  const matchedPolicyRules = Array.isArray(summary.matchedPolicyRules)
+    ? summary.matchedPolicyRules
+    : Array.isArray(evidence.matchedPolicyRules)
+      ? evidence.matchedPolicyRules
+      : []
+
+  const releaseResult = evidence.releaseResult ?? "-"
+  const policyDecision = evidence.policyDecision ?? "-"
+  const finalAction = evidence.finalAction ?? "-"
+  const rolloutPhase = summary.rolloutPhase ?? "-"
+  const analysisRunPhase = summary.analysisRunPhase ?? "-"
+  const riskLevel = summary.riskLevel ?? "-"
+  const riskScore = summary.riskScore ?? 0
+  const changeRiskLevel = summary.changeRiskLevel ?? "-"
+  const changeRiskScore = summary.changeRiskScore ?? 0
+
+  return (
+    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h4 className="text-base font-semibold text-[#031a41]">Evidence 决策视图</h4>
+          <p className="mt-1 text-sm text-slate-600">
+            将 release-evidence JSON 提炼为发布结果、Rollout 状态、AnalysisRun 状态、风险和 SLO 门禁信息。
+          </p>
+        </div>
+        <Badge value={releaseResult} label={resultDisplay(releaseResult)} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <ProductMetricCard
+          label="发布结果"
+          value={resultDisplay(releaseResult)}
+          rawValue={releaseResult}
+          icon={CheckCircle2}
+          hint="Release Evidence 最终结论"
+          statusValue={releaseResult}
+        />
+        <ProductMetricCard
+          label="策略裁决"
+          value={policyDisplay(policyDecision)}
+          rawValue={policyDecision}
+          icon={ShieldCheck}
+          hint="Policy Decision 结果"
+          statusValue={policyDecision}
+        />
+        <ProductMetricCard
+          label="最终动作"
+          value={actionDisplay(finalAction)}
+          rawValue={finalAction}
+          icon={TerminalSquare}
+          hint="策略评估后的建议动作"
+          statusValue={finalAction}
+        />
+        <ProductMetricCard
+          label="Rollout 阶段"
+          value={rolloutPhase}
+          rawValue={String(summary.rolloutAbort ?? false)}
+          icon={GitBranch}
+          hint="rawValue 表示 rolloutAbort"
+          statusValue={rolloutPhase}
+        />
+        <ProductMetricCard
+          label="AnalysisRun 阶段"
+          value={analysisRunPhase}
+          icon={Activity}
+          hint="AnalysisRun 执行状态"
+          statusValue={analysisRunPhase}
+        />
+        <ProductMetricCard
+          label="失败指标"
+          value={String(failedMetrics.length)}
+          rawValue={failedMetrics.length > 0 ? "FAILED_METRICS_FOUND" : "NO_FAILED_METRICS"}
+          icon={AlertTriangle}
+          hint="失败的 SLO 门禁数量"
+          statusValue={failedMetrics.length > 0 ? "REQUIRED" : "NOT REQUIRED"}
+        />
+      </div>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-slate-900">风险摘要</h4>
+          <KeyValueRows
+            rows={[
+              ["riskLevel", riskLevel],
+              ["riskScore", String(riskScore)],
+              ["changeRiskLevel", changeRiskLevel],
+              ["changeRiskScore", String(changeRiskScore)],
+              ["executionMode", evidence.executionMode ?? "-"],
+              ["safeToRetry", String(evidence.safeToRetry ?? "-")],
+            ]}
+          />
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-slate-900">SLO 门禁</h4>
+          <FailedMetricsPanel metrics={failedMetrics} />
+        </div>
+      </section>
+
+      <RuleChipsPanel rules={matchedPolicyRules} />
+    </div>
+  )
+}
+
 function ActionPlanProductView({ body }: { body: string }) {
   const plan = parseJsonResource<ActionPlanPayload>(body)
 
@@ -775,6 +991,10 @@ function App() {
                             <ActionPlanProductView body={resourceQuery.data.body} />
                           ) : null}
 
+                          {activeTab === "Evidence" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+                            <EvidenceProductView body={resourceQuery.data.body} />
+                          ) : null}
+
                           <div>
                             <div className="mb-2 flex items-center justify-between">
                               <h4 className="text-sm font-semibold text-slate-900">原始资源内容</h4>
@@ -808,6 +1028,7 @@ function App() {
 }
 
 export default App
+
 
 
 
