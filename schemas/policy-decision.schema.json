@@ -26,15 +26,33 @@
     },
     "policyDecision": {
       "type": "string",
-      "enum": ["ALLOW", "ALLOW_ADVISORY_ONLY", "DENY", "REQUIRE_HUMAN_APPROVAL", "UNKNOWN"]
+      "enum": [
+        "ALLOW",
+        "ALLOW_ADVISORY_ONLY",
+        "DENY",
+        "REQUIRE_HUMAN_APPROVAL",
+        "UNKNOWN"
+      ]
     },
     "finalAction": {
       "type": "string",
-      "enum": ["NOOP", "STOP_PROMOTION", "ROLLBACK", "PROMOTE", "INVESTIGATE", "UNKNOWN"]
+      "enum": [
+        "NOOP",
+        "STOP_PROMOTION",
+        "ROLLBACK",
+        "PROMOTE",
+        "INVESTIGATE",
+        "UNKNOWN"
+      ]
     },
     "executionMode": {
       "type": "string",
-      "enum": ["advisory_only", "manual_approval", "auto_execute_disabled", "auto_execute"]
+      "enum": [
+        "advisory_only",
+        "manual_approval",
+        "auto_execute_disabled",
+        "auto_execute"
+      ]
     },
     "requiresHumanApproval": {
       "type": "boolean"
@@ -83,7 +101,11 @@
     "policyRef": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["file", "loaded", "schemaVersion"],
+      "required": [
+        "file",
+        "loaded",
+        "schemaVersion"
+      ],
       "properties": {
         "file": {
           "type": "string",
@@ -93,8 +115,8 @@
           "type": "boolean"
         },
         "schemaVersion": {
-          "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Optional policy schema version. It may be null when the policy file does not declare schemaVersion."
         }
       }
     }

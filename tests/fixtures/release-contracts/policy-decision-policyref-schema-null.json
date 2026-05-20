@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "release.policy.evaluator/v1alpha1",
+  "sourceDecisionFile": "docs/release-reports/ai-decision-20260520-114939.json",
+  "policyDecision": "ALLOW",
+  "finalAction": "NOOP",
+  "executionMode": "advisory_only",
+  "requiresHumanApproval": false,
+  "reason": "Release passed and no action is required",
+  "matchedRules": [
+    "pass_release_no_action",
+    "auto_execute_disabled",
+    "guardrail_advisory_only"
+  ],
+  "inputSummary": {
+    "releaseResult": "PASS",
+    "agentActionType": "NOOP",
+    "agentActionAllowed": true,
+    "agentActionRequiresApproval": false,
+    "autoExecute": false
+  },
+  "policyRef": {
+    "file": "policy/release-policy.yaml",
+    "loaded": false,
+    "schemaVersion": null
+  }
+}
