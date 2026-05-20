@@ -42,16 +42,11 @@ export function AIAdviceProductView({ body }: { body: string }) {
   const exactHistoricalMetricSetMatchCount = markdownNumberValue(body, "Exact Historical Metric Set Match Count")
   const recommendedNextAction = markdownValue(body, "Recommended Next Action")
   const matchedPolicyRules = markdownListAfterHeading(body, "### Matched Policy Rules")
-  const ollamaTimedOut = markdownContainsAny(body, [
-    "timed out",
-    "timeout",
-    "timed-out",
-    "Ollama 调用失败",
-    "调用超时",
-    "请求超时",
-    "context deadline exceeded",
-    "deadline exceeded",
-  ])
+  const ollamaTimedOut =
+    markdownBooleanValue(body, "Ollama Timed Out") === true ||
+    markdownBooleanValue(body, "OllamaTimedOut") === true ||
+    markdownBooleanValue(body, "Model Timed Out") === true
+
   const hasSafetyBoundary = markdownContainsAny(body, ["Safety Boundary", "read-only analysis"])
 
   return (
@@ -158,5 +153,8 @@ export function AIAdviceProductView({ body }: { body: string }) {
     </div>
   )
 }
+
+
+
 
 
