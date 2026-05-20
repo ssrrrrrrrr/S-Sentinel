@@ -208,6 +208,299 @@ function SafetyPanel({ latest }: { latest?: LatestReleaseResponse }) {
   )
 }
 
+type ActionPlanPayload = {
+  schemaVersion?: string
+  generatedAt?: string
+  releaseResult?: string
+  policyDecision?: string
+  finalAction?: string
+  executionMode?: string
+  sourceExecutionMode?: string
+  willExecute?: boolean
+  requiresHumanApproval?: boolean
+  target?: {
+    namespace?: string
+    rollout?: string
+    analysisRun?: string
+  }
+  actionPlan?: {
+    action?: string
+    blocked?: boolean
+    blockReason?: string
+    candidateCommands?: string[]
+    humanSteps?: string[]
+  }
+  guardrails?: Record<string, boolean | string | number | null>
+}
+
+function parseJsonResource<T>(body: string): T | null {
+  try {
+    return JSON.parse(body) as T
+  } catch {
+    return null
+  }
+}
+
+function ProductMetricCard({
+  label,
+  value,
+  rawValue,
+  hint,
+  icon: Icon,
+  statusValue,
+}: {
+  label: string
+  value: string
+  rawValue?: string
+  hint: string
+  icon: typeof Activity
+  statusValue?: string
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+          <p className="mt-2 text-xl font-bold tracking-tight text-[#031a41]">{value}</p>
+          {rawValue ? <p className="mt-1 break-all font-mono text-[11px] text-slate-400">{rawValue}</p> : null}
+          <p className="mt-2 text-xs text-slate-600">{hint}</p>
+        </div>
+        <div className={`rounded-lg border p-2 ${statusClass(statusValue ?? value)}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KeyValueRows({ rows }: { rows: Array<[string, string]> }) {
+  return (
+    <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {rows.map(([key, value]) => (
+        <div key={key} className="grid gap-2 px-4 py-3 text-sm md:grid-cols-[150px_1fr]">
+          <span className="font-mono text-xs text-slate-500">{key}</span>
+          <span className="break-all font-mono text-[#031a41]">{value || "-"}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GuardrailGrid({ guardrails }: { guardrails?: Record<string, boolean | string | number | null> }) {
+  const entries = Object.entries(guardrails ?? {})
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        当前 Action Plan 没有 guardrails 字段。
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {entries.map(([key, value]) => {
+        const isBoolean = typeof value === "boolean"
+        const valueText = String(value)
+        return (
+          <div key={key} className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="break-all font-mono text-xs text-slate-500">{key}</p>
+            <div className="mt-2">
+              <span
+                className={`inline-flex rounded-full border px-2.5 py-1 font-mono text-xs font-semibold ${
+                  isBoolean && value === true
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : isBoolean && value === false
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : "border-slate-200 bg-slate-50 text-slate-700"
+                }`}
+              >
+                {valueText}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function HumanStepsPanel({ steps }: { steps?: string[] }) {
+  const items = steps ?? []
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        当前 Action Plan 没有人工步骤。
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white">
+      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-900">人工处理步骤</h4>
+      </div>
+      <div className="divide-y divide-slate-200">
+        {items.map((step, index) => (
+          <div key={`${index}-${step}`} className="flex gap-3 px-4 py-3 text-sm">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#031a41] text-xs font-semibold text-white">
+              {index + 1}
+            </span>
+            <span className="leading-6 text-slate-700">{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CandidateCommandsPanel({ commands }: { commands?: string[] }) {
+  const items = commands ?? []
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        当前 Action Plan 没有候选命令，说明本次发布无需人工执行命令。
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <h4 className="text-sm font-semibold text-amber-900">候选命令</h4>
+      <p className="mt-1 text-xs text-amber-700">这些命令仅作为建议展示，前端不会执行。</p>
+      <pre className="mt-3 overflow-auto rounded-lg bg-[#031a41] p-4 text-xs leading-6 text-cyan-50">
+        {items.join("\n")}
+      </pre>
+    </div>
+  )
+}
+
+function ActionPlanProductView({ body }: { body: string }) {
+  const plan = parseJsonResource<ActionPlanPayload>(body)
+
+  if (!plan) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        Action Plan JSON 解析失败，已保留下方原始内容用于审计。
+      </div>
+    )
+  }
+
+  const action = plan.actionPlan?.action ?? plan.finalAction ?? "-"
+  const blocked = Boolean(plan.actionPlan?.blocked)
+  const willExecute = Boolean(plan.willExecute)
+  const requiresApproval = Boolean(plan.requiresHumanApproval)
+
+  return (
+    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h4 className="text-base font-semibold text-[#031a41]">Action Plan 决策视图</h4>
+          <p className="mt-1 text-sm text-slate-600">
+            将原始 action-plan JSON 提炼为 SRE 可以快速判断的执行、安全和人工门禁信息。
+          </p>
+        </div>
+        <Badge value={action} label={actionDisplay(action)} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <ProductMetricCard
+          label="最终动作"
+          value={actionDisplay(action)}
+          rawValue={action}
+          icon={TerminalSquare}
+          hint="Action Plan 建议的最终动作"
+          statusValue={action}
+        />
+        <ProductMetricCard
+          label="阻断状态"
+          value={blocked ? "已阻断" : "未阻断"}
+          rawValue={String(blocked)}
+          icon={AlertTriangle}
+          hint={plan.actionPlan?.blockReason || "当前没有阻断原因"}
+          statusValue={blocked ? "REQUIRED" : "NOT REQUIRED"}
+        />
+        <ProductMetricCard
+          label="是否执行"
+          value={willExecute ? "会执行" : "不会执行"}
+          rawValue={String(willExecute)}
+          icon={LockKeyhole}
+          hint="前端只读展示，不触发 Kubernetes 修改"
+          statusValue={willExecute ? "REQUIRED" : "NOT REQUIRED"}
+        />
+        <ProductMetricCard
+          label="人工审批"
+          value={approvalText(requiresApproval)}
+          rawValue={approvalRaw(requiresApproval)}
+          icon={ShieldCheck}
+          hint="Human Gate 状态"
+          statusValue={approvalRaw(requiresApproval)}
+        />
+        <ProductMetricCard
+          label="执行模式"
+          value={plan.executionMode ?? "-"}
+          rawValue={plan.sourceExecutionMode}
+          icon={Sparkles}
+          hint="dry_run / advisory_only 等安全模式"
+          statusValue={plan.executionMode ?? "-"}
+        />
+        <ProductMetricCard
+          label="发布结果"
+          value={resultDisplay(plan.releaseResult ?? "-")}
+          rawValue={plan.policyDecision}
+          icon={CheckCircle2}
+          hint="来自 release evidence 的最终结论"
+          statusValue={plan.releaseResult ?? "-"}
+        />
+      </div>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-slate-900">目标对象</h4>
+          <KeyValueRows
+            rows={[
+              ["namespace", plan.target?.namespace ?? "-"],
+              ["rollout", plan.target?.rollout ?? "-"],
+              ["analysisRun", plan.target?.analysisRun ?? "-"],
+              ["generatedAt", plan.generatedAt ?? "-"],
+            ]}
+          />
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-slate-900">人工步骤</h4>
+          <HumanStepsPanel steps={plan.actionPlan?.humanSteps} />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h4 className="text-sm font-semibold text-slate-900">安全护栏</h4>
+        <GuardrailGrid guardrails={plan.guardrails} />
+      </section>
+
+      <CandidateCommandsPanel commands={plan.actionPlan?.candidateCommands} />
+    </div>
+  )
+}
+
+function RawResourceViewer({ contentType, body }: { contentType: string; body: string }) {
+  if (isMarkdownContent(contentType)) {
+    return (
+      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
+        {formatResourceBody(contentType, body)}
+      </pre>
+    )
+  }
+
+  return (
+    <pre className="max-h-[520px] overflow-auto rounded-lg bg-[#031a41] p-5 text-xs leading-6 text-cyan-50">
+      {formatResourceBody(contentType, body)}
+    </pre>
+  )
+}
+
 function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("Action Plan")
@@ -477,15 +770,24 @@ function App() {
                           资源读取失败：{resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
                         </div>
                       ) : resourceQuery.data ? (
-                        isMarkdownContent(resourceQuery.data.contentType) ? (
-                          <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-                            {formatResourceBody(resourceQuery.data.contentType, resourceQuery.data.body)}
-                          </pre>
-                        ) : (
-                          <pre className="mt-4 max-h-[520px] overflow-auto rounded-lg bg-[#031a41] p-5 text-xs leading-6 text-cyan-50">
-                            {formatResourceBody(resourceQuery.data.contentType, resourceQuery.data.body)}
-                          </pre>
-                        )
+                        <div className="mt-4 space-y-5">
+                          {activeTab === "Action Plan" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+                            <ActionPlanProductView body={resourceQuery.data.body} />
+                          ) : null}
+
+                          <div>
+                            <div className="mb-2 flex items-center justify-between">
+                              <h4 className="text-sm font-semibold text-slate-900">原始资源内容</h4>
+                              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
+                                Audit View
+                              </span>
+                            </div>
+                            <RawResourceViewer
+                              contentType={resourceQuery.data.contentType}
+                              body={resourceQuery.data.body}
+                            />
+                          </div>
+                        </div>
                       ) : (
                         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
                           暂无资源内容。
@@ -506,5 +808,6 @@ function App() {
 }
 
 export default App
+
 
 
