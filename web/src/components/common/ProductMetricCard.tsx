@@ -5,27 +5,55 @@ export function ProductMetricCard({
   label,
   value,
   rawValue,
-  hint,
   icon: Icon,
+  hint,
   statusValue,
 }: {
   label: string
   value: string
   rawValue?: string
-  hint: string
   icon: LucideIcon
+  hint?: string
   statusValue?: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-          <p className="mt-2 text-xl font-bold tracking-tight text-[#031a41]">{value}</p>
-          {rawValue ? <p className="mt-1 break-all font-mono text-[11px] text-slate-400">{rawValue}</p> : null}
-          <p className="mt-2 text-xs text-slate-600">{hint}</p>
+    <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+      <div className="flex min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p
+            title={label}
+            className="min-w-0 break-words text-sm font-semibold text-slate-500"
+          >
+            {label}
+          </p>
+
+          <p
+            title={value}
+            className="mt-3 min-w-0 break-words text-2xl font-bold leading-tight tracking-tight text-[#031a41] [overflow-wrap:anywhere]"
+          >
+            {value}
+          </p>
+
+          {rawValue ? (
+            <p
+              title={rawValue}
+              className="mt-2 min-w-0 break-words font-mono text-xs leading-5 text-slate-400 [overflow-wrap:anywhere]"
+            >
+              {rawValue}
+            </p>
+          ) : null}
+
+          {hint ? (
+            <p
+              title={hint}
+              className="mt-3 min-w-0 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]"
+            >
+              {hint}
+            </p>
+          ) : null}
         </div>
-        <div className={`rounded-lg border p-2 ${statusClass(statusValue ?? value)}`}>
+
+        <div className={`shrink-0 rounded-lg border p-2 ${statusClass(statusValue ?? value)}`}>
           <Icon className="h-4 w-4" />
         </div>
       </div>
