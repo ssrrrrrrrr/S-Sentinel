@@ -17,196 +17,29 @@ import {
 import { fetchLatestRelease, fetchReleases } from "@/api/releases"
 import {
   fetchReleaseResource,
-  formatResourceBody,
   getResourceKindByTab,
   isMarkdownContent,
 } from "@/api/releaseResources"
+import { Badge } from "@/components/common/Badge"
+import { KeyValueRows } from "@/components/common/KeyValueRows"
+import { MetricCard } from "@/components/common/MetricCard"
+import { ProductMetricCard } from "@/components/common/ProductMetricCard"
+import { RawResourceViewer } from "@/components/common/RawResourceViewer"
+import { ResourceMetadataPanel } from "@/components/release/ResourceMetadataPanel"
+import { SafetyPanel } from "@/components/release/SafetyPanel"
 import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
+import {
+  actionDisplay,
+  approvalRaw,
+  approvalText,
+  formatTime,
+  normalize,
+  policyDisplay,
+  resultDisplay,
+  riskText,
+} from "@/utils/format"
 
 const tabs = ["概览", "Evidence", "Action Plan", "Intelligence", "AI Advice", "Context"]
-
-function normalize(value?: string) {
-  return (value ?? "").toUpperCase()
-}
-
-function statusClass(value: string) {
-  const normalized = normalize(value)
-
-  if (
-    normalized === "PASS" ||
-    normalized === "LOW" ||
-    normalized === "ALLOW" ||
-    normalized === "NOOP" ||
-    normalized === "NOT REQUIRED" ||
-    normalized === "ADVISORY_ONLY"
-  ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  }
-
-  if (
-    normalized.includes("FAIL") ||
-    normalized === "HIGH" ||
-    normalized === "CRITICAL" ||
-    normalized === "BLOCK" ||
-    normalized === "STOP_PROMOTION" ||
-    normalized === "REQUIRED"
-  ) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
-  }
-
-  return "border-amber-200 bg-amber-50 text-amber-700"
-}
-
-function approvalText(required: boolean) {
-  return required ? "需要审批" : "无需审批"
-}
-
-function approvalRaw(required: boolean) {
-  return required ? "REQUIRED" : "NOT REQUIRED"
-}
-
-function riskText(value: string) {
-  const normalized = normalize(value)
-  if (normalized === "LOW") return "低风险"
-  if (normalized === "MEDIUM") return "中风险"
-  if (normalized === "HIGH") return "高风险"
-  if (normalized === "CRITICAL") return "严重风险"
-  return value || "-"
-}
-
-function resultDisplay(value: string) {
-  if (normalize(value) === "FAIL_BY_MULTIPLE_SLO") return "FAIL"
-  return value || "-"
-}
-
-function policyDisplay(value: string) {
-  if (value === "ALLOW_ADVISORY_ONLY") return "ADVISORY"
-  return value || "-"
-}
-
-function actionDisplay(value: string) {
-  if (value === "STOP_PROMOTION") return "STOP"
-  return value || "-"
-}
-
-function formatTime(value?: string) {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000))
-  if (diffSeconds < 60) return `${diffSeconds} 秒前`
-
-  const diffMinutes = Math.floor(diffSeconds / 60)
-  if (diffMinutes < 60) return `${diffMinutes} 分钟前`
-
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours} 小时前`
-
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays} 天前`
-}
-
-function resourceKeys(release?: ReleaseIndexItem) {
-  return Object.keys(release?.resources ?? {})
-}
-
-function Badge({ value, label }: { value: string; label?: string }) {
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(value)}`}>
-      {label ?? value}
-    </span>
-  )
-}
-
-function MetricCard({
-  label,
-  value,
-  rawValue,
-  icon: Icon,
-  hint,
-}: {
-  label: string
-  value: string
-  rawValue?: string
-  icon: typeof Activity
-  hint: string
-}) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#031a41] via-cyan-500 to-sky-300" />
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-        <Icon className="h-4 w-4 text-cyan-500" />
-      </div>
-      <div className="mt-4">
-        <p className="break-words text-[clamp(1.35rem,2vw,1.75rem)] font-bold tracking-tight text-[#031a41]">
-          {value}
-        </p>
-        {rawValue ? (
-          <p className="mt-1 break-all font-mono text-[11px] text-slate-400">{rawValue}</p>
-        ) : null}
-        <p className="mt-1 text-xs text-slate-600">{hint}</p>
-      </div>
-    </article>
-  )
-}
-
-function ResourceMetadataPanel({ selected }: { selected: ReleaseIndexItem }) {
-  const keys = resourceKeys(selected)
-
-  if (keys.length === 0) {
-    return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-        当前发布没有可展示的资源索引。
-      </div>
-    )
-  }
-
-  return (
-    <div className="rounded-xl border border-slate-200">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">关联资源</h4>
-      </div>
-      <div className="divide-y divide-slate-200">
-        {keys.map((key) => {
-          const resource = selected.resources?.[key]
-          return (
-            <div key={key} className="grid gap-3 px-4 py-3 text-sm md:grid-cols-[180px_1fr_120px]">
-              <span className="font-mono font-semibold text-[#031a41]">{key}</span>
-              <span className="truncate text-slate-500">{resource?.baseName ?? resource?.file ?? "-"}</span>
-              <span className="text-right text-slate-500">{resource?.sizeBytes ?? 0} bytes</span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function SafetyPanel({ latest }: { latest?: LatestReleaseResponse }) {
-  const safety = latest?.safety
-  const rows = [
-    ["mode", latest?.mode ?? "read_only"],
-    ["readOnly", String(safety?.readOnly ?? true)],
-    ["willExecute", String(safety?.willExecute ?? false)],
-    ["supportsRollback", String(safety?.supportsRollback ?? false)],
-    ["supportsPromote", String(safety?.supportsPromote ?? false)],
-    ["supportsPatch", String(safety?.supportsPatch ?? false)],
-    ["supportsDelete", String(safety?.supportsDelete ?? false)],
-  ]
-
-  return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {rows.map(([key, value]) => (
-        <div key={key} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="font-mono text-xs text-slate-500">{key}</p>
-          <p className="mt-2 font-mono text-sm font-semibold text-[#031a41]">{value}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 type ActionPlanPayload = {
   schemaVersion?: string
@@ -239,51 +72,6 @@ function parseJsonResource<T>(body: string): T | null {
   } catch {
     return null
   }
-}
-
-function ProductMetricCard({
-  label,
-  value,
-  rawValue,
-  hint,
-  icon: Icon,
-  statusValue,
-}: {
-  label: string
-  value: string
-  rawValue?: string
-  hint: string
-  icon: typeof Activity
-  statusValue?: string
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-          <p className="mt-2 text-xl font-bold tracking-tight text-[#031a41]">{value}</p>
-          {rawValue ? <p className="mt-1 break-all font-mono text-[11px] text-slate-400">{rawValue}</p> : null}
-          <p className="mt-2 text-xs text-slate-600">{hint}</p>
-        </div>
-        <div className={`rounded-lg border p-2 ${statusClass(statusValue ?? value)}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function KeyValueRows({ rows }: { rows: Array<[string, string]> }) {
-  return (
-    <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
-      {rows.map(([key, value]) => (
-        <div key={key} className="grid gap-2 px-4 py-3 text-sm md:grid-cols-[150px_1fr]">
-          <span className="font-mono text-xs text-slate-500">{key}</span>
-          <span className="break-all font-mono text-[#031a41]">{value || "-"}</span>
-        </div>
-      ))}
-    </div>
-  )
 }
 
 function GuardrailGrid({ guardrails }: { guardrails?: Record<string, boolean | string | number | null> }) {
@@ -1643,22 +1431,6 @@ function OverviewProductView({
   )
 }
 
-function RawResourceViewer({ contentType, body }: { contentType: string; body: string }) {
-  if (isMarkdownContent(contentType)) {
-    return (
-      <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-        {formatResourceBody(contentType, body)}
-      </pre>
-    )
-  }
-
-  return (
-    <pre className="max-h-[520px] overflow-auto rounded-lg bg-[#031a41] p-5 text-xs leading-6 text-cyan-50">
-      {formatResourceBody(contentType, body)}
-    </pre>
-  )
-}
-
 function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("Action Plan")
@@ -1990,6 +1762,7 @@ function App() {
 }
 
 export default App
+
 
 
 
