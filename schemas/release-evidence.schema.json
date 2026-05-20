@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/release-evidence.schema.json",
+  "title": "S Sentinel Release Evidence Bundle",
+  "description": "Auditable release evidence bundle that links release result, policy decision, AI decision, artifacts, and safety references.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "releaseResult",
+    "policyDecision",
+    "finalAction",
+    "executionMode",
+    "requiresHumanApproval",
+    "safeToRetry",
+    "summary",
+    "artifacts",
+    "decisionRefs"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "release.evidence.bundle/v1alpha1"
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseResult": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyDecision": {
+      "type": "string",
+      "enum": ["ALLOW", "ALLOW_ADVISORY_ONLY", "DENY", "REQUIRE_HUMAN_APPROVAL", "UNKNOWN"]
+    },
+    "finalAction": {
+      "type": "string",
+      "enum": ["NOOP", "STOP_PROMOTION", "ROLLBACK", "PROMOTE", "INVESTIGATE", "UNKNOWN"]
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": ["advisory_only", "manual_approval", "auto_execute_disabled", "auto_execute"]
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "safeToRetry": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "rolloutPhase",
+        "rolloutAbort",
+        "analysisRunPhase",
+        "riskLevel",
+        "riskScore",
+        "failedMetrics",
+        "matchedPolicyRules"
+      ],
+      "properties": {
+        "rolloutPhase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rolloutAbort": {
+          "type": "boolean"
+        },
+        "analysisRunPhase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical", "unknown"]
+        },
+        "riskScore": {
+          "type": ["integer", "number"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "changeRiskLevel": {
+          "type": ["string", "null"]
+        },
+        "changeRiskScore": {
+          "type": ["integer", "number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "failedMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "matchedPolicyRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      },
+      "required": [
+        "releaseContext",
+        "aiDecision",
+        "policyDecision",
+        "releaseSummary",
+        "actionPlan"
+      ]
+    },
+    "decisionRefs": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "aiDecision": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "policyDecision": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "failureEvidenceRef": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "generated": {
+          "type": "boolean"
+        },
+        "json": {
+          "type": "string"
+        },
+        "markdown": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

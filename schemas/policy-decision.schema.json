@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/policy-decision.schema.json",
+  "title": "S Sentinel Policy Decision",
+  "description": "Policy evaluator output that converts AI or rule-based release advice into a bounded safety decision.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "policyDecision",
+    "finalAction",
+    "executionMode",
+    "requiresHumanApproval",
+    "reason",
+    "matchedRules",
+    "inputSummary",
+    "policyRef"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "release.policy.evaluator/v1alpha1"
+    },
+    "sourceDecisionFile": {
+      "type": "string"
+    },
+    "policyDecision": {
+      "type": "string",
+      "enum": ["ALLOW", "ALLOW_ADVISORY_ONLY", "DENY", "REQUIRE_HUMAN_APPROVAL", "UNKNOWN"]
+    },
+    "finalAction": {
+      "type": "string",
+      "enum": ["NOOP", "STOP_PROMOTION", "ROLLBACK", "PROMOTE", "INVESTIGATE", "UNKNOWN"]
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": ["advisory_only", "manual_approval", "auto_execute_disabled", "auto_execute"]
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "matchedRules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "inputSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "releaseResult",
+        "agentActionType",
+        "agentActionAllowed",
+        "agentActionRequiresApproval",
+        "autoExecute"
+      ],
+      "properties": {
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agentActionType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agentActionAllowed": {
+          "type": "boolean"
+        },
+        "agentActionRequiresApproval": {
+          "type": "boolean"
+        },
+        "autoExecute": {
+          "type": "boolean"
+        }
+      }
+    },
+    "policyRef": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["file", "loaded", "schemaVersion"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "loaded": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

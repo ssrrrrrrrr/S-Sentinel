@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/release-context.schema.json",
+  "title": "S Sentinel Release Context",
+  "description": "Structured release facts captured from Argo Rollouts, AnalysisRun, SLO metrics, and change context.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "generatedAt",
+    "namespace",
+    "rollout",
+    "rolloutPhase",
+    "rolloutAbort",
+    "currentDesiredVersion",
+    "analysisRun",
+    "analysisRunPhase",
+    "failedMetrics",
+    "analysisRunMetrics",
+    "severity",
+    "riskScore",
+    "riskReasons"
+  ],
+  "properties": {
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "namespace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rollout": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rolloutPhase": {
+      "type": "string",
+      "enum": ["Healthy", "Progressing", "Paused", "Degraded", "Unknown", "Missing"]
+    },
+    "rolloutAbort": {
+      "type": "boolean"
+    },
+    "rolloutMessage": {
+      "type": "string"
+    },
+    "stableReplicaSet": {
+      "type": ["string", "null"]
+    },
+    "currentDesiredVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "analysisRun": {
+      "type": "string"
+    },
+    "analysisRunPhase": {
+      "type": "string",
+      "enum": ["Successful", "Failed", "Running", "Pending", "Inconclusive", "Error", "Unknown", "Missing"]
+    },
+    "failedMetric": {
+      "type": ["string", "null"]
+    },
+    "failedMetrics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "analysisRunMetrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "phase"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "phase": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string"
+          },
+          "value": {
+            "type": ["string", "number", "array", "null"]
+          },
+          "successful": {
+            "type": ["integer", "number", "null"]
+          },
+          "failed": {
+            "type": ["integer", "number", "null"]
+          },
+          "inconclusive": {
+            "type": ["integer", "number", "null"]
+          },
+          "error": {
+            "type": ["integer", "number", "null"]
+          }
+        }
+      }
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical", "unknown"]
+    },
+    "riskScore": {
+      "type": ["integer", "number"],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "riskReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "changeContextFile": {
+      "type": ["string", "null"]
+    },
+    "changeRiskLevel": {
+      "type": ["string", "null"]
+    },
+    "changeContext": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    }
+  }
+}

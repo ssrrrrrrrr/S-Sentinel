@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "release.evidence.bundle/v1alpha1",
+  "generatedBy": "build-release-evidence.sh",
+  "releaseResult": "FAIL_BY_MULTIPLE_SLO",
+  "policyDecision": "ALLOW_ADVISORY_ONLY",
+  "finalAction": "STOP_PROMOTION",
+  "executionMode": "advisory_only",
+  "requiresHumanApproval": true,
+  "safeToRetry": false,
+  "summary": {
+    "rolloutPhase": "Degraded",
+    "rolloutAbort": true,
+    "analysisRunPhase": "Failed",
+    "riskLevel": "critical",
+    "riskScore": 100,
+    "changeRiskLevel": "low",
+    "changeRiskScore": null,
+    "failedMetrics": [
+      "error-rate",
+      "p95-latency"
+    ],
+    "matchedPolicyRules": [
+      "multiple_slo_failure_requires_human_approval",
+      "auto_execute_disabled",
+      "guardrail_advisory_only"
+    ]
+  },
+  "artifacts": {
+    "releaseContext": "/root/slo-rollout-demo/docs/release-reports/release-context-20260519-192107.json",
+    "releaseReport": "docs/release-reports/release-report-20260519-192107.md",
+    "aiAdvice": "docs/release-reports/ai-advice-20260519-192108.md",
+    "aiDecision": "docs/release-reports/ai-decision-20260519-192108.json",
+    "policyDecision": "docs/release-reports/policy-decision-20260519-192108.json",
+    "releaseSummary": "docs/release-reports/release-summary-20260519-192108.md",
+    "failureEvidence": "docs/release-reports/failure-evidence-20260519-192139.json",
+    "failureEvidenceReport": "docs/release-reports/failure-evidence-20260519-192139.md",
+    "actionPlan": "docs/release-reports/action-plan-20260519-192108.json",
+    "actionPlanReport": "docs/release-reports/action-plan-20260519-192108.md",
+    "releaseIntelligence": "docs/release-reports/release-intelligence-20260519-192108.json",
+    "releaseIntelligenceReport": "docs/release-reports/release-intelligence-20260519-192108.md"
+  },
+  "decisionRefs": {
+    "aiDecision": {
+      "decisionSource": "deterministic_rule",
+      "confidence": "high",
+      "agentAction": {
+        "type": "STOP_PROMOTION",
+        "allowed": true,
+        "requiresApproval": true,
+        "reason": "Release failed SLO gates and requires human investigation"
+      },
+      "policyHints": [
+        "multiple_slo_gates_failed",
+        "human_approval_required",
+        "unsafe_to_retry_without_fix",
+        "stop_promotion_recommended"
+      ],
+      "nextSteps": [
+        "stop_promotion",
+        "inspect_canary_logs",
+        "compare_change_context",
+        "publish_fixed_version_with_new_tag"
+      ]
+    },
+    "policyDecision": {
+      "reason": "Multiple SLO gates failed; action is advisory only and requires human approval",
+      "inputSummary": {
+        "releaseResult": "FAIL_BY_MULTIPLE_SLO",
+        "agentActionType": "STOP_PROMOTION",
+        "agentActionAllowed": true,
+        "agentActionRequiresApproval": true,
+        "autoExecute": false
+      }
+    }
+  },
+  "failureEvidenceRef": {
+    "generated": true,
+    "json": "docs/release-reports/failure-evidence-20260519-192139.json",
+    "markdown": "docs/release-reports/failure-evidence-20260519-192139.md"
+  },
+  "actionPlanRef": {
+    "generated": true,
+    "json": "docs/release-reports/action-plan-20260519-192108.json",
+    "markdown": "docs/release-reports/action-plan-20260519-192108.md",
+    "executionMode": "dry_run",
+    "willExecute": false
+  },
+  "releaseIntelligenceRef": {
+    "generated": true,
+    "json": "docs/release-reports/release-intelligence-20260519-192108.json",
+    "markdown": "docs/release-reports/release-intelligence-20260519-192108.md",
+    "readOnlyAnalysis": true
+  }
+}

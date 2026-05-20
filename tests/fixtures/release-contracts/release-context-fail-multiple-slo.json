@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-05-19T19:21:07+08:00",
+  "namespace": "slo-rollout",
+  "rollout": "demo-app",
+  "rolloutPhase": "Degraded",
+  "rolloutAbort": true,
+  "rolloutMessage": "RolloutAborted: Rollout aborted update to revision 57: Step-based analysis phase error/failed: Metric \"error-rate\" assessed Failed due to failed (2) \u003e failureLimit (1)",
+  "stableReplicaSet": "5788699b88",
+  "currentDesiredVersion": "v33-watcher-v120-multi-slo-fail",
+  "analysisRun": "demo-app-86bd977576-57-2",
+  "analysisRunPhase": "Failed",
+  "failedMetric": "error-rate",
+  "failedMetrics": [
+    "error-rate",
+    "p95-latency"
+  ],
+  "analysisRunMetrics": [
+    {
+      "name": "error-rate",
+      "phase": "Failed",
+      "message": "",
+      "value": "[75.85635314497536]",
+      "successful": 0,
+      "failed": 2,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "request-count",
+      "phase": "Successful",
+      "message": "",
+      "value": "[165.09933333333333]",
+      "successful": 2,
+      "failed": 0,
+      "inconclusive": 0,
+      "error": 0
+    },
+    {
+      "name": "p95-latency",
+      "phase": "Failed",
+      "message": "",
+      "value": "[0.975]",
+      "successful": 0,
+      "failed": 2,
+      "inconclusive": 0,
+      "error": 0
+    }
+  ],
+  "severity": "critical",
+  "riskScore": 100,
+  "riskReasons": [
+    "rollout phase is Degraded",
+    "rollout has been aborted",
+    "analysisRun phase is Failed",
+    "error-rate is 75.86%, above 5% threshold",
+    "p95-latency is 0.975s, above 0.3s threshold",
+    "multiple SLO gates failed in the same rollout"
+  ],
+  "changeContextFile": "/root/slo-rollout-demo/docs/release-reports/change-context-latest.json",
+  "changeRiskLevel": "low",
+  "changeContext": {
+    "file": "/root/slo-rollout-demo/docs/release-reports/change-context-latest.json",
+    "schemaVersion": "change-context/v1",
+    "generatedAt": "2026-05-17T09:59:07Z",
+    "changeType": "gitops_release",
+    "app": "demo-app",
+    "namespace": "slo-rollout",
+    "git": {
+      "baseRef": "HEAD",
+      "previousCommit": "05471ae",
+      "currentCommit": "05471ae",
+      "commitMessage": "feat: generate change context for gitops releases"
+    },
+    "image": {
+      "previous": "192.168.30.11:30500/sre/demo-app:v11-actions",
+      "current": "192.168.30.11:30500/sre/demo-app:v11-actions",
+      "changed": false
+    },
+    "riskLevel": "low"
+  },
+  "result": "FAIL_BY_MULTIPLE_SLO",
+  "reason": "Multiple SLO gates failed: error-rate,p95-latency; rollout phase is Degraded; rollout abort is true; analysisrun demo-app-86bd977576-57-2 phase is Failed; rollout message contains failure signal",
+  "decision": "release_failed_or_aborted",
+  "recommendedAction": "stop_promotion_and_investigate"
+}

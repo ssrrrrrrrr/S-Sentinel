@@ -1,0 +1,51 @@
+name: Release Contract Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "schemas/**"
+      - "scripts/validate-release-contracts.py"
+      - "scripts/test-release-contracts.sh"
+      - "tests/fixtures/release-contracts/**"
+      - ".github/workflows/release-contracts.yaml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "schemas/**"
+      - "scripts/validate-release-contracts.py"
+      - "scripts/test-release-contracts.sh"
+      - "tests/fixtures/release-contracts/**"
+      - ".github/workflows/release-contracts.yaml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-contracts:
+    name: Validate release evidence contracts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show tool versions
+        run: |
+          python3 --version
+          bash --version
+
+      - name: Validate schema JSON syntax
+        run: |
+          python3 -m json.tool schemas/release-context.schema.json > /dev/null
+          python3 -m json.tool schemas/policy-decision.schema.json > /dev/null
+          python3 -m json.tool schemas/release-evidence.schema.json > /dev/null
+
+      - name: Validate release contract fixtures
+        run: |
+          bash scripts/test-release-contracts.sh

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "release.policy.evaluator/v1alpha1",
+  "sourceDecisionFile": "docs/release-reports/ai-decision-20260519-192108.json",
+  "policyDecision": "ALLOW_ADVISORY_ONLY",
+  "finalAction": "STOP_PROMOTION",
+  "executionMode": "advisory_only",
+  "requiresHumanApproval": true,
+  "reason": "Multiple SLO gates failed; action is advisory only and requires human approval",
+  "matchedRules": [
+    "multiple_slo_failure_requires_human_approval",
+    "auto_execute_disabled",
+    "guardrail_advisory_only"
+  ],
+  "inputSummary": {
+    "releaseResult": "FAIL_BY_MULTIPLE_SLO",
+    "agentActionType": "STOP_PROMOTION",
+    "agentActionAllowed": true,
+    "agentActionRequiresApproval": true,
+    "autoExecute": false
+  },
+  "policyRef": {
+    "file": "policy/release-policy.yaml",
+    "loaded": true,
+    "schemaVersion": "release.policy/v1alpha1"
+  }
+}
