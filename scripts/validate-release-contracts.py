@@ -114,9 +114,15 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "policy-decision.schema.json"
     if "release-evidence" in lower_name or "evidence-sample" in lower_name:
         return "release-evidence.schema.json"
+    if "ai-decision" in lower_name:
+        return "ai-decision.schema.json"
+    if "action-plan" in lower_name:
+        return "action-plan.schema.json"
+    if "release-intelligence" in lower_name or "intelligence-sample" in lower_name:
+        return "release-intelligence.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, or release-evidence"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, or release-intelligence"
     )
 
 

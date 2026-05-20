@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "release.action-plan/v1alpha1",
+  "generatedBy": "build-action-plan.sh",
+  "generatedAt": "2026-05-19T11:21:39.089917+00:00",
+  "sourceReleaseEvidence": "docs/release-reports/release-evidence-20260519-192108.json",
+  "releaseResult": "FAIL_BY_MULTIPLE_SLO",
+  "policyDecision": "ALLOW_ADVISORY_ONLY",
+  "finalAction": "STOP_PROMOTION",
+  "executionMode": "dry_run",
+  "sourceExecutionMode": "advisory_only",
+  "willExecute": false,
+  "requiresHumanApproval": true,
+  "target": {
+    "namespace": "slo-rollout",
+    "rollout": "demo-app",
+    "analysisRun": "demo-app-86bd977576-57-2"
+  },
+  "actionPlan": {
+    "action": "STOP_PROMOTION",
+    "blocked": false,
+    "blockReason": "",
+    "candidateCommands": [
+      {
+        "name": "inspect_rollout",
+        "command": "kubectl argo rollouts get rollout demo-app -n slo-rollout",
+        "type": "read_only",
+        "willExecute": false
+      },
+      {
+        "name": "inspect_analysis_run",
+        "command": "kubectl get analysisrun demo-app-86bd977576-57-2 -n slo-rollout -o yaml",
+        "type": "read_only",
+        "willExecute": false
+      },
+      {
+        "name": "candidate_abort_rollout",
+        "command": "kubectl argo rollouts abort demo-app -n slo-rollout",
+        "type": "write_candidate_requires_human_approval",
+        "willExecute": false
+      }
+    ],
+    "humanSteps": [
+      "停止继续扩大流量。",
+      "人工检查 canary 版本日志、事件、AnalysisRun 指标和本次变更内容。",
+      "确认原因后发布修复版本，或由人工决定是否中止 Rollout。"
+    ]
+  },
+  "guardrails": {
+    "advisoryOnly": true,
+    "dryRunOnly": true,
+    "doesNotModifyGitOps": true,
+    "doesNotModifyKubernetes": true,
+    "doesNotRollback": true,
+    "doesNotPromote": true,
+    "doesNotPatchResources": true,
+    "doesNotDeleteResources": true,
+    "doesNotBuildImages": true,
+    "doesNotCommitOrPush": true
+  }
+}

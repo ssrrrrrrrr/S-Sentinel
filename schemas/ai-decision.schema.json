@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/ai-decision.schema.json",
+  "title": "S Sentinel AI Decision",
+  "description": "AI or deterministic advisor output for release safety analysis.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "model",
+    "releaseResult",
+    "decisionSource",
+    "confidence",
+    "executionMode",
+    "summary",
+    "conclusion",
+    "failedMetrics",
+    "riskLevel",
+    "riskScore",
+    "riskReasons",
+    "decision",
+    "recommendedAction",
+    "requiresHumanApproval",
+    "safeToRetry",
+    "policyHints",
+    "agentAction",
+    "guardrails",
+    "evidence",
+    "nextSteps",
+    "rollout",
+    "analysisRun",
+    "sources"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseResult": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decisionSource": {
+      "type": "string",
+      "enum": [
+        "deterministic_rule",
+        "ollama",
+        "llm",
+        "fallback_rule",
+        "unknown"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ]
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": [
+        "advisory_only",
+        "manual_approval",
+        "auto_execute_disabled",
+        "auto_execute"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "conclusion": {
+      "type": "string"
+    },
+    "failedMetrics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical",
+        "unknown"
+      ]
+    },
+    "riskScore": {
+      "type": [
+        "integer",
+        "number"
+      ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "riskReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "changeRiskLevel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "changeRiskScore": {
+      "type": [
+        "integer",
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "changeRiskHints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recommendedAction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "safeToRetry": {
+      "type": "boolean"
+    },
+    "policyHints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "agentAction": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "allowed",
+        "requiresApproval",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "allowed": {
+          "type": "boolean"
+        },
+        "requiresApproval": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "nextSteps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "analysisRun": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

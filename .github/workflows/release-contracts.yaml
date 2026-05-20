@@ -42,9 +42,10 @@ jobs:
 
       - name: Validate schema JSON syntax
         run: |
-          python3 -m json.tool schemas/release-context.schema.json > /dev/null
-          python3 -m json.tool schemas/policy-decision.schema.json > /dev/null
-          python3 -m json.tool schemas/release-evidence.schema.json > /dev/null
+          for schema in schemas/*.schema.json; do
+            echo "validating ${schema}"
+            python3 -m json.tool "${schema}" > /dev/null
+          done
 
       - name: Validate release contract fixtures
         run: |

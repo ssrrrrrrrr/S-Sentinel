@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "ai.release.advisor/v1alpha1",
+  "generatedBy": "ai-release-advisor.sh",
+  "model": "qwen2.5:0.5b",
+  "releaseResult": "FAIL_BY_MULTIPLE_SLO",
+  "decisionSource": "deterministic_rule",
+  "confidence": "high",
+  "executionMode": "advisory_only",
+  "summary": "本次发布存在多个 SLO 门禁失败，应停止发布并优先定位 canary 版本质量问题。",
+  "conclusion": "本次发布存在多个 SLO 门禁失败，应停止发布并优先定位 canary 版本质量问题。",
+  "failedMetrics": [
+    "error-rate",
+    "p95-latency"
+  ],
+  "riskLevel": "critical",
+  "riskScore": 100,
+  "riskReasons": [
+    "rollout phase is Degraded",
+    "rollout has been aborted",
+    "analysisRun phase is Failed",
+    "error-rate is 75.86%, above 5% threshold",
+    "p95-latency is 0.975s, above 0.3s threshold",
+    "multiple SLO gates failed in the same rollout"
+  ],
+  "changeRiskLevel": "low",
+  "changeRiskScore": null,
+  "changeRiskHints": [],
+  "decision": "release_failed_or_aborted",
+  "recommendedAction": "stop_promotion_and_investigate",
+  "requiresHumanApproval": true,
+  "safeToRetry": false,
+  "policyHints": [
+    "multiple_slo_gates_failed",
+    "human_approval_required",
+    "unsafe_to_retry_without_fix",
+    "stop_promotion_recommended"
+  ],
+  "agentAction": {
+    "type": "STOP_PROMOTION",
+    "allowed": true,
+    "requiresApproval": true,
+    "reason": "Release failed SLO gates and requires human investigation"
+  },
+  "guardrails": {
+    "autoExecute": false,
+    "executionMode": "advisory_only",
+    "requiresGitOpsChange": true,
+    "requiresHumanApprovalForRiskyAction": true,
+    "allowedActions": [
+      "NOOP",
+      "OBSERVE",
+      "RETRY_WITH_MORE_TRAFFIC",
+      "STOP_PROMOTION",
+      "INVESTIGATE",
+      "MANUAL_REVIEW"
+    ],
+    "blockedActions": [
+      "ROLLBACK",
+      "PROMOTE",
+      "DELETE_RESOURCE",
+      "PATCH_RESOURCE",
+      "APPLY_MANIFEST"
+    ]
+  },
+  "evidence": {
+    "failedMetrics": [
+      "error-rate",
+      "p95-latency"
+    ],
+    "rolloutPhase": "Degraded",
+    "rolloutAbort": true,
+    "analysisRunPhase": "Failed",
+    "riskLevel": "critical",
+    "riskScore": 100,
+    "riskReasons": [
+      "rollout phase is Degraded",
+      "rollout has been aborted",
+      "analysisRun phase is Failed",
+      "error-rate is 75.86%, above 5% threshold",
+      "p95-latency is 0.975s, above 0.3s threshold",
+      "multiple SLO gates failed in the same rollout"
+    ],
+    "changeRiskLevel": "low",
+    "changeRiskScore": null
+  },
+  "nextSteps": [
+    "stop_promotion",
+    "inspect_canary_logs",
+    "compare_change_context",
+    "publish_fixed_version_with_new_tag"
+  ],
+  "rollout": {
+    "namespace": "slo-rollout",
+    "name": "demo-app",
+    "phase": "Degraded",
+    "abort": true,
+    "message": "RolloutAborted: Rollout aborted update to revision 57: Step-based analysis phase error/failed: Metric \"error-rate\" assessed Failed due to failed (2) > failureLimit (1)",
+    "stableReplicaSet": "5788699b88",
+    "currentDesiredVersion": "v33-watcher-v120-multi-slo-fail"
+  },
+  "analysisRun": {
+    "name": "demo-app-86bd977576-57-2",
+    "phase": "Failed",
+    "metrics": [
+      {
+        "name": "error-rate",
+        "phase": "Failed",
+        "message": "",
+        "value": "[75.85635314497536]",
+        "successful": 0,
+        "failed": 2,
+        "inconclusive": 0,
+        "error": 0
+      },
+      {
+        "name": "request-count",
+        "phase": "Successful",
+        "message": "",
+        "value": "[165.09933333333333]",
+        "successful": 2,
+        "failed": 0,
+        "inconclusive": 0,
+        "error": 0
+      },
+      {
+        "name": "p95-latency",
+        "phase": "Failed",
+        "message": "",
+        "value": "[0.975]",
+        "successful": 0,
+        "failed": 2,
+        "inconclusive": 0,
+        "error": 0
+      }
+    ]
+  },
+  "sources": {
+    "releaseContext": "/root/slo-rollout-demo/docs/release-reports/release-context-20260519-192107.json",
+    "releaseReport": "docs/release-reports/release-report-20260519-192107.md",
+    "aiAdvice": "docs/release-reports/ai-advice-20260519-192108.md"
+  }
+}

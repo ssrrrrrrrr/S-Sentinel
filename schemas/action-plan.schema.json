@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/action-plan.schema.json",
+  "title": "S Sentinel Action Plan",
+  "description": "Dry-run action plan generated from release evidence and policy decision.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "generatedAt",
+    "sourceReleaseEvidence",
+    "releaseResult",
+    "policyDecision",
+    "finalAction",
+    "executionMode",
+    "sourceExecutionMode",
+    "willExecute",
+    "requiresHumanApproval",
+    "target",
+    "actionPlan",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceReleaseEvidence": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseResult": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyDecision": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "ALLOW_ADVISORY_ONLY",
+        "DENY",
+        "REQUIRE_HUMAN_APPROVAL",
+        "UNKNOWN"
+      ]
+    },
+    "finalAction": {
+      "type": "string",
+      "enum": [
+        "NOOP",
+        "STOP_PROMOTION",
+        "ROLLBACK",
+        "PROMOTE",
+        "INVESTIGATE",
+        "UNKNOWN"
+      ]
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": [
+        "advisory_only",
+        "manual_approval",
+        "auto_execute_disabled",
+        "auto_execute",
+        "dry_run"
+      ]
+    },
+    "sourceExecutionMode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "willExecute": {
+      "type": "boolean"
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "namespace",
+        "rollout",
+        "analysisRun"
+      ],
+      "properties": {
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rollout": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysisRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "actionPlan": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "action",
+        "blocked",
+        "blockReason",
+        "candidateCommands",
+        "humanSteps"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blocked": {
+          "type": "boolean"
+        },
+        "blockReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidateCommands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "humanSteps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "advisoryOnly",
+        "dryRunOnly",
+        "doesNotModifyGitOps",
+        "doesNotModifyKubernetes",
+        "doesNotRollback",
+        "doesNotPromote",
+        "doesNotPatchResources",
+        "doesNotDeleteResources",
+        "doesNotBuildImages",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "advisoryOnly": {
+          "type": "boolean"
+        },
+        "dryRunOnly": {
+          "type": "boolean"
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean"
+        },
+        "doesNotModifyKubernetes": {
+          "type": "boolean"
+        },
+        "doesNotRollback": {
+          "type": "boolean"
+        },
+        "doesNotPromote": {
+          "type": "boolean"
+        },
+        "doesNotPatchResources": {
+          "type": "boolean"
+        },
+        "doesNotDeleteResources": {
+          "type": "boolean"
+        },
+        "doesNotBuildImages": {
+          "type": "boolean"
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

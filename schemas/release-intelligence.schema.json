@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/release-intelligence.schema.json",
+  "title": "S Sentinel Release Intelligence",
+  "description": "Historical release risk intelligence derived from release evidence and release memory.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "generatedAt",
+    "sourceReleaseEvidence",
+    "sourceReleaseMemory",
+    "release",
+    "history",
+    "intelligence",
+    "artifacts",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceReleaseEvidence": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceReleaseMemory": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "releaseResult",
+        "policyDecision",
+        "finalAction",
+        "executionMode",
+        "requiresHumanApproval",
+        "safeToRetry",
+        "failedMetrics",
+        "riskLevel",
+        "riskScore"
+      ],
+      "properties": {
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policyDecision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finalAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionMode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requiresHumanApproval": {
+          "type": "boolean"
+        },
+        "safeToRetry": {
+          "type": "boolean"
+        },
+        "failedMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
+        },
+        "riskScore": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "recordCount",
+        "passCount",
+        "failureCount",
+        "recentReleases",
+        "recentFailures",
+        "similarFailureCount",
+        "similarFailureIncludingCurrentCount",
+        "exactHistoricalMetricSetMatchCount"
+      ],
+      "properties": {
+        "recordCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        },
+        "passCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        },
+        "failureCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        },
+        "recentReleases": {
+          "type": "array"
+        },
+        "recentFailures": {
+          "type": "array"
+        },
+        "similarFailureCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        },
+        "similarFailureIncludingCurrentCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        },
+        "exactHistoricalMetricSetMatchCount": {
+          "type": [
+            "integer",
+            "number"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "intelligence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "riskPattern",
+        "repeatedRiskPattern",
+        "recommendedNextAction",
+        "conclusion",
+        "humanSummary"
+      ],
+      "properties": {
+        "riskPattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repeatedRiskPattern": {
+          "type": "boolean"
+        },
+        "recommendedNextAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "humanSummary": {
+          "type": "string"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "advisoryOnly",
+        "readOnlyAnalysis",
+        "doesNotModifyGitOps",
+        "doesNotModifyKubernetes",
+        "doesNotRollback",
+        "doesNotPromote",
+        "doesNotPatchResources",
+        "doesNotDeleteResources",
+        "doesNotBuildImages",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "advisoryOnly": {
+          "type": "boolean"
+        },
+        "readOnlyAnalysis": {
+          "type": "boolean"
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean"
+        },
+        "doesNotModifyKubernetes": {
+          "type": "boolean"
+        },
+        "doesNotRollback": {
+          "type": "boolean"
+        },
+        "doesNotPromote": {
+          "type": "boolean"
+        },
+        "doesNotPatchResources": {
+          "type": "boolean"
+        },
+        "doesNotDeleteResources": {
+          "type": "boolean"
+        },
+        "doesNotBuildImages": {
+          "type": "boolean"
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
