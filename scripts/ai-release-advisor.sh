@@ -565,7 +565,7 @@ if [ -n "$POLICY_EVALUATOR" ]; then
 
     if [ -n "$EVIDENCE_BUILDER" ]; then
       echo "Running release evidence builder: $EVIDENCE_BUILDER"
-      "$EVIDENCE_BUILDER" "$DECISION_OUT" "$POLICY_OUT"
+      RELEASE_CONTRACT_VALIDATION_MODE=off "$EVIDENCE_BUILDER" "$DECISION_OUT" "$POLICY_OUT"
 
       EVIDENCE_OUT="${OUT_DIR}/release-evidence-${DECISION_SUFFIX}"
       SUMMARY_BUILDER=""
@@ -809,6 +809,11 @@ LINK_RELEASE_INTELLIGENCE_PY
         echo "WARN: release intelligence builder not found, skip release intelligence generation" >&2
       else
         echo "WARN: expected release evidence file not found, skip release intelligence generation: $EVIDENCE_OUT" >&2
+      fi
+
+      if [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running final release evidence contract validation: $EVIDENCE_OUT"
+        validate_generated_release_contract "$EVIDENCE_OUT"
       fi
     else
       echo "WARN: release evidence builder not found, skip release evidence bundle generation" >&2
