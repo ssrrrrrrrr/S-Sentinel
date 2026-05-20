@@ -1,0 +1,126 @@
+﻿import type { UseQueryResult } from "@tanstack/react-query"
+import { Activity, Bot, Sparkles } from "lucide-react"
+import type { ReleaseResourceContent } from "@/api/releaseResources"
+import { isMarkdownContent } from "@/api/releaseResources"
+import { RawResourceViewer } from "@/components/common/RawResourceViewer"
+import {
+  ActionPlanProductView,
+  AIAdviceProductView,
+  ContextProductView,
+  EvidenceProductView,
+  IntelligenceProductView,
+  OverviewProductView,
+} from "@/components/product-views/ProductViews"
+import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
+import { SafetyPanel } from "./SafetyPanel"
+
+export function ReleaseResourcePanel({
+  activeTab,
+  selected,
+  latest,
+  resourceKind,
+  resourceQuery,
+}: {
+  activeTab: string
+  selected: ReleaseIndexItem
+  latest?: LatestReleaseResponse
+  resourceKind: string
+  resourceQuery: UseQueryResult<ReleaseResourceContent, Error>
+}) {
+  return (
+    <div className="space-y-5">
+      {activeTab === "Action Plan" ? (
+        <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
+          <div className="flex items-center gap-2 font-semibold text-cyan-900">
+            <Sparkles className="h-4 w-4" />
+            Action Plan 安全建议
+          </div>
+          <p className="mt-2 text-sm leading-6 text-cyan-800">
+            当前系统处于只读观察模式。Release Portal 返回的 Action Plan 仅用于辅助判断，不会修改 Kubernetes 资源。
+          </p>
+        </div>
+      ) : null}
+
+      {activeTab === "Action Plan" ? <SafetyPanel latest={latest} /> : null}
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+              {activeTab === "AI Advice" ? <Bot className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+              {activeTab}
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              正在读取 <span className="font-mono text-[#031a41]">/api/releases/{selected.releaseId}/{resourceKind}</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+              {resourceQuery.data?.contentType ?? "loading"}
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+              {resourceKind}
+            </span>
+          </div>
+        </div>
+
+        {resourceQuery.isLoading ? (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            正在加载资源内容...
+          </div>
+        ) : resourceQuery.isError ? (
+          <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            资源读取失败：{resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
+          </div>
+        ) : resourceQuery.data ? (
+          <div className="mt-4 space-y-5">
+            {activeTab === "Action Plan" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+              <ActionPlanProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "Evidence" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+              <EvidenceProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "Intelligence" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+              <IntelligenceProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "AI Advice" && isMarkdownContent(resourceQuery.data.contentType) ? (
+              <AIAdviceProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "Context" && !isMarkdownContent(resourceQuery.data.contentType) ? (
+              <ContextProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "概览" && isMarkdownContent(resourceQuery.data.contentType) ? (
+              <OverviewProductView
+                body={resourceQuery.data.body}
+                selected={selected}
+                latest={latest}
+              />
+            ) : null}
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-900">原始资源内容</h4>
+                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
+                  Audit View
+                </span>
+              </div>
+              <RawResourceViewer
+                contentType={resourceQuery.data.contentType}
+                body={resourceQuery.data.body}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            暂无资源内容。
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
