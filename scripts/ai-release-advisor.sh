@@ -29,8 +29,27 @@ if [ -z "$REPORT_FILE" ] || [ ! -f "$REPORT_FILE" ]; then
   exit 1
 fi
 
+if [ -n "$CONTEXT_FILE" ] && [ ! -f "$CONTEXT_FILE" ]; then
+  RAW_CONTEXT_FILE="$CONTEXT_FILE"
+  CONTEXT_BASENAME="$(basename "$RAW_CONTEXT_FILE")"
+  REPORT_PARENT_DIR="$(cd "$(dirname "$REPORT_FILE")" && pwd)"
+
+  for candidate in \
+    "$RAW_CONTEXT_FILE" \
+    "$REPORT_PARENT_DIR/$CONTEXT_BASENAME" \
+    "$(pwd)/$RAW_CONTEXT_FILE" \
+    "/app/$RAW_CONTEXT_FILE" \
+    "/app/docs/release-reports/$CONTEXT_BASENAME" \
+    "/data/nfs/slo-rollout-watcher/reports/$CONTEXT_BASENAME"; do
+    if [ -f "$candidate" ]; then
+      CONTEXT_FILE="$candidate"
+      break
+    fi
+  done
+fi
+
 if [ -z "$CONTEXT_FILE" ] || [ ! -f "$CONTEXT_FILE" ]; then
-  echo "ERROR: release context file not found" >&2
+  echo "ERROR: release context file not found: ${CONTEXT_FILE:-not provided}" >&2
   exit 1
 fi
 
@@ -956,3 +975,46 @@ INTELLIGENCE_ADVICE_PY
 else
   echo "WARN: policy evaluator not found, skip policy decision generation" >&2
 fi
+
+echo "===== build operator runbook and RCA ====="
+
+if [ -f "${EVIDENCE_OUT:-}" ]; then
+  REPORT_OUTPUT_DIR="$(dirname "$EVIDENCE_OUT")"
+
+  RELEASE_RUNBOOK_BUILDER=""
+  if [ -f "./scripts/build-release-runbook.sh" ]; then
+    RELEASE_RUNBOOK_BUILDER="./scripts/build-release-runbook.sh"
+  elif [ -f "/app/scripts/build-release-runbook.sh" ]; then
+    RELEASE_RUNBOOK_BUILDER="/app/scripts/build-release-runbook.sh"
+  fi
+
+  if [ -n "$RELEASE_RUNBOOK_BUILDER" ]; then
+    if RUNBOOK_OUTPUT_DIR="$REPORT_OUTPUT_DIR" RELEASE_REPORT_DIR="$REPORT_OUTPUT_DIR" bash "$RELEASE_RUNBOOK_BUILDER" "$EVIDENCE_OUT"; then
+      echo "Release runbook generated from evidence: $EVIDENCE_OUT"
+    else
+      echo "WARN: build-release-runbook.sh failed, continue release advice pipeline" >&2
+    fi
+  else
+    echo "WARN: build-release-runbook.sh not found, skip runbook generation" >&2
+  fi
+
+  RELEASE_RCA_BUILDER=""
+  if [ -f "./scripts/build-release-rca.sh" ]; then
+    RELEASE_RCA_BUILDER="./scripts/build-release-rca.sh"
+  elif [ -f "/app/scripts/build-release-rca.sh" ]; then
+    RELEASE_RCA_BUILDER="/app/scripts/build-release-rca.sh"
+  fi
+
+  if [ -n "$RELEASE_RCA_BUILDER" ]; then
+    if RCA_OUTPUT_DIR="$REPORT_OUTPUT_DIR" RELEASE_REPORT_DIR="$REPORT_OUTPUT_DIR" bash "$RELEASE_RCA_BUILDER" "$EVIDENCE_OUT"; then
+      echo "Release RCA generated from evidence: $EVIDENCE_OUT"
+    else
+      echo "WARN: build-release-rca.sh failed, continue release advice pipeline" >&2
+    fi
+  else
+    echo "WARN: build-release-rca.sh not found, skip RCA generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip runbook/RCA generation: ${EVIDENCE_OUT:-not provided}" >&2
+fi
+
