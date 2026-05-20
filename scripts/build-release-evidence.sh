@@ -64,6 +64,24 @@ fi
 
 OUTPUT_FILE="$REPORT_DIR/release-evidence-$AI_SUFFIX"
 
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+validate_generated_release_contract() {
+  local contract_file="${1:-}"
+  local helper="${RELEASE_CONTRACT_VALIDATOR_HELPER:-$SCRIPT_DIR/validate-generated-release-contract.sh}"
+
+  if [ "${RELEASE_CONTRACT_VALIDATION_MODE:-warn}" = "off" ]; then
+    return 0
+  fi
+
+  if [ -f "$helper" ]; then
+    bash "$helper" "$contract_file"
+  else
+    echo "WARN: release contract validator helper not found: $helper" >&2
+  fi
+}
+
 python3 - "$AI_DECISION_FILE" "$POLICY_DECISION_FILE" "$OUTPUT_FILE" "$SUMMARY_FILE" <<'PY'
 import json
 import sys
@@ -130,5 +148,7 @@ output_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", 
 
 print(f"Release evidence bundle generated: {output_path}")
 PY
+
+validate_generated_release_contract "$OUTPUT_FILE"
 
 cat "$OUTPUT_FILE"

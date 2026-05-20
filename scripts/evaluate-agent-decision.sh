@@ -52,6 +52,24 @@ BASENAME="$(basename "$INPUT_FILE")"
 SUFFIX="${BASENAME#ai-decision-}"
 OUTPUT_FILE="$REPORT_DIR/policy-decision-$SUFFIX"
 
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+validate_generated_release_contract() {
+  local contract_file="${1:-}"
+  local helper="${RELEASE_CONTRACT_VALIDATOR_HELPER:-$SCRIPT_DIR/validate-generated-release-contract.sh}"
+
+  if [ "${RELEASE_CONTRACT_VALIDATION_MODE:-warn}" = "off" ]; then
+    return 0
+  fi
+
+  if [ -f "$helper" ]; then
+    bash "$helper" "$contract_file"
+  else
+    echo "WARN: release contract validator helper not found: $helper" >&2
+  fi
+}
+
 python3 - "$INPUT_FILE" "$OUTPUT_FILE" "$POLICY_FILE" <<'PY'
 import json
 import sys
@@ -246,5 +264,7 @@ with output_path.open("w", encoding="utf-8") as f:
 
 print(f"Wrote policy decision: {output_path}")
 PY
+
+validate_generated_release_contract "$OUTPUT_FILE"
 
 cat "$OUTPUT_FILE"

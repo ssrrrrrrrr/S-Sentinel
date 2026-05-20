@@ -47,6 +47,16 @@ jobs:
             python3 -m json.tool "${schema}" > /dev/null
           done
 
+      - name: Validate shell script syntax
+        run: |
+          bash -n scripts/test-release-contracts.sh
+          bash -n scripts/validate-generated-release-contract.sh
+          bash -n scripts/ai-release-advisor.sh
+          bash -n scripts/evaluate-agent-decision.sh
+          bash -n scripts/build-release-evidence.sh
+          bash -n scripts/build-action-plan.sh
+          bash -n scripts/build-release-intelligence.sh
+
       - name: Validate release contract fixtures
         run: |
           bash scripts/test-release-contracts.sh

@@ -38,6 +38,24 @@ mkdir -p "$OUT_DIR"
 OUT="${OUT_DIR}/ai-advice-${TS}.md"
 DECISION_OUT="${OUT_DIR}/ai-decision-${TS}.json"
 
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+validate_generated_release_contract() {
+  local contract_file="${1:-}"
+  local helper="${RELEASE_CONTRACT_VALIDATOR_HELPER:-$SCRIPT_DIR/validate-generated-release-contract.sh}"
+
+  if [ "${RELEASE_CONTRACT_VALIDATION_MODE:-warn}" = "off" ]; then
+    return 0
+  fi
+
+  if [ -f "$helper" ]; then
+    bash "$helper" "$contract_file"
+  else
+    echo "WARN: release contract validator helper not found: $helper" >&2
+  fi
+}
+
 python3 - "$OLLAMA_URL" "$MODEL" "$OLLAMA_TIMEOUT_SECONDS" "$OLLAMA_NUM_CTX" "$OLLAMA_NUM_PREDICT" "$ADVISOR_REPORT_TEXT_LIMIT" "$REPORT_FILE" "$CONTEXT_FILE" "$OUT" "$DECISION_OUT" <<'PY'
 import json
 import sys
@@ -498,6 +516,8 @@ print(f"Source context: {context_file}")
 print(f"Source report: {report_file}")
 print(f"Change risk: {change_risk_level} score={change_risk_score}")
 PY
+
+validate_generated_release_contract "$DECISION_OUT"
 
 POLICY_EVALUATOR=""
 

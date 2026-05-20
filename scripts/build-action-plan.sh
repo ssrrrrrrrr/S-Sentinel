@@ -40,6 +40,24 @@ OUTPUT_MD="$OUTPUT_DIR/action-plan-${SUFFIX%.json}.md"
 LATEST_JSON="$OUTPUT_DIR/action-plan-latest.json"
 LATEST_MD="$OUTPUT_DIR/action-plan-latest.md"
 
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+validate_generated_release_contract() {
+  local contract_file="${1:-}"
+  local helper="${RELEASE_CONTRACT_VALIDATOR_HELPER:-$SCRIPT_DIR/validate-generated-release-contract.sh}"
+
+  if [ "${RELEASE_CONTRACT_VALIDATION_MODE:-warn}" = "off" ]; then
+    return 0
+  fi
+
+  if [ -f "$helper" ]; then
+    bash "$helper" "$contract_file"
+  else
+    echo "WARN: release contract validator helper not found: $helper" >&2
+  fi
+}
+
 python3 - "$RELEASE_EVIDENCE_FILE" "$OUTPUT_JSON" "$OUTPUT_MD" "$LATEST_JSON" "$LATEST_MD" <<'PY'
 import json
 import shutil
@@ -242,3 +260,5 @@ print(json.dumps({
     "candidateCommandCount": len(candidate_commands),
 }, ensure_ascii=False, indent=2))
 PY
+
+validate_generated_release_contract "$OUTPUT_JSON"
