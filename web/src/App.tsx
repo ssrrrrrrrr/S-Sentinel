@@ -6,17 +6,20 @@ import {
   getResourceKindByTab,
 } from "@/api/releaseResources"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
+import { PortalInformationArchitecture } from "@/components/layout/PortalInformationArchitecture"
 import { StageBanner } from "@/components/layout/StageBanner"
+import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObjectCards"
+import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwarePortalPanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
 import { ReleaseResourcePanel } from "@/components/release/ReleaseResourcePanel"
 
-const tabs = ["概览", "Timeline", "Evidence", "Action Plan", "Intelligence", "Runbook", "RCA", "AI Advice", "Context"]
+const tabs = ["概览", "Evidence", "Intelligence", "Action Plan", "AI Advice", "Timeline", "Runbook", "RCA", "Context"]
 
 function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("Action Plan")
+  const [activeTab, setActiveTab] = useState("概览")
 
   const releasesQuery = useQuery({
     queryKey: ["releases"],
@@ -42,12 +45,20 @@ function App() {
     staleTime: 10000,
   })
 
+  const environmentEvidenceQuery = useQuery({
+    queryKey: ["release-environment-evidence", selected?.releaseId],
+    queryFn: () => fetchReleaseResource(selected!.releaseId, "evidence"),
+    enabled: Boolean(selected?.releaseId),
+    staleTime: 10000,
+  })
+
   const isLoading = releasesQuery.isLoading || latestQuery.isLoading
   const hasError = releasesQuery.isError || latestQuery.isError
 
   function refreshAll() {
     void releasesQuery.refetch()
     void latestQuery.refetch()
+    void environmentEvidenceQuery.refetch()
   }
 
   return (
@@ -60,6 +71,13 @@ function App() {
 
       <section className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 py-6">
         <StageBanner latest={latestQuery.data} />
+
+        <PortalInformationArchitecture
+          latest={latestQuery.data}
+          releaseCount={releases.length}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
         {isLoading ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600 shadow-sm">
@@ -76,6 +94,18 @@ function App() {
         ) : (
           <>
             <ReleaseMetricGrid selected={selected} />
+
+            <ControlPlaneObjectCards
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <EnvironmentAwarePortalPanel
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
 
             <section className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
               <ReleaseList
