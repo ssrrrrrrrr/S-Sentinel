@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/release-timeline.schema.json",
+  "title": "Release Timeline",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "generatedAt",
+    "releaseId",
+    "sourceEvidence",
+    "releaseResult",
+    "policyDecision",
+    "finalAction",
+    "executionMode",
+    "coverage",
+    "events",
+    "safety"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "release.timeline/v1alpha1"
+    },
+    "generatedBy": {
+      "type": "string"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "releaseId": {
+      "type": "string"
+    },
+    "sourceEvidence": {
+      "type": "string"
+    },
+    "releaseResult": {
+      "type": "string"
+    },
+    "policyDecision": {
+      "type": "string"
+    },
+    "finalAction": {
+      "type": "string"
+    },
+    "executionMode": {
+      "type": "string"
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "object"
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "collected",
+        "total",
+        "missingStages"
+      ],
+      "properties": {
+        "collected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingStages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sequence",
+          "stage",
+          "title",
+          "description",
+          "status",
+          "artifactKind",
+          "artifact"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "stage": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "artifactKind": {
+            "type": "string"
+          },
+          "artifact": {
+            "type": "object",
+            "required": [
+              "path",
+              "baseName",
+              "exists"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "baseName": {
+                "type": "string"
+              },
+              "exists": {
+                "type": "boolean"
+              },
+              "sizeBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "modifiedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "safety": {
+      "type": "object"
+    }
+  }
+}
