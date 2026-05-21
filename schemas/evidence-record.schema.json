@@ -283,6 +283,13 @@
             "null"
           ],
           "description": "Path to the generated read-only planning run JSON."
+        },
+        "executionRequest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated policy-bound execution request JSON."
         }
       }
     },
@@ -562,6 +569,87 @@
           "type": [
             "integer",
             "number",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "executionRequest": {
+      "type": "object",
+      "properties": {
+        "executionRequestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourcePlanRunId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedBy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policyDecision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requiresHumanApproval": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "approvalStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approved": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "willExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sourceExecutionRequest": {
+          "type": [
+            "string",
             "null"
           ]
         },

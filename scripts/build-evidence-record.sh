@@ -272,6 +272,13 @@ plan_retrieval = as_dict(plan_run.get("retrieval"))
 plan_retrieval_summary = as_dict(plan_retrieval.get("summary"))
 plan_guardrails = as_dict(plan_run.get("guardrails"))
 
+execution_request_path = resolve_ref(artifacts.get("executionRequest"), evidence_path)
+execution_request = load_json(execution_request_path)
+execution_request_body = as_dict(execution_request.get("request"))
+execution_policy_binding = as_dict(execution_request.get("policyBinding"))
+execution_approval = as_dict(execution_request.get("approval"))
+execution_guardrails = as_dict(execution_request.get("guardrails"))
+
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
     "releaseEvidence": str(evidence_path),
@@ -284,6 +291,7 @@ link_map = {
     "rca": artifacts.get("rca"),
     "agentRun": artifacts.get("agentRun"),
     "planRun": artifacts.get("planRun"),
+    "executionRequest": artifacts.get("executionRequest"),
 }
 
 artifact_defs = [
@@ -302,6 +310,7 @@ artifact_defs = [
     ("releaseIntelligenceReport", artifacts.get("releaseIntelligenceReport"), False),
     ("agentRun", link_map["agentRun"], False),
     ("planRun", link_map["planRun"], False),
+    ("executionRequest", link_map["executionRequest"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -400,6 +409,25 @@ record = {
         "retrievedEvidenceCount": plan_retrieval_summary.get("retrievedEvidenceCount"),
         "topScore": plan_retrieval_summary.get("topScore"),
         "guardrails": plan_guardrails,
+    },
+    "executionRequest": {
+        "executionRequestId": nullable_string(execution_request.get("executionRequestId")),
+        "mode": nullable_string(execution_request.get("mode")),
+        "sourcePlanRunId": nullable_string(execution_request.get("sourcePlanRunId")),
+        "requestedAction": nullable_string(execution_request_body.get("requestedAction")),
+        "requestStatus": nullable_string(execution_request_body.get("requestStatus")),
+        "requestedBy": nullable_string(execution_request_body.get("requestedBy")),
+        "policyDecision": nullable_string(execution_policy_binding.get("policyDecision")),
+        "requiresHumanApproval": bool_or_none(execution_policy_binding.get("requiresHumanApproval")),
+        "approvalStatus": nullable_string(execution_approval.get("status")),
+        "approved": bool_or_none(execution_approval.get("approved")),
+        "willExecute": bool_or_none(first_not_none(
+            execution_request_body.get("willExecute"),
+            execution_policy_binding.get("willExecute"),
+            execution_guardrails.get("willExecute"),
+        )),
+        "sourceExecutionRequest": nullable_string(link_map.get("executionRequest")),
+        "guardrails": execution_guardrails,
     },
     "slo": {
         "sloId": slo_id,

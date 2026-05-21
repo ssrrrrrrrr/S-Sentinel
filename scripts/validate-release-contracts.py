@@ -114,6 +114,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "agent-run.schema.json"
         if schema_version == "agent.plan.run/v1alpha1":
             return "plan-run.schema.json"
+        if schema_version == "execution.request/v1alpha1":
+            return "execution-request.schema.json"
 
     lower_name = file_name.lower()
     if "release-context" in lower_name or lower_name.endswith("context-sample.json"):
@@ -124,6 +126,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "release-evidence.schema.json"
     if "ai-decision" in lower_name:
         return "ai-decision.schema.json"
+    if "execution-request" in lower_name:
+        return "execution-request.schema.json"
     if "plan-run" in lower_name:
         return "plan-run.schema.json"
     if "action-plan" in lower_name:
@@ -138,7 +142,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 

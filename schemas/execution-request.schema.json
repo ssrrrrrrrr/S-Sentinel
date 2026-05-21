@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S Sentinel Policy-bound Execution Request",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "executionRequestId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "sourcePlanRunId",
+    "release",
+    "request",
+    "policyBinding",
+    "approval",
+    "evidence",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "execution.request/v1alpha1"
+    },
+    "executionRequestId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "request_only"
+      ]
+    },
+    "sourcePlanRunId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "releaseId",
+        "releaseResult"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policyDecision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failedMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "requestedAction",
+        "requestReason",
+        "requestStatus",
+        "willExecute"
+      ],
+      "properties": {
+        "requestedBy": {
+          "type": "string"
+        },
+        "requestedAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestReason": {
+          "type": "string"
+        },
+        "requestStatus": {
+          "type": "string",
+          "enum": [
+            "PENDING_APPROVAL",
+            "NO_ACTION_REQUESTED",
+            "BLOCKED_BY_POLICY",
+            "NEEDS_MORE_EVIDENCE"
+          ]
+        },
+        "candidateActionCount": {
+          "type": "integer"
+        },
+        "candidateActions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "policyBinding": {
+      "type": "object",
+      "required": [
+        "policyDecision",
+        "requiresHumanApproval",
+        "stage32Required",
+        "policyBound",
+        "willExecute"
+      ],
+      "properties": {
+        "policyDecision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requiresHumanApproval": {
+          "type": "boolean"
+        },
+        "stage32Required": {
+          "type": "boolean"
+        },
+        "policyBound": {
+          "type": "boolean"
+        },
+        "allowedToRequest": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "blockingReasons": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "approval": {
+      "type": "object",
+      "required": [
+        "required",
+        "status",
+        "approved",
+        "willExecuteAfterApproval"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        },
+        "approved": {
+          "type": "boolean"
+        },
+        "approver": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "willExecuteAfterApproval": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "planRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agentRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseEvidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseIntelligence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retrievedEvidenceCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "artifacts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "requestOnly",
+        "readOnly",
+        "willExecute",
+        "doesNotModifyKubernetes",
+        "doesNotModifyGitOps",
+        "doesNotRollback",
+        "doesNotPromote",
+        "doesNotPatchResources",
+        "doesNotDeleteResources",
+        "doesNotBuildImages",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "requestOnly": {
+          "type": "boolean"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "doesNotModifyKubernetes": {
+          "type": "boolean"
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean"
+        },
+        "doesNotRollback": {
+          "type": "boolean"
+        },
+        "doesNotPromote": {
+          "type": "boolean"
+        },
+        "doesNotPatchResources": {
+          "type": "boolean"
+        },
+        "doesNotDeleteResources": {
+          "type": "boolean"
+        },
+        "doesNotBuildImages": {
+          "type": "boolean"
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

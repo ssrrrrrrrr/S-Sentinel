@@ -1255,6 +1255,43 @@ else
   echo "WARN: release evidence not found, skip read-only plan run generation" >&2
 fi
 
+echo "===== build policy-bound execution request ====="
+
+if [ -n "${EVIDENCE_OUT:-}" ] && [ -f "$EVIDENCE_OUT" ]; then
+  EXECUTION_REQUEST_BUILDER=""
+
+  if [ -x "./scripts/build-execution-request.sh" ]; then
+    EXECUTION_REQUEST_BUILDER="./scripts/build-execution-request.sh"
+  elif [ -x "/app/scripts/build-execution-request.sh" ]; then
+    EXECUTION_REQUEST_BUILDER="/app/scripts/build-execution-request.sh"
+  fi
+
+  if [ -n "$EXECUTION_REQUEST_BUILDER" ]; then
+    REPORT_OUTPUT_DIR="$(dirname "$EVIDENCE_OUT")"
+    EVIDENCE_BASENAME="$(basename "$EVIDENCE_OUT")"
+    EVIDENCE_SUFFIX="${EVIDENCE_BASENAME#release-evidence-}"
+    PLAN_RUN_JSON="$REPORT_OUTPUT_DIR/plan-run-$EVIDENCE_SUFFIX"
+
+    if [ -f "$PLAN_RUN_JSON" ]; then
+      echo "Running policy-bound execution request builder: $EXECUTION_REQUEST_BUILDER"
+      if RELEASE_REPORT_DIR="$REPORT_OUTPUT_DIR" \
+        EXECUTION_REQUEST_OUTPUT_DIR="${EXECUTION_REQUEST_OUTPUT_DIR:-$REPORT_OUTPUT_DIR}" \
+        REQUESTED_BY="${REQUESTED_BY:-read-only-agent-planner}" \
+        "$EXECUTION_REQUEST_BUILDER" "$PLAN_RUN_JSON"; then
+        validate_generated_release_contract "$EVIDENCE_OUT"
+      else
+        echo "WARN: build-execution-request.sh failed, continue release advice pipeline" >&2
+      fi
+    else
+      echo "WARN: expected plan run file not found, skip execution request generation: $PLAN_RUN_JSON" >&2
+    fi
+  else
+    echo "WARN: build-execution-request.sh not found, skip policy-bound execution request generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip policy-bound execution request generation" >&2
+fi
+
 echo "===== build evidence control-plane record ====="
 
 if [ -f "${EVIDENCE_OUT:-}" ]; then
