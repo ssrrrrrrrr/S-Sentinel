@@ -71,14 +71,22 @@ export function ReleaseResourcePanel({
           <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
             正在加载资源内容...
           </div>
-        ) : resourceQuery.isError ? (
+        ) : resourceQuery.isError && activeTab !== "Timeline" ? (
           <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             资源读取失败：{resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
+          </div>
+        ) : resourceQuery.isError && activeTab === "Timeline" ? (
+          <div className="mt-4 space-y-5">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Timeline 资源读取失败，已回退到 Release Portal metadata：
+              {resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
+            </div>
+            <TimelineProductView selected={selected} />
           </div>
         ) : resourceQuery.data ? (
           <div className="mt-4 space-y-5">
             {activeTab === "Timeline" ? (
-              <TimelineProductView selected={selected} />
+              <TimelineProductView selected={selected} body={resourceQuery.data.body} />
             ) : null}
 
             {activeTab === "Action Plan" && !isMarkdownContent(resourceQuery.data.contentType) ? (
