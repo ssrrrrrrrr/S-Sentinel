@@ -364,6 +364,11 @@ main() {
   bash -n scripts/test-agent-tool-router-approval.sh
   bash -n scripts/test-approval-record-evidence-link.sh
   bash -n scripts/test-approval-record-report-integration.sh
+  bash -n scripts/test-environment-config.sh
+  bash -n scripts/test-packaging-boundary.sh
+  bash -n scripts/test-evidence-environment-integration.sh
+  bash -n scripts/test-environment-selection.sh
+  bash -n scripts/test-stage34-multi-env-packaging.sh
 
   sleep 1
   run_advisor_case "pass" "$PASS_CONTEXT"
@@ -394,6 +399,11 @@ main() {
   ./scripts/test-agent-tool-router-approval.sh "$TEST_TMP/router-approval"
   ./scripts/test-approval-record-evidence-link.sh "$TEST_TMP/approval-evidence-link"
   ./scripts/test-approval-record-report-integration.sh "$TEST_TMP/approval-report-integration"
+  ./scripts/test-environment-config.sh
+  ./scripts/test-packaging-boundary.sh
+  ./scripts/test-evidence-environment-integration.sh
+  ./scripts/test-environment-selection.sh "$TEST_TMP/environment-selection"
+  ./scripts/test-stage34-multi-env-packaging.sh "$TEST_TMP/stage34-multi-env-packaging"
 
   log "ALL OFFLINE RELEASE PIPELINE TESTS PASSED"
 }

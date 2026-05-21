@@ -1,0 +1,45 @@
+apiVersion: platform.ssentinel.io/v1alpha1
+kind: EnvironmentConfig
+metadata:
+  name: staging
+  env: staging
+  labels:
+    ssentinel.io/component: environment-config
+    ssentinel.io/profile: staging
+spec:
+  description: "Staging profile for validating release evidence, policy decisions, and GitOps packaging before production."
+  cluster:
+    name: staging-cluster
+    provider: self-managed
+    environmentClass: staging
+  kubernetes:
+    namespace: slo-rollout-staging
+    context: null
+  gitops:
+    mode: kustomize
+    basePath: deploy/base
+    overlayPath: deploy/overlays/staging
+    applicationPath: deploy
+  release:
+    profile: staging
+    reportDir: docs/release-reports
+    evidenceRetention: local
+  slo:
+    defaultProfile: demo-app-canary-slo
+    configRefs:
+      - configs/services/demo-app.slo.yaml
+  strategy:
+    defaultProfile: demo-app-canary-strategy
+    configRefs:
+      - configs/services/demo-app.strategy.yaml
+  policies:
+    policyProfile: staging-controlled
+    approvalRequired: true
+    executionMode: manual_approval
+  supplyChain:
+    requireImageDigest: true
+    blockMutableTags: true
+  safety:
+    readOnlyDefault: true
+    willExecuteDefault: false
+    requiresHumanApprovalForExecution: true

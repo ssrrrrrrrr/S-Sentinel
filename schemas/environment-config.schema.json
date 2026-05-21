@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/environment-config.schema.json",
+  "title": "S Sentinel Environment Config",
+  "description": "Environment profile contract for S Sentinel multi-env packaging.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "platform.ssentinel.io/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "EnvironmentConfig"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name", "env"],
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "required": ["cluster", "kubernetes", "gitops", "release", "policies", "safety"],
+      "additionalProperties": true
+    }
+  }
+}

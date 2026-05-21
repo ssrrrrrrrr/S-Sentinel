@@ -215,6 +215,30 @@
     "strategyConfigRef": {
       "type": "string",
       "minLength": 1
+    },
+    "environmentConfigRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environmentProfile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "clusterName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environmentClass": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyProfile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gitopsOverlayPath": {
+      "type": "string",
+      "minLength": 1
     }
   }
 }

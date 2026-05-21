@@ -234,9 +234,43 @@ policy_decision_ref = as_dict(decision_refs.get("policyDecision"))
 release_context_path = resolve_ref(artifacts.get("releaseContext"), evidence_path)
 release_context = load_json(release_context_path)
 
-service = evidence.get("service") or release_context.get("service")
-namespace = release_context.get("namespace")
-env = evidence.get("env") or release_context.get("env")
+environment = as_dict(evidence.get("environment"))
+environment_config_snapshot = evidence.get("environmentConfigSnapshot")
+
+environment_config_ref = first_not_none(
+    evidence.get("environmentConfigRef"),
+    environment.get("configRef"),
+    release_context.get("environmentConfigRef"),
+)
+service = evidence.get("service") or release_context.get("service") or release_context.get("rollout")
+namespace = evidence.get("namespace") or environment.get("namespace") or release_context.get("namespace")
+env = evidence.get("env") or environment.get("env") or release_context.get("env")
+environment_profile = first_not_none(
+    evidence.get("environmentProfile"),
+    environment.get("profile"),
+    release_context.get("environmentProfile"),
+    env,
+)
+cluster_name = first_not_none(
+    evidence.get("clusterName"),
+    environment.get("clusterName"),
+    release_context.get("clusterName"),
+)
+environment_class = first_not_none(
+    evidence.get("environmentClass"),
+    environment.get("environmentClass"),
+    release_context.get("environmentClass"),
+)
+policy_profile = first_not_none(
+    evidence.get("policyProfile"),
+    environment.get("policyProfile"),
+    release_context.get("policyProfile"),
+)
+gitops_overlay_path = first_not_none(
+    evidence.get("gitopsOverlayPath"),
+    environment.get("gitopsOverlayPath"),
+    release_context.get("gitopsOverlayPath"),
+)
 
 version = (
     release_context.get("currentDesiredVersion")
@@ -289,6 +323,7 @@ supply_chain_guardrails = as_dict(supply_chain_decision.get("guardrails"))
 
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
+    "environmentConfig": artifacts.get("environmentConfig") or environment_config_ref,
     "releaseEvidence": str(evidence_path),
     "aiDecision": artifacts.get("aiDecision"),
     "policyDecision": artifacts.get("policyDecision"),
@@ -305,6 +340,7 @@ link_map = {
 
 artifact_defs = [
     ("releaseContext", link_map["releaseContext"], True),
+    ("environmentConfig", link_map["environmentConfig"], False),
     ("releaseEvidence", link_map["releaseEvidence"], True),
     ("releaseReport", artifacts.get("releaseReport"), False),
     ("aiAdvice", artifacts.get("aiAdvice"), False),
@@ -351,6 +387,12 @@ record = {
     "service": service,
     "namespace": namespace,
     "env": env,
+    "environmentConfigRef": nullable_string(environment_config_ref),
+    "environmentProfile": nullable_string(environment_profile),
+    "clusterName": nullable_string(cluster_name),
+    "environmentClass": nullable_string(environment_class),
+    "policyProfile": nullable_string(policy_profile),
+    "gitopsOverlayPath": nullable_string(gitops_overlay_path),
     "version": nullable_string(version),
     "commit": nullable_string(commit),
     "image": nullable_string(image),
@@ -361,6 +403,17 @@ record = {
     "finalAction": scalar(evidence.get("finalAction")),
     "executionMode": nullable_string(evidence.get("executionMode")),
     "requiresHumanApproval": bool(evidence.get("requiresHumanApproval", False)),
+    "environment": {
+        "env": nullable_string(env),
+        "profile": nullable_string(environment_profile),
+        "clusterName": nullable_string(cluster_name),
+        "environmentClass": nullable_string(environment_class),
+        "namespace": nullable_string(namespace),
+        "policyProfile": nullable_string(policy_profile),
+        "gitopsOverlayPath": nullable_string(gitops_overlay_path),
+        "configRef": nullable_string(environment_config_ref),
+        "configCaptured": isinstance(environment_config_snapshot, dict),
+    },
     "policy": {
         "policyDecisionId": nullable_string(first_not_none(
             evidence.get("policyDecisionId"),

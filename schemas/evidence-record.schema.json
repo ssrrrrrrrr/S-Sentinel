@@ -297,6 +297,13 @@
             "null"
           ],
           "description": "Path to the generated supply-chain safety decision JSON."
+        },
+        "environmentConfig": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the environment config used by this evidence record."
         }
       }
     },
@@ -783,6 +790,99 @@
         }
       },
       "additionalProperties": true
+    },
+    "environmentConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environmentProfile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "clusterName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environmentClass": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "policyProfile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gitopsOverlayPath": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clusterName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "environmentClass": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policyProfile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gitopsOverlayPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "configRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "configCaptured": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

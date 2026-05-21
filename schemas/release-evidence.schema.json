@@ -181,6 +181,13 @@
             "null"
           ],
           "description": "Path to the generated supply-chain safety decision JSON."
+        },
+        "environmentConfig": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the environment config used by this release evidence bundle."
         }
       }
     },
@@ -603,6 +610,59 @@
         "null"
       ],
       "description": "Supply chain safety decision id linked to this release evidence bundle."
+    },
+    "namespace": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environmentConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environmentProfile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "clusterName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environmentClass": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "policyProfile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gitopsOverlayPath": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "environmentConfigSnapshot": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
     }
   }
 }

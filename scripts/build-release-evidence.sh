@@ -84,6 +84,7 @@ validate_generated_release_contract() {
 
 python3 - "$AI_DECISION_FILE" "$POLICY_DECISION_FILE" "$OUTPUT_FILE" "$SUMMARY_FILE" <<'PY'
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -148,8 +149,51 @@ def read_yaml_object(path):
 release_context_path = resolve_existing_path(sources.get("releaseContext"))
 release_context = read_json_object(release_context_path)
 
-service = release_context.get("service")
-env = release_context.get("env")
+service = release_context.get("service") or release_context.get("rollout")
+
+env_override = (os.environ.get("S_SENTINEL_ENV") or "").strip() or None
+environment_config_override = (os.environ.get("S_SENTINEL_ENV_CONFIG") or "").strip() or None
+release_context_env = release_context.get("env")
+
+initial_env = env_override or release_context_env or "dev"
+environment_config_ref = (
+    environment_config_override
+    or release_context.get("environmentConfigRef")
+    or f"configs/environments/{initial_env}.yaml"
+)
+environment_config_path = resolve_existing_path(environment_config_ref)
+environment_config_snapshot = read_yaml_object(environment_config_path)
+if not isinstance(environment_config_snapshot, dict):
+    environment_config_snapshot = None
+
+environment_metadata = (environment_config_snapshot or {}).get("metadata") or {}
+environment_config_env = environment_metadata.get("env") or environment_metadata.get("name")
+
+if environment_config_override and not env_override:
+    env = environment_config_env or release_context_env or initial_env
+else:
+    env = env_override or release_context_env or environment_config_env or initial_env
+
+environment_spec = (environment_config_snapshot or {}).get("spec") or {}
+environment_cluster = environment_spec.get("cluster") or {}
+environment_kubernetes = environment_spec.get("kubernetes") or {}
+environment_gitops = environment_spec.get("gitops") or {}
+environment_release = environment_spec.get("release") or {}
+environment_policies = environment_spec.get("policies") or {}
+
+namespace = release_context.get("namespace") or environment_kubernetes.get("namespace")
+environment_profile = (
+    release_context.get("environmentProfile")
+    or release_context.get("profile")
+    or environment_release.get("profile")
+    or environment_metadata.get("env")
+    or env
+)
+cluster_name = release_context.get("clusterName") or environment_cluster.get("name")
+environment_class = release_context.get("environmentClass") or environment_cluster.get("environmentClass")
+policy_profile = release_context.get("policyProfile") or environment_policies.get("policyProfile")
+gitops_overlay_path = release_context.get("gitopsOverlayPath") or environment_gitops.get("overlayPath")
+
 slo_id = release_context.get("sloId")
 slo_config_ref = release_context.get("sloConfigRef")
 slo_config_path = resolve_existing_path(slo_config_ref)
@@ -177,7 +221,26 @@ bundle = {
     "requiresHumanApproval": bool(policy.get("requiresHumanApproval", False)),
     "safeToRetry": bool(ai.get("safeToRetry", False)),
     "service": service,
+    "namespace": namespace,
     "env": env,
+    "environmentConfigRef": environment_config_ref,
+    "environmentProfile": environment_profile,
+    "clusterName": cluster_name,
+    "environmentClass": environment_class,
+    "policyProfile": policy_profile,
+    "gitopsOverlayPath": gitops_overlay_path,
+    "environment": {
+        "env": env,
+        "profile": environment_profile,
+        "clusterName": cluster_name,
+        "environmentClass": environment_class,
+        "namespace": namespace,
+        "policyProfile": policy_profile,
+        "gitopsOverlayPath": gitops_overlay_path,
+        "configRef": environment_config_ref,
+        "configFound": environment_config_snapshot is not None,
+    },
+    "environmentConfigSnapshot": environment_config_snapshot,
     "sloId": slo_id,
     "sloConfigRef": slo_config_ref,
     "sloConfigSnapshot": slo_config_snapshot,
@@ -197,6 +260,7 @@ bundle = {
     },
     "artifacts": {
         "releaseContext": sources.get("releaseContext"),
+        "environmentConfig": environment_config_ref,
         "releaseReport": sources.get("releaseReport"),
         "aiAdvice": sources.get("aiAdvice"),
         "aiDecision": str(ai_path),

@@ -1,0 +1,45 @@
+apiVersion: platform.ssentinel.io/v1alpha1
+kind: EnvironmentConfig
+metadata:
+  name: prod
+  env: prod
+  labels:
+    ssentinel.io/component: environment-config
+    ssentinel.io/profile: prod
+spec:
+  description: "Production profile with strict policy, manual approval, immutable image requirements, and read-only default guardrails."
+  cluster:
+    name: prod-cluster
+    provider: self-managed
+    environmentClass: production
+  kubernetes:
+    namespace: slo-rollout-prod
+    context: null
+  gitops:
+    mode: kustomize
+    basePath: deploy/base
+    overlayPath: deploy/overlays/prod
+    applicationPath: deploy
+  release:
+    profile: prod
+    reportDir: docs/release-reports
+    evidenceRetention: local
+  slo:
+    defaultProfile: demo-app-canary-slo
+    configRefs:
+      - configs/services/demo-app.slo.yaml
+  strategy:
+    defaultProfile: demo-app-canary-strategy
+    configRefs:
+      - configs/services/demo-app.strategy.yaml
+  policies:
+    policyProfile: prod-strict
+    approvalRequired: true
+    executionMode: manual_approval
+  supplyChain:
+    requireImageDigest: true
+    blockMutableTags: true
+  safety:
+    readOnlyDefault: true
+    willExecuteDefault: false
+    requiresHumanApprovalForExecution: true

@@ -1,0 +1,45 @@
+apiVersion: platform.ssentinel.io/v1alpha1
+kind: EnvironmentConfig
+metadata:
+  name: dev
+  env: dev
+  labels:
+    ssentinel.io/component: environment-config
+    ssentinel.io/profile: dev
+spec:
+  description: "Local development profile for S Sentinel release control-plane testing."
+  cluster:
+    name: local-dev
+    provider: self-managed
+    environmentClass: development
+  kubernetes:
+    namespace: slo-rollout
+    context: null
+  gitops:
+    mode: kustomize
+    basePath: deploy/base
+    overlayPath: deploy/overlays/dev
+    applicationPath: deploy
+  release:
+    profile: dev
+    reportDir: docs/release-reports
+    evidenceRetention: local
+  slo:
+    defaultProfile: demo-app-canary-slo
+    configRefs:
+      - configs/services/demo-app.slo.yaml
+  strategy:
+    defaultProfile: demo-app-canary-strategy
+    configRefs:
+      - configs/services/demo-app.strategy.yaml
+  policies:
+    policyProfile: dev-advisory
+    approvalRequired: false
+    executionMode: advisory_only
+  supplyChain:
+    requireImageDigest: false
+    blockMutableTags: false
+  safety:
+    readOnlyDefault: true
+    willExecuteDefault: false
+    requiresHumanApprovalForExecution: true
