@@ -10,6 +10,8 @@ import {
   EvidenceProductView,
   IntelligenceProductView,
   OverviewProductView,
+  RCAProductView,
+  RunbookProductView,
 } from "@/components/product-views/ProductViews"
 import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
 import { SafetyPanel } from "./SafetyPanel"
@@ -88,6 +90,14 @@ export function ReleaseResourcePanel({
 
             {activeTab === "AI Advice" && isMarkdownContent(resourceQuery.data.contentType) ? (
               <AIAdviceProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "Runbook" && isMarkdownContent(resourceQuery.data.contentType) ? (
+              <RunbookProductView body={resourceQuery.data.body} />
+            ) : null}
+
+            {activeTab === "RCA" && isMarkdownContent(resourceQuery.data.contentType) ? (
+              <RCAProductView body={resourceQuery.data.body} />
             ) : null}
 
             {activeTab === "Context" && !isMarkdownContent(resourceQuery.data.contentType) ? (

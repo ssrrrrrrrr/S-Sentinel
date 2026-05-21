@@ -100,6 +100,8 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/failure-evidence", api.handleLatestResource("failureEvidence"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
+	mux.HandleFunc("/api/releases/latest/runbook", api.handleLatestResource("runbook"))
+	mux.HandleFunc("/api/releases/latest/rca", api.handleLatestResource("rca"))
 }
 
 func portalResourceDefs() []portalResourceDef {
@@ -167,6 +169,22 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "release-memory-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest release memory summary.",
+		},
+		{
+			Name:         "runbook",
+			Endpoint:     "/api/releases/latest/runbook",
+			Candidates:   []string{"runbook-latest.md"},
+			FallbackGlob: "runbook-*.md",
+			ContentType:  "text/markdown; charset=utf-8",
+			Description:  "Latest operator runbook markdown.",
+		},
+		{
+			Name:         "rca",
+			Endpoint:     "/api/releases/latest/rca",
+			Candidates:   []string{"rca-latest.md"},
+			FallbackGlob: "rca-*.md",
+			ContentType:  "text/markdown; charset=utf-8",
+			Description:  "Latest release RCA markdown.",
 		},
 		{
 			Name:        "changeContext",
@@ -409,6 +427,10 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "policyDecision", "application/json; charset=utf-8", true
 	case "context":
 		return "releaseContext", "application/json; charset=utf-8", true
+	case "runbook":
+		return "runbook", "text/markdown; charset=utf-8", true
+	case "rca":
+		return "rca", "text/markdown; charset=utf-8", true
 	default:
 		return "", "", false
 	}
@@ -430,6 +452,8 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"aiDecision":          "ai-decision",
 		"policyDecision":      "policy-decision",
 		"releaseContext":      "context",
+		"runbook":             "runbook",
+		"rca":                 "rca",
 	}
 
 	names := []string{}
@@ -522,6 +546,8 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"ai-decision-*.json",
 		"policy-decision-*.json",
 		"release-context-*.json",
+		"runbook-*.md",
+		"rca-*.md",
 	}
 
 	seen := map[string]bool{}
@@ -743,6 +769,8 @@ func releaseIDFromReportFile(base string) string {
 		"ai-decision-",
 		"policy-decision-",
 		"release-context-",
+		"runbook-",
+		"rca-",
 	}
 
 	for _, prefix := range prefixes {
@@ -928,6 +956,10 @@ func kindFromReportFile(base string) string {
 		return "policyDecision"
 	case strings.HasPrefix(base, "release-context-"):
 		return "releaseContext"
+	case strings.HasPrefix(base, "runbook-"):
+		return "runbook"
+	case strings.HasPrefix(base, "rca-"):
+		return "rca"
 	default:
 		return "unknown"
 	}

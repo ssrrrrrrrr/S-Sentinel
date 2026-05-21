@@ -12,7 +12,7 @@ import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
 import { ReleaseResourcePanel } from "@/components/release/ReleaseResourcePanel"
 
-const tabs = ["概览", "Evidence", "Action Plan", "Intelligence", "AI Advice", "Context"]
+const tabs = ["概览", "Evidence", "Action Plan", "Intelligence", "Runbook", "RCA", "AI Advice", "Context"]
 
 function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)

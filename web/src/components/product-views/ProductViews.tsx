@@ -4,3 +4,6 @@ export { ContextProductView } from "./ContextProductView"
 export { EvidenceProductView } from "./EvidenceProductView"
 export { IntelligenceProductView } from "./IntelligenceProductView"
 export { OverviewProductView } from "./OverviewProductView"
+
+export { RunbookProductView } from "./RunbookProductView"
+export { RCAProductView } from "./RCAProductView"

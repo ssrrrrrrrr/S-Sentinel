@@ -7,6 +7,8 @@
   | "context"
   | "ai-decision"
   | "policy-decision"
+  | "runbook"
+  | "rca"
 
 export type ReleaseResourceContent = {
   releaseId: string
@@ -20,6 +22,8 @@ const resourcePathByTab: Record<string, ReleaseResourceKind> = {
   Evidence: "evidence",
   "Action Plan": "action-plan",
   Intelligence: "intelligence",
+  Runbook: "runbook",
+  RCA: "rca",
   "AI Advice": "advice",
   Context: "context",
 }

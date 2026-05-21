@@ -146,6 +146,38 @@ export function arrayFromPaths(root: unknown, paths: string[][]) {
   return Array.isArray(value) ? value : []
 }
 
+function cleanMarkdownInline(value: string) {
+  return value
+    .replace(/`/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/^\s+|\s+$/g, "")
+}
+
+function markdownTableValue(body: string, label: string) {
+  const target = label.trim().toLowerCase()
+  const lines = body.split(/\r?\n/)
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) continue
+
+    const cells = trimmed
+      .slice(1, -1)
+      .split("|")
+      .map((cell) => cleanMarkdownInline(cell))
+
+    if (cells.length < 2) continue
+
+    const key = cells[0].toLowerCase()
+    const value = cells[1]
+
+    if (!key || key === "field" || /^-+$/.test(key)) continue
+    if (key === target) return value || "-"
+  }
+
+  return "-"
+}
+
 export function markdownValue(body: string, label: string) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   const patterns = [
@@ -155,10 +187,10 @@ export function markdownValue(body: string, label: string) {
 
   for (const pattern of patterns) {
     const match = body.match(pattern)
-    if (match?.[1]) return match[1].trim()
+    if (match?.[1]) return cleanMarkdownInline(match[1])
   }
 
-  return "-"
+  return markdownTableValue(body, label)
 }
 
 export function markdownBooleanValue(body: string, label: string) {
@@ -195,7 +227,31 @@ export function markdownListAfterHeading(body: string, heading: string) {
     }
 
     if (trimmed.startsWith("- ")) {
-      items.push(trimmed.slice(2).replace(/`/g, "").trim())
+      items.push(cleanMarkdownInline(trimmed.slice(2)))
+      continue
+    }
+
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      const cells = trimmed
+        .slice(1, -1)
+        .split("|")
+        .map((cell) => cleanMarkdownInline(cell))
+
+      if (cells.length >= 2) {
+        const key = cells[0]
+        const value = cells[1]
+
+        if (
+          key &&
+          value &&
+          key.toLowerCase() !== "field" &&
+          value.toLowerCase() !== "value" &&
+          !/^-+$/.test(key) &&
+          !/^-+$/.test(value)
+        ) {
+          items.push(`${key}: ${value}`)
+        }
+      }
     }
   }
 
