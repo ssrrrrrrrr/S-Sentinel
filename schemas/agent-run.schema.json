@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S Sentinel Read-only Agent Run",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "agentRunId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "release",
+    "inputs",
+    "observation",
+    "policy",
+    "recommendation",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "agent.run/v1alpha1"
+    },
+    "agentRunId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "read_only"
+      ]
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "releaseId",
+        "releaseResult"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "releaseEvidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidenceRecord": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseIntelligence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseMemory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artifacts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "observation": {
+      "type": "object",
+      "required": [
+        "releaseResult",
+        "failedMetrics"
+      ],
+      "properties": {
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rolloutPhase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rolloutAbort": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "analysisRunPhase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "riskLevel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "riskScore": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "failedMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sloId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "strategyId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "policyDecision",
+        "finalAction",
+        "executionMode",
+        "requiresHumanApproval"
+      ],
+      "properties": {
+        "policyDecisionId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policyDecision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "finalAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionMode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requiresHumanApproval": {
+          "type": "boolean"
+        },
+        "deniedReasons": {
+          "type": "array"
+        },
+        "approvalRequiredReasons": {
+          "type": "array"
+        },
+        "matchedRules": {
+          "type": "array"
+        },
+        "strategyPolicy": {
+          "type": "object"
+        },
+        "safety": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "reasoning": {
+      "type": "object",
+      "properties": {
+        "riskPattern": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repeatedRiskPattern": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "similarFailureCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "similarFailureIncludingCurrentCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "observations": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "recommendation": {
+      "type": "object",
+      "required": [
+        "recommendedAction",
+        "willExecute"
+      ],
+      "properties": {
+        "recommendedAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "humanNextSteps": {
+          "type": "array"
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "evidenceLinks": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "readOnly",
+        "willExecute",
+        "doesNotModifyKubernetes",
+        "doesNotModifyGitOps",
+        "doesNotRollback",
+        "doesNotPromote",
+        "doesNotPatchResources",
+        "doesNotDeleteResources",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "readOnly": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "doesNotModifyKubernetes": {
+          "type": "boolean"
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean"
+        },
+        "doesNotRollback": {
+          "type": "boolean"
+        },
+        "doesNotPromote": {
+          "type": "boolean"
+        },
+        "doesNotPatchResources": {
+          "type": "boolean"
+        },
+        "doesNotDeleteResources": {
+          "type": "boolean"
+        },
+        "doesNotBuildImages": {
+          "type": "boolean"
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

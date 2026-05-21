@@ -260,6 +260,11 @@ strategy_config_ref = evidence.get("strategyConfigRef") or release_context.get("
 strategy_failure_policy = strategy_spec_value(strategy_snapshot, "failurePolicy")
 strategy_promotion_policy = strategy_spec_value(strategy_snapshot, "promotionPolicy")
 
+agent_run_path = resolve_ref(artifacts.get("agentRun"), evidence_path)
+agent_run = load_json(agent_run_path)
+agent_recommendation = as_dict(agent_run.get("recommendation"))
+agent_guardrails = as_dict(agent_run.get("guardrails"))
+
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
     "releaseEvidence": str(evidence_path),
@@ -270,6 +275,7 @@ link_map = {
     "timeline": artifacts.get("releaseTimeline") or artifacts.get("timeline"),
     "runbook": artifacts.get("runbook"),
     "rca": artifacts.get("rca"),
+    "agentRun": artifacts.get("agentRun"),
 }
 
 artifact_defs = [
@@ -286,6 +292,7 @@ artifact_defs = [
     ("actionPlanReport", artifacts.get("actionPlanReport"), False),
     ("releaseIntelligence", artifacts.get("releaseIntelligence"), False),
     ("releaseIntelligenceReport", artifacts.get("releaseIntelligenceReport"), False),
+    ("agentRun", link_map["agentRun"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -357,6 +364,18 @@ record = {
             evidence.get("policySafety"),
             policy_decision_ref.get("safety"),
         )),
+    },
+    "agent": {
+        "agentRunId": nullable_string(agent_run.get("agentRunId")),
+        "mode": nullable_string(agent_run.get("mode")),
+        "recommendedAction": nullable_string(agent_recommendation.get("recommendedAction")),
+        "priority": nullable_string(agent_recommendation.get("priority")),
+        "willExecute": bool_or_none(first_not_none(
+            agent_recommendation.get("willExecute"),
+            agent_guardrails.get("willExecute"),
+        )),
+        "sourceAgentRun": nullable_string(link_map.get("agentRun")),
+        "guardrails": agent_guardrails,
     },
     "slo": {
         "sloId": slo_id,

@@ -346,7 +346,9 @@ main() {
   bash -n scripts/query-release-memory.sh
   bash -n scripts/test-advisor-release-memory.sh
   bash -n scripts/build-release-intelligence.sh
+  bash -n scripts/build-agent-run.sh
   bash -n scripts/test-release-intelligence.sh
+  bash -n scripts/test-readonly-release-agent.sh
   bash -n scripts/test-agent-tool-router-intelligence.sh
   bash -n scripts/test-advisor-release-intelligence.sh
   bash -n scripts/test-release-summary-intelligence.sh
@@ -376,6 +378,7 @@ main() {
   ./scripts/test-release-intelligence.sh "$TEST_TMP/release-intelligence"
   ./scripts/test-agent-tool-router-intelligence.sh "$TEST_TMP/router-intelligence"
   ./scripts/test-advisor-release-intelligence.sh "$TEST_TMP/advisor-release-intelligence"
+  ./scripts/test-readonly-release-agent.sh "$TEST_TMP/readonly-release-agent"
   ./scripts/test-release-summary-intelligence.sh "$TEST_TMP/release-summary-intelligence"
   ./scripts/test-ai-advice-intelligence.sh "$TEST_TMP/ai-advice-intelligence"
   ./scripts/test-approval-record.sh "$TEST_TMP/approval-record"

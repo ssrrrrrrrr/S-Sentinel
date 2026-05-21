@@ -152,7 +152,16 @@
         "policyDecision",
         "releaseSummary",
         "actionPlan"
-      ]
+      ],
+      "properties": {
+        "agentRun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated read-only agent run JSON."
+        }
+      }
     },
     "decisionRefs": {
       "type": "object",
@@ -164,6 +173,45 @@
         },
         "policyDecision": {
           "type": "object",
+          "additionalProperties": true
+        },
+        "agentRun": {
+          "type": "object",
+          "properties": {
+            "agentRunId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "mode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "recommendedAction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "priority": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "willExecute": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "guardrails": {
+              "type": "object"
+            }
+          },
           "additionalProperties": true
         }
       }
@@ -286,6 +334,13 @@
       "type": "object",
       "additionalProperties": true,
       "description": "Read-only safety flags emitted by Policy Guard."
+    },
+    "agentRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Read-only agent run id linked to this release evidence bundle."
     }
   }
 }

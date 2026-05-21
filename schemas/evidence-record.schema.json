@@ -269,6 +269,13 @@
             "string",
             "null"
           ]
+        },
+        "agentRun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated read-only agent run JSON."
         }
       }
     },
@@ -447,6 +454,51 @@
           "additionalProperties": true
         }
       }
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "agentRunId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "priority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "willExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sourceAgentRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
     }
   }
 }

@@ -1193,6 +1193,31 @@ else
 fi
 
 
+echo "===== build read-only agent run ====="
+
+if [ -n "${EVIDENCE_OUT:-}" ] && [ -f "$EVIDENCE_OUT" ]; then
+  AGENT_RUN_BUILDER=""
+
+  if [ -x "./scripts/build-agent-run.sh" ]; then
+    AGENT_RUN_BUILDER="./scripts/build-agent-run.sh"
+  elif [ -x "/app/scripts/build-agent-run.sh" ]; then
+    AGENT_RUN_BUILDER="/app/scripts/build-agent-run.sh"
+  fi
+
+  if [ -n "$AGENT_RUN_BUILDER" ]; then
+    echo "Running read-only agent run builder: $AGENT_RUN_BUILDER"
+    if RELEASE_REPORT_DIR="$OUT_DIR" "$AGENT_RUN_BUILDER" "$EVIDENCE_OUT"; then
+      true
+    else
+      echo "WARN: build-agent-run.sh failed, continue release advice pipeline" >&2
+    fi
+  else
+    echo "WARN: build-agent-run.sh not found, skip read-only agent run generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip read-only agent run generation" >&2
+fi
+
 echo "===== build evidence control-plane record ====="
 
 if [ -f "${EVIDENCE_OUT:-}" ]; then
