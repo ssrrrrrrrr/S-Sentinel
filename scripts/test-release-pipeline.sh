@@ -114,12 +114,22 @@ assert ai["agentAction"]["type"] == "NOOP", ai["agentAction"]
 assert ai["requiresHumanApproval"] is False
 assert ai["safeToRetry"] is True
 
-assert policy["policyDecision"] == "ALLOW", policy
+assert policy["policyDecision"] == "ALLOW_ADVISORY_ONLY", policy
+assert policy["requestedAction"] == "NOOP", policy
+assert policy["allowed"] is True, policy
 assert policy["finalAction"] == "NOOP", policy
 assert policy["requiresHumanApproval"] is False
+assert policy["safety"]["readOnly"] is True, policy
+assert policy["safety"]["willExecute"] is False, policy
+assert "pass_release_no_action" in policy["matchedRules"], policy["matchedRules"]
 
 assert evidence["releaseResult"] == "PASS", evidence
-assert evidence["policyDecision"] == "ALLOW", evidence
+assert evidence["policyDecision"] == "ALLOW_ADVISORY_ONLY", evidence
+assert evidence["requestedAction"] == "NOOP", evidence
+assert evidence["allowed"] is True, evidence
+assert evidence["policySafety"]["willExecute"] is False, evidence
+assert evidence["decisionRefs"]["policyDecision"]["requestedAction"] == "NOOP", evidence["decisionRefs"]["policyDecision"]
+assert evidence["decisionRefs"]["policyDecision"]["allowed"] is True, evidence["decisionRefs"]["policyDecision"]
 assert evidence["artifacts"].get("releaseSummary"), evidence["artifacts"]
 assert summary_path.exists(), summary_path
 
@@ -158,12 +168,22 @@ assert ai["agentAction"]["type"] == "STOP_PROMOTION", ai["agentAction"]
 assert ai["requiresHumanApproval"] is True
 assert ai["safeToRetry"] is False
 
-assert policy["policyDecision"] == "ALLOW_ADVISORY_ONLY", policy
+assert policy["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", policy
+assert policy["requestedAction"] == "STOP_PROMOTION", policy
+assert policy["allowed"] is True, policy
 assert policy["finalAction"] == "STOP_PROMOTION", policy
 assert policy["requiresHumanApproval"] is True
+assert policy["safety"]["readOnly"] is True, policy
+assert policy["safety"]["willExecute"] is False, policy
+assert "slo_failure_stop_promotion_allowed_by_strategy" in policy["matchedRules"], policy["matchedRules"]
 
 assert evidence["releaseResult"] == "FAIL_BY_P95_LATENCY", evidence
+assert evidence["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", evidence
+assert evidence["requestedAction"] == "STOP_PROMOTION", evidence
+assert evidence["allowed"] is True, evidence
 assert evidence["finalAction"] == "STOP_PROMOTION", evidence
+assert evidence["decisionRefs"]["policyDecision"]["requestedAction"] == "STOP_PROMOTION", evidence["decisionRefs"]["policyDecision"]
+assert evidence["decisionRefs"]["policyDecision"]["allowed"] is True, evidence["decisionRefs"]["policyDecision"]
 assert "p95-latency" in evidence["summary"]["failedMetrics"], evidence["summary"]
 
 assert failure["isFailure"] is True, failure
@@ -208,12 +228,21 @@ assert ai["agentAction"]["type"] == "STOP_PROMOTION", ai["agentAction"]
 assert ai["requiresHumanApproval"] is True
 assert ai["safeToRetry"] is False
 
-assert policy["policyDecision"] == "ALLOW_ADVISORY_ONLY", policy
+assert policy["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", policy
+assert policy["requestedAction"] == "STOP_PROMOTION", policy
+assert policy["allowed"] is True, policy
 assert policy["finalAction"] == "STOP_PROMOTION", policy
 assert policy["requiresHumanApproval"] is True
-assert "multiple_slo_failure_requires_human_approval" in policy["matchedRules"], policy["matchedRules"]
+assert policy["safety"]["readOnly"] is True, policy
+assert policy["safety"]["willExecute"] is False, policy
+assert "slo_failure_stop_promotion_allowed_by_strategy" in policy["matchedRules"], policy["matchedRules"]
 
 assert evidence["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", evidence
+assert evidence["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", evidence
+assert evidence["requestedAction"] == "STOP_PROMOTION", evidence
+assert evidence["allowed"] is True, evidence
+assert evidence["decisionRefs"]["policyDecision"]["requestedAction"] == "STOP_PROMOTION", evidence["decisionRefs"]["policyDecision"]
+assert evidence["decisionRefs"]["policyDecision"]["allowed"] is True, evidence["decisionRefs"]["policyDecision"]
 assert set(evidence["summary"]["failedMetrics"]) == {"error-rate", "p95-latency"}, evidence["summary"]
 
 assert failure["isFailure"] is True, failure

@@ -243,6 +243,49 @@
       ],
       "description": "Progressive delivery strategy config snapshot captured at evidence generation time.",
       "additionalProperties": true
+    },
+    "policyDecisionId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Policy decision identifier copied from the Policy Guard output."
+    },
+    "requestedAction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Action requested by the AI advisor and evaluated by Policy Guard."
+    },
+    "allowed": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether Policy Guard allowed the requested action."
+    },
+    "deniedReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approvalRequiredReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "strategyPolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Strategy-aware policy fields used by Policy Guard."
+    },
+    "policySafety": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Read-only safety flags emitted by Policy Guard."
     }
   }
 }

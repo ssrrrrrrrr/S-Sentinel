@@ -119,6 +119,164 @@
           "description": "Optional policy schema version. It may be null when the policy file does not declare schemaVersion."
         }
       }
+    },
+    "policyDecisionId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "description": "Stable policy decision identifier derived from the source AI decision."
+    },
+    "releaseId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Release identifier when it can be inferred from the source decision filename or evidence."
+    },
+    "evidenceId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Evidence record identifier when available."
+    },
+    "service": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "env": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sloId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "strategyId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requestedAction": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Action requested or recommended by the AI advisor."
+    },
+    "allowed": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether the requested action is allowed by Policy Guard."
+    },
+    "deniedReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "approvalRequiredReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "strategyPolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "strategyId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "strategyType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "onSLOFailure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "onAnalysisError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "onInsufficientTraffic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rollbackAllowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "autoPromotionEnabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "requiresHumanApproval": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "finalPromotionMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "readOnly": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "autoExecute": {
+          "type": "boolean"
+        },
+        "advisoryOnly": {
+          "type": "boolean"
+        },
+        "dangerousAction": {
+          "type": "boolean"
+        },
+        "strategyBound": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

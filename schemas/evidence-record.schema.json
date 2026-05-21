@@ -397,6 +397,56 @@
           "additionalProperties": true
         }
       }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "policyDecisionId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "deniedReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvalRequiredReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "matchedRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "strategyPolicy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "safety": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
     }
   }
 }

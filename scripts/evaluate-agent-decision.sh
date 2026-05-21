@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPORT_DIR="docs/release-reports"
+REPORT_DIR="${RELEASE_REPORT_DIR:-docs/release-reports}"
 POLICY_FILE="${RELEASE_POLICY_FILE:-policy/release-policy.yaml}"
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
   scripts/evaluate-agent-decision.sh [AI_DECISION_JSON]
 
@@ -18,7 +18,7 @@ Behavior:
   - The output is written to docs/release-reports/policy-decision-*.json.
   - Policy defaults are read from policy/release-policy.yaml unless RELEASE_POLICY_FILE is set.
   - This evaluator is advisory-only. It does not modify Rollouts, GitOps manifests, or Kubernetes resources.
-EOF
+USAGE
 }
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
@@ -52,7 +52,6 @@ BASENAME="$(basename "$INPUT_FILE")"
 SUFFIX="${BASENAME#ai-decision-}"
 OUTPUT_FILE="$REPORT_DIR/policy-decision-$SUFFIX"
 
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 validate_generated_release_contract() {
@@ -70,19 +69,21 @@ validate_generated_release_contract() {
   fi
 }
 
-python3 - "$INPUT_FILE" "$OUTPUT_FILE" "$POLICY_FILE" <<'PY'
+python3 - "$INPUT_FILE" "$OUTPUT_FILE" "$POLICY_FILE" <<'PY_EVAL'
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 input_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
 policy_path = Path(sys.argv[3])
 
-with input_path.open("r", encoding="utf-8") as f:
-    decision = json.load(f)
+decision = json.loads(input_path.read_text(encoding="utf-8"))
 
-def parse_scalar(value):
+def parse_scalar(value: str) -> Any:
     value = value.strip().strip('"').strip("'")
     if value.lower() == "true":
         return True
@@ -90,8 +91,8 @@ def parse_scalar(value):
         return False
     return value
 
-def load_policy(path: Path):
-    policy = {
+def load_policy(path: Path) -> dict[str, Any]:
+    policy: dict[str, Any] = {
         "executionMode": "advisory_only",
         "autoExecute": False,
         "blockedActions": [],
@@ -101,6 +102,7 @@ def load_policy(path: Path):
             "PROMOTE",
             "DELETE_RESOURCE",
             "PATCH_GITOPS",
+            "PATCH_RESOURCE",
             "SCALE_DOWN",
             "RESTART_WORKLOAD",
         ],
@@ -142,113 +144,274 @@ def load_policy(path: Path):
                 policy[key] = {}
             continue
 
-        parsed = parse_scalar(value)
-
         if key.startswith("rule."):
             _, rule_name, rule_field = key.split(".", 2)
-            policy["rules"].setdefault(rule_name, {})[rule_field] = parsed
+            policy["rules"].setdefault(rule_name, {})[rule_field] = parse_scalar(value)
         else:
-            policy[key] = parsed
+            policy[key] = parse_scalar(value)
 
     policy["loaded"] = True
     return policy
 
+def as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+def as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+def nullable_string(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text if text else None
+
+def first_non_empty(*values: Any) -> Any:
+    for value in values:
+        if value not in (None, ""):
+            return value
+    return None
+
+def release_id_from_ai_decision(path: Path) -> str | None:
+    base = path.name
+    if base.startswith("ai-decision-") and base.endswith(".json"):
+        return base[len("ai-decision-"):-len(".json")]
+    return None
+
+def policy_decision_id(path: Path) -> str:
+    release_id = release_id_from_ai_decision(path) or path.stem
+    return f"pd-{release_id}"
+
 policy = load_policy(policy_path)
 
-def rule(name, field, default=None):
-    return (policy.get("rules") or {}).get(name, {}).get(field, default)
+release_result = str(decision.get("releaseResult") or "UNKNOWN")
+execution_mode = str(decision.get("executionMode") or policy.get("executionMode") or "advisory_only")
 
-release_result = decision.get("releaseResult", "UNKNOWN")
-execution_mode = decision.get("executionMode", policy.get("executionMode", "advisory_only"))
-requires_human_approval = bool(decision.get("requiresHumanApproval", False))
+agent_action = as_dict(decision.get("agentAction"))
+guardrails = as_dict(decision.get("guardrails"))
+evidence = as_dict(decision.get("evidence"))
 
-agent_action = decision.get("agentAction") or {}
-action_type = agent_action.get("type", "UNKNOWN")
-action_allowed_by_ai = bool(agent_action.get("allowed", False))
-action_requires_approval = bool(agent_action.get("requiresApproval", False))
+requested_action = str(agent_action.get("type") or decision.get("recommendedAction") or "UNKNOWN")
+agent_action_allowed = bool(agent_action.get("allowed", False))
+agent_action_requires_approval = bool(agent_action.get("requiresApproval", False))
 
-guardrails = decision.get("guardrails") or {}
 policy_auto_execute = bool(policy.get("autoExecute", False))
 auto_execute = bool(guardrails.get("autoExecute", policy_auto_execute)) and policy_auto_execute
-guardrail_execution_mode = guardrails.get("executionMode", policy.get("executionMode", execution_mode))
+guardrail_execution_mode = str(guardrails.get("executionMode") or execution_mode)
 
-blocked_actions = set(policy.get("blockedActions") or []) | set(guardrails.get("blockedActions") or [])
-dangerous_actions = set(policy.get("dangerousActions") or [])
-allowed_actions = set(guardrails.get("allowedActions") or policy.get("allowedActions") or [])
+blocked_actions = set(as_list(policy.get("blockedActions"))) | set(as_list(guardrails.get("blockedActions")))
+allowed_actions = set(as_list(guardrails.get("allowedActions") or policy.get("allowedActions") or []))
+dangerous_actions = set(as_list(policy.get("dangerousActions")))
 
-matched_rules = []
+strategy_failure_policy = as_dict(first_non_empty(
+    decision.get("strategyFailurePolicy"),
+    evidence.get("strategyFailurePolicy"),
+))
+strategy_promotion_policy = as_dict(first_non_empty(
+    decision.get("strategyPromotionPolicy"),
+    evidence.get("strategyPromotionPolicy"),
+))
 
-if action_type in blocked_actions:
-    policy_decision = "BLOCKED"
-    final_action = "NONE"
-    reason = f"{action_type} is blocked by guardrails"
-    matched_rules.append("action_explicitly_blocked_by_guardrails")
+strategy_id = first_non_empty(decision.get("strategyId"), evidence.get("strategyId"))
+strategy_type = first_non_empty(decision.get("strategyType"), evidence.get("strategyType"))
 
-elif allowed_actions and action_type not in allowed_actions:
-    policy_decision = "BLOCKED"
-    final_action = "NONE"
-    reason = f"{action_type} is not in allowedActions"
-    matched_rules.append("action_not_listed_in_allowed_actions")
+on_slo_failure = nullable_string(strategy_failure_policy.get("onSLOFailure"))
+on_analysis_error = nullable_string(strategy_failure_policy.get("onAnalysisError"))
+on_insufficient_traffic = nullable_string(strategy_failure_policy.get("onInsufficientTraffic"))
+rollback_allowed = strategy_failure_policy.get("rollbackAllowed")
+auto_promotion_enabled = strategy_promotion_policy.get("autoPromotionEnabled")
+strategy_requires_human_approval = strategy_promotion_policy.get("requiresHumanApproval")
+final_promotion_mode = nullable_string(strategy_promotion_policy.get("finalPromotionMode"))
 
-elif action_type in dangerous_actions:
-    policy_decision = "BLOCKED"
-    final_action = "NONE"
-    reason = f"{action_type} is blocked by default safety policy"
-    matched_rules.append("dangerous_action_blocked_by_default")
+rollback_allowed = bool(rollback_allowed) if rollback_allowed is not None else False
+auto_promotion_enabled = bool(auto_promotion_enabled) if auto_promotion_enabled is not None else False
+strategy_requires_human_approval = bool(strategy_requires_human_approval) if strategy_requires_human_approval is not None else False
 
-elif release_result == "PASS" and action_type == "NOOP":
-    policy_decision = rule("pass", "policyDecision", "ALLOW")
-    final_action = rule("pass", "finalAction", "NOOP")
-    reason = rule("pass", "reason", "Release passed and no action is required")
-    matched_rules.append(rule("pass", "matchedRule", "pass_release_no_action"))
+allowed = False
+policy_decision = "DENY"
+final_action = "UNKNOWN"
+reason = "Policy Guard denied the requested action by default"
+matched_rules: list[str] = []
+denied_reasons: list[str] = []
+approval_required_reasons: list[str] = []
 
-elif release_result == "FAIL_BY_MULTIPLE_SLO" and action_type == "STOP_PROMOTION":
-    policy_decision = rule("multipleSlo", "policyDecision", "ALLOW_ADVISORY_ONLY")
-    final_action = rule("multipleSlo", "finalAction", "STOP_PROMOTION")
-    reason = rule("multipleSlo", "reason", "Multiple SLO gates failed; action is advisory only and requires human approval")
-    matched_rules.append(rule("multipleSlo", "matchedRule", "multiple_slo_failure_requires_human_approval"))
-    requires_human_approval = bool(rule("multipleSlo", "requiresHumanApproval", True))
+VALID_FINAL_ACTIONS = {"NOOP", "STOP_PROMOTION", "ROLLBACK", "PROMOTE", "INVESTIGATE", "UNKNOWN"}
 
-elif release_result.startswith("FAIL_") and action_type == "STOP_PROMOTION":
-    policy_decision = rule("failedStopPromotion", "policyDecision", "ALLOW_ADVISORY_ONLY")
-    final_action = rule("failedStopPromotion", "finalAction", "STOP_PROMOTION")
-    reason = rule("failedStopPromotion", "reason", "Release failed; stop promotion is advisory only and requires human approval")
-    matched_rules.append(rule("failedStopPromotion", "matchedRule", "failed_release_stop_promotion_requires_human_approval"))
-    requires_human_approval = bool(rule("failedStopPromotion", "requiresHumanApproval", True))
+def set_allow(action: str, rule_name: str, why: str, decision_value: str = "ALLOW_ADVISORY_ONLY") -> None:
+    global allowed, policy_decision, final_action, reason
+    allowed = True
+    policy_decision = decision_value
+    final_action = action if action in VALID_FINAL_ACTIONS else "UNKNOWN"
+    reason = why
+    matched_rules.append(rule_name)
 
-elif release_result == "IN_PROGRESS":
-    policy_decision = rule("inProgress", "policyDecision", "ALLOW_ADVISORY_ONLY")
-    final_action = action_type if action_type != "UNKNOWN" else rule("inProgress", "defaultFinalAction", "WAIT")
-    reason = rule("inProgress", "reason", "Release is still in progress; policy remains advisory only")
-    matched_rules.append(rule("inProgress", "matchedRule", "release_in_progress_advisory_only"))
+def set_approval(action: str, rule_name: str, why: str, approval_reason: str) -> None:
+    set_allow(action, rule_name, why, "REQUIRE_HUMAN_APPROVAL")
+    approval_required_reasons.append(approval_reason)
+
+def set_deny(action: str, rule_name: str, why: str) -> None:
+    global allowed, policy_decision, final_action, reason
+    allowed = False
+    policy_decision = "DENY"
+    final_action = action if action in VALID_FINAL_ACTIONS else "UNKNOWN"
+    reason = why
+    matched_rules.append(rule_name)
+    denied_reasons.append(why)
+
+if requested_action in blocked_actions:
+    set_deny(requested_action, "action_explicitly_blocked_by_guardrails", f"{requested_action} is blocked by guardrails")
+
+elif allowed_actions and requested_action not in allowed_actions:
+    set_deny(requested_action, "action_not_listed_in_allowed_actions", f"{requested_action} is not listed in allowedActions")
+
+elif requested_action in dangerous_actions and requested_action not in {"ROLLBACK", "PROMOTE"}:
+    set_deny(requested_action, "dangerous_action_blocked_by_default", f"{requested_action} is blocked by default safety policy")
+
+elif release_result == "PASS" and requested_action in {"NOOP", "OBSERVE"}:
+    set_allow("NOOP", "pass_release_no_action", "Release passed and the requested action is observational")
+
+elif release_result == "PASS" and requested_action == "PROMOTE":
+    if auto_promotion_enabled:
+        if strategy_requires_human_approval:
+            set_approval(
+                "PROMOTE",
+                "pass_promote_requires_human_approval_by_strategy",
+                "Release passed, but strategy requires human approval before promotion",
+                "strategy_promotion_policy_requires_human_approval",
+            )
+        else:
+            set_allow("PROMOTE", "pass_auto_promote_allowed_by_strategy", "Release passed and strategy allows auto promotion")
+    else:
+        set_deny("PROMOTE", "promote_denied_by_strategy_auto_promotion_disabled", "Promotion is denied because strategy autoPromotionEnabled is false")
+
+elif release_result == "FAIL_BY_REQUEST_COUNT" and requested_action == "RETRY_WITH_MORE_TRAFFIC":
+    if on_insufficient_traffic == "retry_with_more_traffic":
+        set_allow("NOOP", "insufficient_traffic_retry_observation_allowed_by_strategy", "Insufficient canary traffic may be retried with more traffic; no direct execution is performed")
+    else:
+        set_deny("NOOP", "insufficient_traffic_retry_denied_by_strategy", "Retry with more traffic is not allowed by strategy failure policy")
+
+elif release_result in {"FAIL_BY_ERROR_RATE", "FAIL_BY_P95_LATENCY", "FAIL_BY_MULTIPLE_SLO"} and requested_action == "STOP_PROMOTION":
+    if on_slo_failure in {None, "", "stop_promotion"}:
+        set_approval(
+            "STOP_PROMOTION",
+            "slo_failure_stop_promotion_allowed_by_strategy",
+            "SLO failure matches strategy failure policy stop_promotion; action remains advisory and requires approval",
+            "slo_failure_requires_human_approval",
+        )
+    else:
+        set_deny("STOP_PROMOTION", "slo_failure_stop_promotion_denied_by_strategy", f"Strategy onSLOFailure is {on_slo_failure}, not stop_promotion")
+
+elif requested_action == "ROLLBACK":
+    if rollback_allowed:
+        set_approval(
+            "ROLLBACK",
+            "rollback_allowed_by_strategy_but_requires_human_approval",
+            "Rollback is allowed by strategy but must remain policy-bound and human-approved",
+            "rollback_is_high_risk_action",
+        )
+    else:
+        set_deny("ROLLBACK", "rollback_denied_by_strategy", "Rollback is denied because strategy rollbackAllowed is false")
+
+elif requested_action == "PROMOTE":
+    set_deny("PROMOTE", "promote_denied_unless_release_passed_and_strategy_allows", "Promotion is denied unless releaseResult is PASS and strategy allows promotion")
+
+elif release_result in {"FAIL_BY_ROLLOUT_ABORT", "FAIL_BY_ROLLOUT_DEGRADED"} and requested_action in {"INVESTIGATE", "MANUAL_REVIEW"}:
+    set_approval(
+        "INVESTIGATE",
+        "rollout_unhealthy_investigation_required",
+        "Rollout is unhealthy; investigation is allowed as advisory-only action",
+        "rollout_unhealthy_requires_human_review",
+    )
+
+elif release_result == "IN_PROGRESS" and requested_action in {"OBSERVE", "NOOP"}:
+    set_allow("NOOP", "release_in_progress_observe_only", "Release is still in progress; observe-only action is allowed")
+
+elif requested_action in {"MANUAL_REVIEW", "INVESTIGATE"}:
+    set_approval(
+        "INVESTIGATE",
+        "fallback_manual_review_required",
+        "No specific strategy-aware rule matched; manual review is required",
+        "fallback_manual_review_required",
+    )
 
 else:
-    policy_decision = rule("fallback", "policyDecision", "ALLOW_ADVISORY_ONLY")
-    final_action = action_type if action_allowed_by_ai else "NONE"
-    reason = rule("fallback", "reason", "No specific policy rule matched; fallback to advisory-only mode")
-    matched_rules.append(rule("fallback", "matchedRule", "fallback_advisory_only"))
+    set_deny(requested_action, "fallback_deny_unknown_or_unsafe_action", "No specific strategy-aware rule matched and the requested action is not safe")
 
 if not auto_execute:
-    matched_rules.append(rule("autoExecuteDisabled", "matchedRule", "auto_execute_disabled"))
+    matched_rules.append("auto_execute_disabled")
 
 if guardrail_execution_mode == "advisory_only":
-    matched_rules.append(rule("advisoryOnly", "matchedRule", "guardrail_advisory_only"))
+    matched_rules.append("guardrail_advisory_only")
+
+if agent_action_requires_approval:
+    approval_required_reasons.append("agent_action_requires_approval")
+
+if strategy_requires_human_approval and allowed:
+    approval_required_reasons.append("strategy_requires_human_approval")
+
+approval_required_reasons = sorted(set(approval_required_reasons))
+denied_reasons = sorted(set(denied_reasons))
+matched_rules = list(dict.fromkeys(matched_rules))
+
+requires_human_approval = bool(
+    decision.get("requiresHumanApproval", False)
+    or agent_action_requires_approval
+    or approval_required_reasons
+)
+
+if allowed and requires_human_approval and policy_decision == "ALLOW_ADVISORY_ONLY":
+    policy_decision = "REQUIRE_HUMAN_APPROVAL"
+
+if not allowed:
+    requires_human_approval = False
+    approval_required_reasons = []
 
 policy_output = {
     "schemaVersion": "release.policy.evaluator/v1alpha1",
+    "policyDecisionId": policy_decision_id(input_path),
     "sourceDecisionFile": str(input_path),
+    "releaseId": release_id_from_ai_decision(input_path),
+    "evidenceId": nullable_string(decision.get("evidenceId")),
+    "service": nullable_string(first_non_empty(decision.get("service"), evidence.get("service"))),
+    "env": nullable_string(first_non_empty(decision.get("env"), evidence.get("env"))),
+    "sloId": nullable_string(first_non_empty(decision.get("sloId"), evidence.get("sloId"))),
+    "strategyId": nullable_string(strategy_id),
     "policyDecision": policy_decision,
+    "requestedAction": requested_action,
+    "allowed": allowed,
     "finalAction": final_action,
     "executionMode": guardrail_execution_mode,
-    "requiresHumanApproval": requires_human_approval or action_requires_approval,
+    "requiresHumanApproval": requires_human_approval,
     "reason": reason,
+    "deniedReasons": denied_reasons,
+    "approvalRequiredReasons": approval_required_reasons,
     "matchedRules": matched_rules,
     "inputSummary": {
         "releaseResult": release_result,
-        "agentActionType": action_type,
-        "agentActionAllowed": action_allowed_by_ai,
-        "agentActionRequiresApproval": action_requires_approval,
+        "agentActionType": requested_action,
+        "agentActionAllowed": agent_action_allowed,
+        "agentActionRequiresApproval": agent_action_requires_approval,
         "autoExecute": auto_execute,
+    },
+    "strategyPolicy": {
+        "strategyId": nullable_string(strategy_id),
+        "strategyType": nullable_string(strategy_type),
+        "onSLOFailure": on_slo_failure,
+        "onAnalysisError": on_analysis_error,
+        "onInsufficientTraffic": on_insufficient_traffic,
+        "rollbackAllowed": rollback_allowed,
+        "autoPromotionEnabled": auto_promotion_enabled,
+        "requiresHumanApproval": strategy_requires_human_approval,
+        "finalPromotionMode": final_promotion_mode,
+    },
+    "safety": {
+        "readOnly": True,
+        "willExecute": False,
+        "autoExecute": auto_execute,
+        "advisoryOnly": guardrail_execution_mode == "advisory_only",
+        "dangerousAction": requested_action in dangerous_actions,
+        "strategyBound": bool(strategy_id),
     },
     "policyRef": {
         "file": str(policy_path),
@@ -258,12 +421,10 @@ policy_output = {
 }
 
 output_path.parent.mkdir(parents=True, exist_ok=True)
-with output_path.open("w", encoding="utf-8") as f:
-    json.dump(policy_output, f, indent=2, ensure_ascii=False)
-    f.write("\n")
+output_path.write_text(json.dumps(policy_output, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 print(f"Wrote policy decision: {output_path}")
-PY
+PY_EVAL
 
 validate_generated_release_contract "$OUTPUT_FILE"
 

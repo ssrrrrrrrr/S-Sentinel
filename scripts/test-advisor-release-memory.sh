@@ -59,7 +59,7 @@ assert matched, f"release evidence not found in memory: {release_evidence}"
 record = matched[-1]
 
 assert record["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", record
-assert record["policyDecision"] == "ALLOW_ADVISORY_ONLY", record
+assert record["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", record
 assert record["finalAction"] == "STOP_PROMOTION", record
 assert record["requiresHumanApproval"] is True, record
 assert set(record["failedMetrics"]) == {"error-rate", "p95-latency"}, record

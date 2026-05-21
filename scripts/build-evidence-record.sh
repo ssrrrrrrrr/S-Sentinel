@@ -88,6 +88,25 @@ def nullable_string(value: Any) -> str | None:
     text = str(value).strip()
     return text if text else None
 
+def as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+def as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+def first_not_none(*values: Any) -> Any:
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+def bool_or_none(value: Any) -> bool | None:
+    if value is None:
+        return None
+    return bool(value)
+
 def release_id_from_evidence(path: Path) -> str:
     base = path.name
     if base.startswith("release-evidence-") and base.endswith(".json"):
@@ -210,6 +229,7 @@ release_id = release_id_from_evidence(evidence_path)
 artifacts = evidence.get("artifacts") if isinstance(evidence.get("artifacts"), dict) else {}
 summary = evidence.get("summary") if isinstance(evidence.get("summary"), dict) else {}
 decision_refs = evidence.get("decisionRefs") if isinstance(evidence.get("decisionRefs"), dict) else {}
+policy_decision_ref = as_dict(decision_refs.get("policyDecision"))
 
 release_context_path = resolve_ref(artifacts.get("releaseContext"), evidence_path)
 release_context = load_json(release_context_path)
@@ -304,6 +324,40 @@ record = {
     "finalAction": scalar(evidence.get("finalAction")),
     "executionMode": nullable_string(evidence.get("executionMode")),
     "requiresHumanApproval": bool(evidence.get("requiresHumanApproval", False)),
+    "policy": {
+        "policyDecisionId": nullable_string(first_not_none(
+            evidence.get("policyDecisionId"),
+            policy_decision_ref.get("policyDecisionId"),
+        )),
+        "requestedAction": nullable_string(first_not_none(
+            evidence.get("requestedAction"),
+            policy_decision_ref.get("requestedAction"),
+        )),
+        "allowed": bool_or_none(first_not_none(
+            evidence.get("allowed"),
+            policy_decision_ref.get("allowed"),
+        )),
+        "deniedReasons": [str(item) for item in as_list(first_not_none(
+            evidence.get("deniedReasons"),
+            policy_decision_ref.get("deniedReasons"),
+        ))],
+        "approvalRequiredReasons": [str(item) for item in as_list(first_not_none(
+            evidence.get("approvalRequiredReasons"),
+            policy_decision_ref.get("approvalRequiredReasons"),
+        ))],
+        "matchedRules": [str(item) for item in as_list(first_not_none(
+            summary.get("matchedPolicyRules"),
+            policy_decision_ref.get("matchedRules"),
+        ))],
+        "strategyPolicy": as_dict(first_not_none(
+            evidence.get("strategyPolicy"),
+            policy_decision_ref.get("strategyPolicy"),
+        )),
+        "safety": as_dict(first_not_none(
+            evidence.get("policySafety"),
+            policy_decision_ref.get("safety"),
+        )),
+    },
     "slo": {
         "sloId": slo_id,
         "sloConfigRef": slo_config_ref,
