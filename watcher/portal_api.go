@@ -93,6 +93,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/", api.handleReleaseDetail)
 	mux.HandleFunc("/api/releases/latest", api.handleLatestIndex)
 	mux.HandleFunc("/api/releases/latest/evidence", api.handleLatestResource("releaseEvidence"))
+	mux.HandleFunc("/api/releases/latest/evidence-record", api.handleLatestResource("evidenceRecord"))
 	mux.HandleFunc("/api/releases/latest/summary", api.handleLatestResource("releaseSummary"))
 	mux.HandleFunc("/api/releases/latest/action-plan", api.handleLatestResource("actionPlan"))
 	mux.HandleFunc("/api/releases/latest/intelligence", api.handleLatestResource("releaseIntelligence"))
@@ -114,6 +115,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "release-evidence-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest release evidence index.",
+		},
+		{
+			Name:         "evidenceRecord",
+			Endpoint:     "/api/releases/latest/evidence-record",
+			Candidates:   []string{"evidence-record-latest.json"},
+			FallbackGlob: "evidence-record-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest evidence control-plane record.",
 		},
 		{
 			Name:         "releaseSummary",
@@ -434,6 +443,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 	switch resourceName {
 	case "evidence":
 		return "releaseEvidence", "application/json; charset=utf-8", true
+	case "evidence-record":
+		return "evidenceRecord", "application/json; charset=utf-8", true
 	case "summary":
 		return "releaseSummary", "text/markdown; charset=utf-8", true
 	case "action-plan":
@@ -470,6 +481,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 
 	resourceByKind := map[string]string{
 		"releaseEvidence":     "evidence",
+		"evidenceRecord":      "evidence-record",
 		"releaseSummary":      "summary",
 		"actionPlan":          "action-plan",
 		"releaseIntelligence": "intelligence",
@@ -789,6 +801,7 @@ func findPortalJSONValue(value interface{}, key string) (interface{}, bool) {
 func releaseIDFromReportFile(base string) string {
 	prefixes := []string{
 		"release-evidence-",
+		"evidence-record-",
 		"release-summary-",
 		"action-plan-",
 		"release-intelligence-",
@@ -968,6 +981,8 @@ func kindFromReportFile(base string) string {
 	switch {
 	case strings.HasPrefix(base, "release-evidence-"):
 		return "releaseEvidence"
+	case strings.HasPrefix(base, "evidence-record-"):
+		return "evidenceRecord"
 	case strings.HasPrefix(base, "release-summary-"):
 		return "releaseSummary"
 	case strings.HasPrefix(base, "action-plan-"):

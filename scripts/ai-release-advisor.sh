@@ -1125,3 +1125,45 @@ else
   echo "WARN: release evidence not found, skip release timeline generation: ${EVIDENCE_OUT:-not provided}" >&2
 fi
 
+
+echo "===== build evidence control-plane record ====="
+
+if [ -f "${EVIDENCE_OUT:-}" ]; then
+  EVIDENCE_RECORD_BUILDER=""
+
+  if [ -x "./scripts/build-evidence-record.sh" ]; then
+    EVIDENCE_RECORD_BUILDER="./scripts/build-evidence-record.sh"
+  elif [ -x "/app/scripts/build-evidence-record.sh" ]; then
+    EVIDENCE_RECORD_BUILDER="/app/scripts/build-evidence-record.sh"
+  fi
+
+  if [ -n "$EVIDENCE_RECORD_BUILDER" ]; then
+    REPORT_OUTPUT_DIR="$(dirname "$EVIDENCE_OUT")"
+    RESOLVED_EVIDENCE_RECORD_OUTPUT_DIR="${EVIDENCE_RECORD_OUTPUT_DIR:-$REPORT_OUTPUT_DIR}"
+
+    if EVIDENCE_RECORD_OUTPUT_DIR="$RESOLVED_EVIDENCE_RECORD_OUTPUT_DIR" \
+      "$EVIDENCE_RECORD_BUILDER" "$EVIDENCE_OUT"; then
+
+      EVIDENCE_BASENAME="$(basename "$EVIDENCE_OUT")"
+      EVIDENCE_SUFFIX="${EVIDENCE_BASENAME#release-evidence-}"
+      EVIDENCE_RECORD_JSON="$RESOLVED_EVIDENCE_RECORD_OUTPUT_DIR/evidence-record-$EVIDENCE_SUFFIX"
+
+      if [ ! -f "$EVIDENCE_RECORD_JSON" ] && [ -f "$RESOLVED_EVIDENCE_RECORD_OUTPUT_DIR/evidence-record-latest.json" ]; then
+        EVIDENCE_RECORD_JSON="$RESOLVED_EVIDENCE_RECORD_OUTPUT_DIR/evidence-record-latest.json"
+      fi
+
+      if [ -f "$EVIDENCE_RECORD_JSON" ]; then
+        echo "Running evidence record contract validation: $EVIDENCE_RECORD_JSON"
+        validate_generated_release_contract "$EVIDENCE_RECORD_JSON"
+      else
+        echo "WARN: expected evidence record file not found after builder run" >&2
+      fi
+    else
+      echo "WARN: build-evidence-record.sh failed, continue release advice pipeline" >&2
+    fi
+  else
+    echo "WARN: evidence record builder not found, skip evidence control-plane record generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip evidence control-plane record generation: ${EVIDENCE_OUT:-not provided}" >&2
+fi

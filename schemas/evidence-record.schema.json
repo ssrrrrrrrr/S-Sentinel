@@ -1,0 +1,258 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://s-sentinel.local/schemas/evidence-record.schema.json",
+  "title": "S Sentinel Evidence Record",
+  "description": "Control-plane index record that links release evidence, SLO, AI, policy, approval, timeline, runbook, RCA, and related artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedBy",
+    "generatedAt",
+    "evidenceId",
+    "releaseId",
+    "service",
+    "namespace",
+    "env",
+    "sourceEvidence",
+    "releaseResult",
+    "policyDecision",
+    "finalAction",
+    "slo",
+    "artifacts",
+    "links",
+    "safety"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "evidence.record/v1alpha1"
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidenceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "service": {
+      "type": ["string", "null"]
+    },
+    "namespace": {
+      "type": ["string", "null"]
+    },
+    "env": {
+      "type": ["string", "null"]
+    },
+    "version": {
+      "type": ["string", "null"]
+    },
+    "commit": {
+      "type": ["string", "null"]
+    },
+    "image": {
+      "type": ["string", "null"]
+    },
+    "imageDigest": {
+      "type": ["string", "null"]
+    },
+    "sourceEvidence": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseResult": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyDecision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "finalAction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executionMode": {
+      "type": ["string", "null"]
+    },
+    "requiresHumanApproval": {
+      "type": "boolean"
+    },
+    "slo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sloId",
+        "sloConfigRef",
+        "snapshotCaptured"
+      ],
+      "properties": {
+        "sloId": {
+          "type": ["string", "null"]
+        },
+        "sloConfigRef": {
+          "type": ["string", "null"]
+        },
+        "snapshotCaptured": {
+          "type": "boolean"
+        },
+        "objectiveIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["object", "null"],
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "path",
+          "exists"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": ["string", "null"]
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "contentType": {
+            "type": ["string", "null"]
+          },
+          "sizeBytes": {
+            "type": ["integer", "number", "null"],
+            "minimum": 0
+          },
+          "modifiedAt": {
+            "type": ["string", "null"]
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "releaseContext",
+        "releaseEvidence",
+        "aiDecision",
+        "policyDecision",
+        "actionPlan",
+        "approval",
+        "timeline",
+        "runbook",
+        "rca"
+      ],
+      "properties": {
+        "releaseContext": {
+          "type": ["string", "null"]
+        },
+        "releaseEvidence": {
+          "type": ["string", "null"]
+        },
+        "aiDecision": {
+          "type": ["string", "null"]
+        },
+        "policyDecision": {
+          "type": ["string", "null"]
+        },
+        "actionPlan": {
+          "type": ["string", "null"]
+        },
+        "approval": {
+          "type": ["string", "null"]
+        },
+        "timeline": {
+          "type": ["string", "null"]
+        },
+        "runbook": {
+          "type": ["string", "null"]
+        },
+        "rca": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "decisionRefs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "collected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "readOnly",
+        "willExecute",
+        "supportsRollback",
+        "supportsPromote",
+        "supportsPatch",
+        "supportsDelete"
+      ],
+      "properties": {
+        "readOnly": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "supportsRollback": {
+          "type": "boolean"
+        },
+        "supportsPromote": {
+          "type": "boolean"
+        },
+        "supportsPatch": {
+          "type": "boolean"
+        },
+        "supportsDelete": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
