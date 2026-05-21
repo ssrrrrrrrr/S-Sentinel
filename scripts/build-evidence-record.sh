@@ -178,6 +178,32 @@ def objective_ids(snapshot: Any) -> list[str]:
             ids.append(str(item["id"]))
     return ids
 
+def strategy_step_summaries(snapshot: Any) -> list[dict[str, Any]]:
+    if not isinstance(snapshot, dict):
+        return []
+    spec = snapshot.get("spec") or {}
+    traffic = spec.get("traffic") or {}
+    steps = traffic.get("steps") or []
+    if not isinstance(steps, list):
+        return []
+
+    result: list[dict[str, Any]] = []
+    for item in steps:
+        if not isinstance(item, dict):
+            continue
+        result.append({
+            "name": nullable_string(item.get("name")),
+            "setWeight": item.get("setWeight"),
+            "pause": nullable_string(item.get("pause")),
+        })
+    return result
+
+def strategy_spec_value(snapshot: Any, key: str) -> Any:
+    if not isinstance(snapshot, dict):
+        return None
+    spec = snapshot.get("spec") or {}
+    return spec.get(key)
+
 evidence = load_json(evidence_path)
 release_id = release_id_from_evidence(evidence_path)
 
@@ -207,6 +233,12 @@ image_digest = change_context.get("imageDigest") or image_obj.get("digest")
 slo_snapshot = evidence.get("sloConfigSnapshot")
 slo_id = evidence.get("sloId") or release_context.get("sloId")
 slo_config_ref = evidence.get("sloConfigRef") or release_context.get("sloConfigRef")
+
+strategy_snapshot = evidence.get("strategyConfigSnapshot")
+strategy_id = evidence.get("strategyId") or release_context.get("strategyId")
+strategy_config_ref = evidence.get("strategyConfigRef") or release_context.get("strategyConfigRef")
+strategy_failure_policy = strategy_spec_value(strategy_snapshot, "failurePolicy")
+strategy_promotion_policy = strategy_spec_value(strategy_snapshot, "promotionPolicy")
 
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
@@ -277,6 +309,15 @@ record = {
         "sloConfigRef": slo_config_ref,
         "snapshotCaptured": isinstance(slo_snapshot, dict),
         "objectiveIds": objective_ids(slo_snapshot),
+    },
+    "strategy": {
+        "strategyId": strategy_id,
+        "strategyConfigRef": strategy_config_ref,
+        "snapshotCaptured": isinstance(strategy_snapshot, dict),
+        "strategyType": strategy_spec_value(strategy_snapshot, "strategyType"),
+        "trafficSteps": strategy_step_summaries(strategy_snapshot),
+        "failurePolicy": strategy_failure_policy if isinstance(strategy_failure_policy, dict) else {},
+        "promotionPolicy": strategy_promotion_policy if isinstance(strategy_promotion_policy, dict) else {},
     },
     "summary": summary,
     "artifacts": artifact_records,

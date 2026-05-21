@@ -1,0 +1,46 @@
+apiVersion: delivery.ssentinel.io/v1alpha1
+kind: ProgressiveDeliveryStrategy
+metadata:
+  name: demo-app-canary-strategy
+  service: demo-app
+  namespace: slo-rollout
+  env: dev
+  labels:
+    app.kubernetes.io/name: demo-app
+    ssentinel.io/component: progressive-delivery-strategy
+spec:
+  description: "Default canary progressive delivery strategy for demo-app."
+  owner: sre
+  strategyType: canary
+
+  traffic:
+    steps:
+      - name: initial-canary
+        setWeight: 20
+        pause: 30s
+      - name: expand-canary
+        setWeight: 50
+        pause: 60s
+      - name: full-promotion
+        setWeight: 100
+        pause: 0s
+
+  analysis:
+    sloRef: demo-app-canary-slo
+    interval: 30s
+    maxFailures: 1
+    metrics:
+      - request-count
+      - error-rate
+      - p95-latency
+
+  failurePolicy:
+    onSLOFailure: stop_promotion
+    onAnalysisError: require_manual_review
+    onInsufficientTraffic: retry_with_more_traffic
+    rollbackAllowed: false
+
+  promotionPolicy:
+    autoPromotionEnabled: false
+    requiresHumanApproval: true
+    finalPromotionMode: manual

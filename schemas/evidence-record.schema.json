@@ -19,6 +19,7 @@
     "policyDecision",
     "finalAction",
     "slo",
+    "strategy",
     "artifacts",
     "links",
     "safety"
@@ -45,25 +46,46 @@
       "minLength": 1
     },
     "service": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "namespace": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "env": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "version": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "commit": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "image": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "imageDigest": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "sourceEvidence": {
       "type": "string",
@@ -82,7 +104,10 @@
       "minLength": 1
     },
     "executionMode": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "requiresHumanApproval": {
       "type": "boolean"
@@ -97,10 +122,16 @@
       ],
       "properties": {
         "sloId": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "sloConfigRef": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "snapshotCaptured": {
           "type": "boolean"
@@ -120,7 +151,10 @@
     "artifacts": {
       "type": "object",
       "additionalProperties": {
-        "type": ["object", "null"],
+        "type": [
+          "object",
+          "null"
+        ],
         "additionalProperties": false,
         "required": [
           "kind",
@@ -133,7 +167,10 @@
             "minLength": 1
           },
           "path": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "exists": {
             "type": "boolean"
@@ -142,14 +179,24 @@
             "type": "boolean"
           },
           "contentType": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "sizeBytes": {
-            "type": ["integer", "number", "null"],
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ],
             "minimum": 0
           },
           "modifiedAt": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       }
@@ -170,31 +217,58 @@
       ],
       "properties": {
         "releaseContext": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "releaseEvidence": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "aiDecision": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "policyDecision": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "actionPlan": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "approval": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "timeline": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "runbook": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "rca": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -251,6 +325,76 @@
         },
         "supportsDelete": {
           "type": "boolean"
+        }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategyId",
+        "strategyConfigRef",
+        "snapshotCaptured"
+      ],
+      "properties": {
+        "strategyId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "strategyConfigRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "snapshotCaptured": {
+          "type": "boolean"
+        },
+        "strategyType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trafficSteps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "setWeight": {
+                "type": [
+                  "integer",
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 100
+              },
+              "pause": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "failurePolicy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "promotionPolicy": {
+          "type": "object",
+          "additionalProperties": true
         }
       }
     }

@@ -221,6 +221,28 @@
       ],
       "description": "SLO config snapshot captured at evidence generation time.",
       "additionalProperties": true
+    },
+    "strategyId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Progressive delivery strategy identifier copied from the release context."
+    },
+    "strategyConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Repository-relative progressive delivery strategy config path copied from the release context."
+    },
+    "strategyConfigSnapshot": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Progressive delivery strategy config snapshot captured at evidence generation time.",
+      "additionalProperties": true
     }
   }
 }

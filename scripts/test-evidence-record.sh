@@ -44,6 +44,8 @@ cat > "$TEST_TMP/release-context-test.json" <<JSON
   "env": "dev",
   "sloId": "demo-app-canary-slo",
   "sloConfigRef": "configs/services/demo-app.slo.yaml",
+  "strategyId": "demo-app-canary-strategy",
+  "strategyConfigRef": "configs/services/demo-app.strategy.yaml",
   "rollout": "demo-app",
   "rolloutPhase": "Degraded",
   "rolloutAbort": true,
@@ -84,6 +86,36 @@ cat > "$TEST_TMP/release-evidence-20260521-100000.json" <<JSON
         {"id": "error-rate"},
         {"id": "p95-latency"}
       ]
+    }
+  },
+  "strategyId": "demo-app-canary-strategy",
+  "strategyConfigRef": "configs/services/demo-app.strategy.yaml",
+  "strategyConfigSnapshot": {
+    "apiVersion": "delivery.ssentinel.io/v1alpha1",
+    "kind": "ProgressiveDeliveryStrategy",
+    "metadata": {
+      "name": "demo-app-canary-strategy"
+    },
+    "spec": {
+      "strategyType": "canary",
+      "traffic": {
+        "steps": [
+          {"name": "initial-canary", "setWeight": 20, "pause": "30s"},
+          {"name": "expand-canary", "setWeight": 50, "pause": "60s"},
+          {"name": "full-promotion", "setWeight": 100, "pause": "0s"}
+        ]
+      },
+      "failurePolicy": {
+        "onSLOFailure": "stop_promotion",
+        "onAnalysisError": "require_manual_review",
+        "onInsufficientTraffic": "retry_with_more_traffic",
+        "rollbackAllowed": false
+      },
+      "promotionPolicy": {
+        "autoPromotionEnabled": false,
+        "requiresHumanApproval": true,
+        "finalPromotionMode": "manual"
+      }
     }
   },
   "summary": {
@@ -157,6 +189,13 @@ assert record["env"] == "dev", record
 assert record["slo"]["sloId"] == "demo-app-canary-slo", record
 assert record["slo"]["snapshotCaptured"] is True, record
 assert set(record["slo"]["objectiveIds"]) == {"request-count", "error-rate", "p95-latency"}, record
+assert record["strategy"]["strategyId"] == "demo-app-canary-strategy", record
+assert record["strategy"]["strategyConfigRef"] == "configs/services/demo-app.strategy.yaml", record
+assert record["strategy"]["snapshotCaptured"] is True, record
+assert record["strategy"]["strategyType"] == "canary", record
+assert [step["setWeight"] for step in record["strategy"]["trafficSteps"]] == [20, 50, 100], record
+assert record["strategy"]["failurePolicy"]["onSLOFailure"] == "stop_promotion", record
+assert record["strategy"]["promotionPolicy"]["requiresHumanApproval"] is True, record
 assert record["links"]["releaseEvidence"].endswith("release-evidence-20260521-100000.json"), record
 assert record["artifacts"]["releaseContext"]["exists"] is True, record
 assert record["coverage"]["total"] >= record["coverage"]["collected"], record

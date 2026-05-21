@@ -248,6 +248,53 @@
         "type": "object",
         "additionalProperties": true
       }
+    },
+    "strategyId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Progressive delivery strategy identifier used by the release."
+    },
+    "strategyConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Repository-relative progressive delivery strategy config reference."
+    },
+    "strategyConfigSnapshot": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Progressive delivery strategy config snapshot loaded by the AI advisor.",
+      "additionalProperties": true
+    },
+    "strategyType": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Progressive delivery strategy type, such as canary."
+    },
+    "strategyTrafficSteps": {
+      "type": "array",
+      "description": "Traffic steps made visible to the AI advisor.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "strategyFailurePolicy": {
+      "type": "object",
+      "description": "Failure policy made visible to the AI advisor.",
+      "additionalProperties": true
+    },
+    "strategyPromotionPolicy": {
+      "type": "object",
+      "description": "Promotion policy made visible to the AI advisor.",
+      "additionalProperties": true
     }
   }
 }

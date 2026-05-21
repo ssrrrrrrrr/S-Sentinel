@@ -155,6 +155,11 @@ slo_config_ref = release_context.get("sloConfigRef")
 slo_config_path = resolve_existing_path(slo_config_ref)
 slo_config_snapshot = read_yaml_object(slo_config_path)
 
+strategy_id = release_context.get("strategyId")
+strategy_config_ref = release_context.get("strategyConfigRef")
+strategy_config_path = resolve_existing_path(strategy_config_ref)
+strategy_config_snapshot = read_yaml_object(strategy_config_path)
+
 bundle = {
     "schemaVersion": "release.evidence.bundle/v1alpha1",
     "generatedBy": "build-release-evidence.sh",
@@ -169,6 +174,9 @@ bundle = {
     "sloId": slo_id,
     "sloConfigRef": slo_config_ref,
     "sloConfigSnapshot": slo_config_snapshot,
+    "strategyId": strategy_id,
+    "strategyConfigRef": strategy_config_ref,
+    "strategyConfigSnapshot": strategy_config_snapshot,
     "summary": {
         "rolloutPhase": rollout.get("phase") or evidence.get("rolloutPhase"),
         "rolloutAbort": rollout.get("abort") if "abort" in rollout else evidence.get("rolloutAbort"),

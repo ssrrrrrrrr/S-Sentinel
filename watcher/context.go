@@ -27,6 +27,8 @@ type ReleaseContext struct {
 	Env                   string                `json:"env"`
 	SLOID                 string                `json:"sloId"`
 	SLOConfigRef          string                `json:"sloConfigRef"`
+	StrategyID            string                `json:"strategyId"`
+	StrategyConfigRef     string                `json:"strategyConfigRef"`
 	Rollout               string                `json:"rollout"`
 	RolloutPhase          string                `json:"rolloutPhase"`
 	RolloutAbort          bool                  `json:"rolloutAbort"`
@@ -60,6 +62,8 @@ type ReleaseEventArchiveRecord struct {
 	Env                   string   `json:"env"`
 	SLOID                 string   `json:"sloId"`
 	SLOConfigRef          string   `json:"sloConfigRef"`
+	StrategyID            string   `json:"strategyId"`
+	StrategyConfigRef     string   `json:"strategyConfigRef"`
 	Rollout               string   `json:"rollout"`
 	RolloutPhase          string   `json:"rolloutPhase"`
 	RolloutAbort          bool     `json:"rolloutAbort"`
@@ -92,6 +96,8 @@ func appendReleaseEventArchive(cfg Config, ctx ReleaseContext, contextFile strin
 		Env:                   ctx.Env,
 		SLOID:                 ctx.SLOID,
 		SLOConfigRef:          ctx.SLOConfigRef,
+		StrategyID:            ctx.StrategyID,
+		StrategyConfigRef:     ctx.StrategyConfigRef,
 		Rollout:               ctx.Rollout,
 		RolloutPhase:          ctx.RolloutPhase,
 		RolloutAbort:          ctx.RolloutAbort,
@@ -184,6 +190,18 @@ func resolveSLOMetadata(e WatchEvent) (string, string, string, string) {
 	sloConfigRef := filepath.ToSlash(filepath.Join("configs", "services", service+".slo.yaml"))
 
 	return service, env, sloID, sloConfigRef
+}
+
+func resolveStrategyMetadata(e WatchEvent) (string, string) {
+	service := strings.TrimSpace(e.RolloutName)
+	if service == "" {
+		service = "demo-app"
+	}
+
+	strategyID := service + "-canary-strategy"
+	strategyConfigRef := filepath.ToSlash(filepath.Join("configs", "services", service+".strategy.yaml"))
+
+	return strategyID, strategyConfigRef
 }
 
 func calculateRisk(e WatchEvent) (string, int, []string) {
@@ -326,6 +344,7 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 	severity, riskScore, riskReasons := calculateRisk(e)
 	result, resultReason := calculateReleaseResult(e, failedMetrics)
 	service, env, sloID, sloConfigRef := resolveSLOMetadata(e)
+	strategyID, strategyConfigRef := resolveStrategyMetadata(e)
 
 	decision := "unknown"
 	action := "manual_check"
@@ -358,6 +377,8 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 		Env:                   env,
 		SLOID:                 sloID,
 		SLOConfigRef:          sloConfigRef,
+		StrategyID:            strategyID,
+		StrategyConfigRef:     strategyConfigRef,
 		Rollout:               e.RolloutName,
 		RolloutPhase:          e.RolloutPhase,
 		RolloutAbort:          e.RolloutAbort,

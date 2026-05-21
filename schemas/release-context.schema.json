@@ -207,6 +207,14 @@
     "sloConfigRef": {
       "type": "string",
       "minLength": 1
+    },
+    "strategyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategyConfigRef": {
+      "type": "string",
+      "minLength": 1
     }
   }
 }

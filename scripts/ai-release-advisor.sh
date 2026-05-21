@@ -138,12 +138,39 @@ slo_config_ref = ctx.get("sloConfigRef")
 slo_config_path = resolve_existing_path(slo_config_ref)
 slo_config_snapshot = read_yaml_object(slo_config_path)
 
+strategy_id = ctx.get("strategyId")
+strategy_config_ref = ctx.get("strategyConfigRef")
+strategy_config_path = resolve_existing_path(strategy_config_ref)
+strategy_config_snapshot = read_yaml_object(strategy_config_path)
+
 slo_objectives = []
 if isinstance(slo_config_snapshot, dict):
     spec = slo_config_snapshot.get("spec") or {}
     objectives = spec.get("objectives") or []
     if isinstance(objectives, list):
         slo_objectives = objectives
+
+strategy_type = None
+strategy_traffic_steps = []
+strategy_failure_policy = {}
+strategy_promotion_policy = {}
+
+if isinstance(strategy_config_snapshot, dict):
+    strategy_spec = strategy_config_snapshot.get("spec") or {}
+    strategy_type = strategy_spec.get("strategyType")
+
+    traffic = strategy_spec.get("traffic") or {}
+    steps = traffic.get("steps") or []
+    if isinstance(steps, list):
+        strategy_traffic_steps = steps
+
+    failure_policy = strategy_spec.get("failurePolicy") or {}
+    if isinstance(failure_policy, dict):
+        strategy_failure_policy = failure_policy
+
+    promotion_policy = strategy_spec.get("promotionPolicy") or {}
+    if isinstance(promotion_policy, dict):
+        strategy_promotion_policy = promotion_policy
 
 def arr(v):
     if v is None:
@@ -240,6 +267,29 @@ deterministic = f"""# AI Release Advisor
 
 {j(slo_objectives)}
 
+## 2.2 Progressive Delivery Strategy-as-Code 输入
+
+- Strategy ID: {strategy_id}
+- Strategy Config Ref: {strategy_config_ref}
+- Strategy Config Loaded: {strategy_config_snapshot is not None}
+- Strategy Type: {strategy_type}
+- Auto Promotion Enabled: {strategy_promotion_policy.get("autoPromotionEnabled")}
+- Requires Human Approval: {strategy_promotion_policy.get("requiresHumanApproval")}
+- On SLO Failure: {strategy_failure_policy.get("onSLOFailure")}
+- Rollback Allowed: {strategy_failure_policy.get("rollbackAllowed")}
+
+### Strategy Traffic Steps
+
+{j(strategy_traffic_steps)}
+
+### Strategy Failure Policy
+
+{j(strategy_failure_policy)}
+
+### Strategy Promotion Policy
+
+{j(strategy_promotion_policy)}
+
 ## 3. 发布失败证据
 
 - Namespace: {ctx.get("namespace")}
@@ -309,6 +359,9 @@ ReleaseContext JSON：
 
 SLOConfig Snapshot JSON：
 {j(slo_config_snapshot)}
+
+StrategyConfig Snapshot JSON：
+{j(strategy_config_snapshot)}
 
 发布报告摘录：
 {report_text}
@@ -539,6 +592,12 @@ evidence = {
     "sloId": slo_id,
     "sloConfigRef": slo_config_ref,
     "sloObjectives": slo_objectives,
+    "strategyId": strategy_id,
+    "strategyConfigRef": strategy_config_ref,
+    "strategyType": strategy_type,
+    "strategyTrafficSteps": strategy_traffic_steps,
+    "strategyFailurePolicy": strategy_failure_policy,
+    "strategyPromotionPolicy": strategy_promotion_policy,
     "failedMetrics": failed_metrics,
     "rolloutPhase": rollout_phase,
     "rolloutAbort": rollout_abort,
@@ -577,6 +636,13 @@ decision_json = {
     "sloConfigRef": slo_config_ref,
     "sloConfigSnapshot": slo_config_snapshot,
     "sloObjectives": slo_objectives,
+    "strategyId": strategy_id,
+    "strategyConfigRef": strategy_config_ref,
+    "strategyConfigSnapshot": strategy_config_snapshot,
+    "strategyType": strategy_type,
+    "strategyTrafficSteps": strategy_traffic_steps,
+    "strategyFailurePolicy": strategy_failure_policy,
+    "strategyPromotionPolicy": strategy_promotion_policy,
     "policyHints": policy_hints,
     "agentAction": agent_action,
     "guardrails": guardrails,
@@ -601,6 +667,7 @@ decision_json = {
         "releaseReport": str(report_file),
         "aiAdvice": str(out_file),
         "sloConfig": str(slo_config_path) if slo_config_path else slo_config_ref,
+        "strategyConfig": str(strategy_config_path) if strategy_config_path else strategy_config_ref,
     },
 }
 

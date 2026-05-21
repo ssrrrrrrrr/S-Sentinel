@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://s-sentinel.local/schemas/progressive-delivery-strategy.schema.json",
+  "title": "S Sentinel Progressive Delivery Strategy",
+  "description": "Service-level progressive delivery strategy configuration used by S Sentinel release analysis and policy guardrails.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "delivery.ssentinel.io/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "ProgressiveDeliveryStrategy"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "service", "namespace", "env"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "env": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategyType", "traffic", "analysis", "failurePolicy", "promotionPolicy"],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "strategyType": {
+          "type": "string",
+          "enum": ["canary", "blue_green"]
+        },
+        "traffic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["steps"],
+          "properties": {
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "setWeight", "pause"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                  },
+                  "setWeight": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "pause": {
+                    "type": "string",
+                    "pattern": "^[0-9]+[smhd]$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sloRef", "interval", "maxFailures", "metrics"],
+          "properties": {
+            "sloRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "interval": {
+              "type": "string",
+              "pattern": "^[0-9]+[smhd]$"
+            },
+            "maxFailures": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "metrics": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "failurePolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["onSLOFailure", "onAnalysisError", "onInsufficientTraffic", "rollbackAllowed"],
+          "properties": {
+            "onSLOFailure": {
+              "type": "string",
+              "enum": ["stop_promotion", "require_manual_review", "rollback"]
+            },
+            "onAnalysisError": {
+              "type": "string",
+              "enum": ["stop_promotion", "require_manual_review", "retry"]
+            },
+            "onInsufficientTraffic": {
+              "type": "string",
+              "enum": ["retry_with_more_traffic", "require_manual_review", "stop_promotion"]
+            },
+            "rollbackAllowed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "promotionPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["autoPromotionEnabled", "requiresHumanApproval", "finalPromotionMode"],
+          "properties": {
+            "autoPromotionEnabled": {
+              "type": "boolean"
+            },
+            "requiresHumanApproval": {
+              "type": "boolean"
+            },
+            "finalPromotionMode": {
+              "type": "string",
+              "enum": ["manual", "automatic", "policy_bound"]
+            }
+          }
+        }
+      }
+    }
+  }
+}
