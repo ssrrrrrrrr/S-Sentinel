@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ssentinel.io/schemas/slo-config.schema.json",
+  "title": "S Sentinel SLO Config",
+  "description": "Service-level SLO-as-Code configuration used by S Sentinel release analysis.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "slo.ssentinel.io/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "SLOConfig"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "service",
+        "namespace",
+        "env"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "env": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation",
+        "objectives"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "evaluation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "window",
+            "minRequestCount"
+          ],
+          "properties": {
+            "window": {
+              "type": "string",
+              "pattern": "^[0-9]+[smhd]$"
+            },
+            "minRequestCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "type",
+              "threshold",
+              "severity"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "request_count",
+                  "error_rate",
+                  "latency"
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "percentile": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              },
+              "threshold": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "operator",
+                  "value",
+                  "unit"
+                ],
+                "properties": {
+                  "operator": {
+                    "type": "string",
+                    "enum": [
+                      ">",
+                      ">=",
+                      "<",
+                      "<=",
+                      "=="
+                    ]
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "requests",
+                      "percent",
+                      "seconds",
+                      "milliseconds"
+                    ]
+                  }
+                }
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "info",
+                  "warning",
+                  "critical"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

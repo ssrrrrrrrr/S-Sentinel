@@ -33,15 +33,33 @@
     },
     "policyDecision": {
       "type": "string",
-      "enum": ["ALLOW", "ALLOW_ADVISORY_ONLY", "DENY", "REQUIRE_HUMAN_APPROVAL", "UNKNOWN"]
+      "enum": [
+        "ALLOW",
+        "ALLOW_ADVISORY_ONLY",
+        "DENY",
+        "REQUIRE_HUMAN_APPROVAL",
+        "UNKNOWN"
+      ]
     },
     "finalAction": {
       "type": "string",
-      "enum": ["NOOP", "STOP_PROMOTION", "ROLLBACK", "PROMOTE", "INVESTIGATE", "UNKNOWN"]
+      "enum": [
+        "NOOP",
+        "STOP_PROMOTION",
+        "ROLLBACK",
+        "PROMOTE",
+        "INVESTIGATE",
+        "UNKNOWN"
+      ]
     },
     "executionMode": {
       "type": "string",
-      "enum": ["advisory_only", "manual_approval", "auto_execute_disabled", "auto_execute"]
+      "enum": [
+        "advisory_only",
+        "manual_approval",
+        "auto_execute_disabled",
+        "auto_execute"
+      ]
     },
     "requiresHumanApproval": {
       "type": "boolean"
@@ -75,18 +93,34 @@
         },
         "riskLevel": {
           "type": "string",
-          "enum": ["low", "medium", "high", "critical", "unknown"]
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ]
         },
         "riskScore": {
-          "type": ["integer", "number"],
+          "type": [
+            "integer",
+            "number"
+          ],
           "minimum": 0,
           "maximum": 100
         },
         "changeRiskLevel": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "changeRiskScore": {
-          "type": ["integer", "number", "null"],
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 100
         },
@@ -107,7 +141,10 @@
     "artifacts": {
       "type": "object",
       "additionalProperties": {
-        "type": ["string", "null"]
+        "type": [
+          "string",
+          "null"
+        ]
       },
       "required": [
         "releaseContext",
@@ -132,7 +169,10 @@
       }
     },
     "failureEvidenceRef": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": true,
       "properties": {
         "generated": {
@@ -145,6 +185,42 @@
           "type": "string"
         }
       }
+    },
+    "service": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Service name associated with the release evidence."
+    },
+    "env": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Environment associated with the release evidence."
+    },
+    "sloId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "SLO identifier copied from the release context."
+    },
+    "sloConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Repository-relative SLO config path copied from the release context."
+    },
+    "sloConfigSnapshot": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "SLO config snapshot captured at evidence generation time.",
+      "additionalProperties": true
     }
   }
 }

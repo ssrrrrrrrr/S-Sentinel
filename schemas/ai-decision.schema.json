@@ -204,6 +204,50 @@
     "sources": {
       "type": "object",
       "additionalProperties": true
+    },
+    "service": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Service name associated with the AI release analysis."
+    },
+    "env": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Environment associated with the AI release analysis."
+    },
+    "sloId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "SLO identifier used by the release."
+    },
+    "sloConfigRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Repository-relative SLO config reference."
+    },
+    "sloConfigSnapshot": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "SLO config snapshot loaded by the AI advisor.",
+      "additionalProperties": true
+    },
+    "sloObjectives": {
+      "type": "array",
+      "description": "SLO objectives made visible to the AI advisor.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
     }
   }
 }

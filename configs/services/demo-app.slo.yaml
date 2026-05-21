@@ -1,0 +1,47 @@
+apiVersion: slo.ssentinel.io/v1alpha1
+kind: SLOConfig
+metadata:
+  name: demo-app-canary-slo
+  service: demo-app
+  namespace: slo-rollout
+  env: dev
+  labels:
+    app.kubernetes.io/name: demo-app
+    ssentinel.io/component: slo-config
+spec:
+  description: "Default canary release SLO for demo-app."
+  owner: sre
+  evaluation:
+    window: 1m
+    minRequestCount: 20
+  objectives:
+    - id: request-count
+      name: Minimum request count
+      type: request_count
+      description: "Require enough traffic before evaluating release quality."
+      threshold:
+        operator: ">="
+        value: 20
+        unit: requests
+      severity: info
+
+    - id: error-rate
+      name: Error rate
+      type: error_rate
+      description: "The canary error rate must stay below the allowed threshold."
+      threshold:
+        operator: "<="
+        value: 5
+        unit: percent
+      severity: critical
+
+    - id: p95-latency
+      name: P95 latency
+      type: latency
+      description: "The canary p95 latency must stay below the allowed threshold."
+      percentile: 95
+      threshold:
+        operator: "<="
+        value: 0.5
+        unit: seconds
+      severity: critical

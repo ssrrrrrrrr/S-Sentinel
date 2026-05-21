@@ -81,6 +81,11 @@ import sys
 import urllib.request
 from pathlib import Path
 
+try:
+    import yaml
+except Exception:
+    yaml = None
+
 ollama_url = sys.argv[1].rstrip("/")
 model = sys.argv[2]
 ollama_timeout_seconds = int(sys.argv[3])
@@ -94,6 +99,51 @@ decision_out_file = Path(sys.argv[10])
 
 ctx = json.loads(context_file.read_text(encoding="utf-8"))
 report_text = report_file.read_text(encoding="utf-8", errors="ignore")[:advisor_report_text_limit]
+
+def resolve_existing_path(raw):
+    if not raw:
+        return None
+
+    candidate = Path(str(raw))
+    if candidate.is_absolute():
+        return candidate if candidate.exists() else None
+
+    search_roots = [
+        Path.cwd(),
+        context_file.parent,
+        report_file.parent,
+        out_file.parent,
+    ]
+
+    for root in search_roots:
+        resolved = root / candidate
+        if resolved.exists():
+            return resolved
+
+    return None
+
+def read_yaml_object(path):
+    if not path or not path.exists() or yaml is None:
+        return None
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+service = ctx.get("service") or ctx.get("rollout") or "unknown"
+env = ctx.get("env") or "unknown"
+slo_id = ctx.get("sloId")
+slo_config_ref = ctx.get("sloConfigRef")
+slo_config_path = resolve_existing_path(slo_config_ref)
+slo_config_snapshot = read_yaml_object(slo_config_path)
+
+slo_objectives = []
+if isinstance(slo_config_snapshot, dict):
+    spec = slo_config_snapshot.get("spec") or {}
+    objectives = spec.get("objectives") or []
+    if isinstance(objectives, list):
+        slo_objectives = objectives
 
 def arr(v):
     if v is None:
@@ -178,6 +228,18 @@ deterministic = f"""# AI Release Advisor
 
 {j(slo_changes)}
 
+## 2.1 SLO-as-Code 输入
+
+- Service: {service}
+- Env: {env}
+- SLO ID: {slo_id}
+- SLO Config Ref: {slo_config_ref}
+- SLO Config Loaded: {slo_config_snapshot is not None}
+
+### SLO Objectives
+
+{j(slo_objectives)}
+
 ## 3. 发布失败证据
 
 - Namespace: {ctx.get("namespace")}
@@ -244,6 +306,9 @@ user_prompt = f"""
 
 ReleaseContext JSON：
 {j(ctx)}
+
+SLOConfig Snapshot JSON：
+{j(slo_config_snapshot)}
 
 发布报告摘录：
 {report_text}
@@ -469,6 +534,11 @@ guardrails = {
 }
 
 evidence = {
+    "service": service,
+    "env": env,
+    "sloId": slo_id,
+    "sloConfigRef": slo_config_ref,
+    "sloObjectives": slo_objectives,
     "failedMetrics": failed_metrics,
     "rolloutPhase": rollout_phase,
     "rolloutAbort": rollout_abort,
@@ -501,6 +571,12 @@ decision_json = {
     "recommendedAction": ctx.get("recommendedAction"),
     "requiresHumanApproval": requires_human_approval,
     "safeToRetry": safe_to_retry,
+    "service": service,
+    "env": env,
+    "sloId": slo_id,
+    "sloConfigRef": slo_config_ref,
+    "sloConfigSnapshot": slo_config_snapshot,
+    "sloObjectives": slo_objectives,
     "policyHints": policy_hints,
     "agentAction": agent_action,
     "guardrails": guardrails,
@@ -524,6 +600,7 @@ decision_json = {
         "releaseContext": str(context_file),
         "releaseReport": str(report_file),
         "aiAdvice": str(out_file),
+        "sloConfig": str(slo_config_path) if slo_config_path else slo_config_ref,
     },
 }
 

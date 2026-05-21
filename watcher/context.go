@@ -23,6 +23,10 @@ type MetricResult struct {
 type ReleaseContext struct {
 	GeneratedAt           string                `json:"generatedAt"`
 	Namespace             string                `json:"namespace"`
+	Service               string                `json:"service"`
+	Env                   string                `json:"env"`
+	SLOID                 string                `json:"sloId"`
+	SLOConfigRef          string                `json:"sloConfigRef"`
 	Rollout               string                `json:"rollout"`
 	RolloutPhase          string                `json:"rolloutPhase"`
 	RolloutAbort          bool                  `json:"rolloutAbort"`
@@ -52,6 +56,10 @@ type ReleaseEventArchiveRecord struct {
 	ID                    string   `json:"id"`
 	GeneratedAt           string   `json:"generatedAt"`
 	Namespace             string   `json:"namespace"`
+	Service               string   `json:"service"`
+	Env                   string   `json:"env"`
+	SLOID                 string   `json:"sloId"`
+	SLOConfigRef          string   `json:"sloConfigRef"`
 	Rollout               string   `json:"rollout"`
 	RolloutPhase          string   `json:"rolloutPhase"`
 	RolloutAbort          bool     `json:"rolloutAbort"`
@@ -80,6 +88,10 @@ func appendReleaseEventArchive(cfg Config, ctx ReleaseContext, contextFile strin
 		ID:                    ctx.GeneratedAt + ":" + ctx.Namespace + "/" + ctx.Rollout + ":" + ctx.AnalysisRun,
 		GeneratedAt:           ctx.GeneratedAt,
 		Namespace:             ctx.Namespace,
+		Service:               ctx.Service,
+		Env:                   ctx.Env,
+		SLOID:                 ctx.SLOID,
+		SLOConfigRef:          ctx.SLOConfigRef,
 		Rollout:               ctx.Rollout,
 		RolloutPhase:          ctx.RolloutPhase,
 		RolloutAbort:          ctx.RolloutAbort,
@@ -152,6 +164,26 @@ func metricByName(metrics []MetricResult, name string) *MetricResult {
 		}
 	}
 	return nil
+}
+
+func resolveSLOMetadata(e WatchEvent) (string, string, string, string) {
+	service := strings.TrimSpace(e.RolloutName)
+	if service == "" {
+		service = "demo-app"
+	}
+
+	env := strings.TrimSpace(os.Getenv("S_SENTINEL_ENV"))
+	if env == "" {
+		env = strings.TrimSpace(os.Getenv("RELEASE_ENV"))
+	}
+	if env == "" {
+		env = "dev"
+	}
+
+	sloID := service + "-canary-slo"
+	sloConfigRef := filepath.ToSlash(filepath.Join("configs", "services", service+".slo.yaml"))
+
+	return service, env, sloID, sloConfigRef
 }
 
 func calculateRisk(e WatchEvent) (string, int, []string) {
@@ -293,6 +325,7 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 
 	severity, riskScore, riskReasons := calculateRisk(e)
 	result, resultReason := calculateReleaseResult(e, failedMetrics)
+	service, env, sloID, sloConfigRef := resolveSLOMetadata(e)
 
 	decision := "unknown"
 	action := "manual_check"
@@ -321,6 +354,10 @@ func buildReleaseContext(e WatchEvent) ReleaseContext {
 	return ReleaseContext{
 		GeneratedAt:           time.Now().Format(time.RFC3339),
 		Namespace:             e.Namespace,
+		Service:               service,
+		Env:                   env,
+		SLOID:                 sloID,
+		SLOConfigRef:          sloConfigRef,
 		Rollout:               e.RolloutName,
 		RolloutPhase:          e.RolloutPhase,
 		RolloutAbort:          e.RolloutAbort,

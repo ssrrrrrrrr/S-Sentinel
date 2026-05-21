@@ -87,6 +87,11 @@ import json
 import sys
 from pathlib import Path
 
+try:
+    import yaml
+except Exception:
+    yaml = None
+
 ai_path = Path(sys.argv[1])
 policy_path = Path(sys.argv[2])
 output_path = Path(sys.argv[3])
@@ -100,6 +105,56 @@ rollout = ai.get("rollout") or {}
 analysis_run = ai.get("analysisRun") or {}
 evidence = ai.get("evidence") or {}
 
+def resolve_existing_path(raw):
+    if not raw:
+        return None
+
+    candidate = Path(str(raw))
+    if candidate.is_absolute():
+        return candidate if candidate.exists() else None
+
+    search_roots = [
+        Path.cwd(),
+        ai_path.parent,
+        policy_path.parent,
+        output_path.parent,
+    ]
+
+    for root in search_roots:
+        resolved = root / candidate
+        if resolved.exists():
+            return resolved
+
+    return None
+
+def read_json_object(path):
+    if not path or not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def read_yaml_object(path):
+    if not path or not path.exists() or yaml is None:
+        return None
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+release_context_path = resolve_existing_path(sources.get("releaseContext"))
+release_context = read_json_object(release_context_path)
+
+service = release_context.get("service")
+env = release_context.get("env")
+slo_id = release_context.get("sloId")
+slo_config_ref = release_context.get("sloConfigRef")
+slo_config_path = resolve_existing_path(slo_config_ref)
+slo_config_snapshot = read_yaml_object(slo_config_path)
+
 bundle = {
     "schemaVersion": "release.evidence.bundle/v1alpha1",
     "generatedBy": "build-release-evidence.sh",
@@ -109,6 +164,11 @@ bundle = {
     "executionMode": policy.get("executionMode", ai.get("executionMode", "unknown")),
     "requiresHumanApproval": bool(policy.get("requiresHumanApproval", False)),
     "safeToRetry": bool(ai.get("safeToRetry", False)),
+    "service": service,
+    "env": env,
+    "sloId": slo_id,
+    "sloConfigRef": slo_config_ref,
+    "sloConfigSnapshot": slo_config_snapshot,
     "summary": {
         "rolloutPhase": rollout.get("phase") or evidence.get("rolloutPhase"),
         "rolloutAbort": rollout.get("abort") if "abort" in rollout else evidence.get("rolloutAbort"),
@@ -127,6 +187,8 @@ bundle = {
         "aiDecision": str(ai_path),
         "policyDecision": str(policy_path),
         "releaseSummary": str(summary_path),
+        "actionPlan": None,
+        "actionPlanReport": None,
     },
     "decisionRefs": {
         "aiDecision": {

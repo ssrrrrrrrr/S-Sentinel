@@ -35,7 +35,14 @@
     },
     "rolloutPhase": {
       "type": "string",
-      "enum": ["Healthy", "Progressing", "Paused", "Degraded", "Unknown", "Missing"]
+      "enum": [
+        "Healthy",
+        "Progressing",
+        "Paused",
+        "Degraded",
+        "Unknown",
+        "Missing"
+      ]
     },
     "rolloutAbort": {
       "type": "boolean"
@@ -44,7 +51,10 @@
       "type": "string"
     },
     "stableReplicaSet": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "currentDesiredVersion": {
       "type": "string",
@@ -55,10 +65,22 @@
     },
     "analysisRunPhase": {
       "type": "string",
-      "enum": ["Successful", "Failed", "Running", "Pending", "Inconclusive", "Error", "Unknown", "Missing"]
+      "enum": [
+        "Successful",
+        "Failed",
+        "Running",
+        "Pending",
+        "Inconclusive",
+        "Error",
+        "Unknown",
+        "Missing"
+      ]
     },
     "failedMetric": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "failedMetrics": {
       "type": "array",
@@ -72,7 +94,10 @@
       "items": {
         "type": "object",
         "additionalProperties": true,
-        "required": ["name", "phase"],
+        "required": [
+          "name",
+          "phase"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -86,29 +111,59 @@
             "type": "string"
           },
           "value": {
-            "type": ["string", "number", "array", "null"]
+            "type": [
+              "string",
+              "number",
+              "array",
+              "null"
+            ]
           },
           "successful": {
-            "type": ["integer", "number", "null"]
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
           },
           "failed": {
-            "type": ["integer", "number", "null"]
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
           },
           "inconclusive": {
-            "type": ["integer", "number", "null"]
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
           },
           "error": {
-            "type": ["integer", "number", "null"]
+            "type": [
+              "integer",
+              "number",
+              "null"
+            ]
           }
         }
       }
     },
     "severity": {
       "type": "string",
-      "enum": ["low", "medium", "high", "critical", "unknown"]
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical",
+        "unknown"
+      ]
     },
     "riskScore": {
-      "type": ["integer", "number"],
+      "type": [
+        "integer",
+        "number"
+      ],
       "minimum": 0,
       "maximum": 100
     },
@@ -119,14 +174,39 @@
       }
     },
     "changeContextFile": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "changeRiskLevel": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "changeContext": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": true
+    },
+    "service": {
+      "type": "string",
+      "minLength": 1
+    },
+    "env": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sloId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sloConfigRef": {
+      "type": "string",
+      "minLength": 1
     }
   }
 }
