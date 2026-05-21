@@ -1,4 +1,4 @@
-apiVersion: v1
+﻿apiVersion: v1
 kind: ConfigMap
 metadata:
   name: release-rollout-watcher-config
@@ -41,7 +41,7 @@ spec:
       serviceAccountName: release-rollout-watcher
       containers:
         - name: watcher
-          image: 192.168.30.11:5000/release-rollout-watcher:v1.25
+          image: 192.168.30.11:5000/release-rollout-watcher:v1.26
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -87,3 +87,4 @@ spec:
         - name: release-reports
           persistentVolumeClaim:
             claimName: release-rollout-watcher-reports-nfs
+
