@@ -9,6 +9,7 @@
   | "policy-decision"
   | "runbook"
   | "rca"
+  | "timeline"
 
 export type ReleaseResourceContent = {
   releaseId: string
@@ -19,7 +20,7 @@ export type ReleaseResourceContent = {
 
 const resourcePathByTab: Record<string, ReleaseResourceKind> = {
   "概览": "summary",
-  Timeline: "summary",
+  Timeline: "timeline",
   Evidence: "evidence",
   "Action Plan": "action-plan",
   Intelligence: "intelligence",

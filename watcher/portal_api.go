@@ -100,6 +100,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/failure-evidence", api.handleLatestResource("failureEvidence"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
+	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
 	mux.HandleFunc("/api/releases/latest/runbook", api.handleLatestResource("runbook"))
 	mux.HandleFunc("/api/releases/latest/rca", api.handleLatestResource("rca"))
 }
@@ -169,6 +170,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "release-memory-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest release memory summary.",
+		},
+		{
+			Name:         "releaseTimeline",
+			Endpoint:     "/api/releases/latest/timeline",
+			Candidates:   []string{"release-timeline-latest.json"},
+			FallbackGlob: "release-timeline-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest release evidence timeline.",
 		},
 		{
 			Name:         "runbook",
@@ -375,6 +384,22 @@ func (api *portalAPI) handleReleaseResourceContent(w http.ResponseWriter, releas
 	}
 
 	resource, ok := group.Resources[kind]
+	if !ok && kind == "releaseTimeline" {
+		timelineFile := filepath.Join(api.reportDir, "release-timeline-"+releaseID+".json")
+		if info, err := os.Stat(timelineFile); err == nil && !info.IsDir() {
+			resource = portalReleaseResource{
+				Kind:         kind,
+				File:         timelineFile,
+				BaseName:     filepath.Base(timelineFile),
+				ReleaseID:    releaseID,
+				SizeBytes:    info.Size(),
+				ModifiedAt:   info.ModTime().Format(time.RFC3339),
+				ModifiedUnix: info.ModTime().Unix(),
+			}
+			ok = true
+		}
+	}
+
 	if !ok {
 		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
 			"error":              "release resource not found",
@@ -427,6 +452,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "policyDecision", "application/json; charset=utf-8", true
 	case "context":
 		return "releaseContext", "application/json; charset=utf-8", true
+	case "timeline":
+		return "releaseTimeline", "application/json; charset=utf-8", true
 	case "runbook":
 		return "runbook", "text/markdown; charset=utf-8", true
 	case "rca":
@@ -452,6 +479,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"aiDecision":          "ai-decision",
 		"policyDecision":      "policy-decision",
 		"releaseContext":      "context",
+		"releaseTimeline":     "timeline",
 		"runbook":             "runbook",
 		"rca":                 "rca",
 	}
@@ -546,6 +574,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"ai-decision-*.json",
 		"policy-decision-*.json",
 		"release-context-*.json",
+		"release-timeline-*.json",
 		"runbook-*.md",
 		"rca-*.md",
 	}
@@ -769,6 +798,7 @@ func releaseIDFromReportFile(base string) string {
 		"ai-decision-",
 		"policy-decision-",
 		"release-context-",
+		"release-timeline-",
 		"runbook-",
 		"rca-",
 	}
@@ -956,6 +986,8 @@ func kindFromReportFile(base string) string {
 		return "policyDecision"
 	case strings.HasPrefix(base, "release-context-"):
 		return "releaseContext"
+	case strings.HasPrefix(base, "release-timeline-"):
+		return "releaseTimeline"
 	case strings.HasPrefix(base, "runbook-"):
 		return "runbook"
 	case strings.HasPrefix(base, "rca-"):

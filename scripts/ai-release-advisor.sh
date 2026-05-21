@@ -1023,3 +1023,28 @@ else
   echo "WARN: release evidence not found, skip runbook/RCA generation: ${EVIDENCE_OUT:-not provided}" >&2
 fi
 
+echo "===== build release timeline ====="
+
+if [ -f "${EVIDENCE_OUT:-}" ]; then
+  REPORT_OUTPUT_DIR="$(dirname "$EVIDENCE_OUT")"
+
+  RELEASE_TIMELINE_BUILDER=""
+  if [ -f "./scripts/build-release-timeline.sh" ]; then
+    RELEASE_TIMELINE_BUILDER="./scripts/build-release-timeline.sh"
+  elif [ -f "/app/scripts/build-release-timeline.sh" ]; then
+    RELEASE_TIMELINE_BUILDER="/app/scripts/build-release-timeline.sh"
+  fi
+
+  if [ -n "$RELEASE_TIMELINE_BUILDER" ]; then
+    if RELEASE_TIMELINE_OUTPUT_DIR="$REPORT_OUTPUT_DIR" RELEASE_REPORT_DIR="$REPORT_OUTPUT_DIR" bash "$RELEASE_TIMELINE_BUILDER" "$EVIDENCE_OUT"; then
+      echo "Release timeline generated from evidence: $EVIDENCE_OUT"
+    else
+      echo "WARN: build-release-timeline.sh failed, continue release advice pipeline" >&2
+    fi
+  else
+    echo "WARN: build-release-timeline.sh not found, skip release timeline generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip release timeline generation: ${EVIDENCE_OUT:-not provided}" >&2
+fi
+
