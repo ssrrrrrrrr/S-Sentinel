@@ -1218,6 +1218,43 @@ else
   echo "WARN: release evidence not found, skip read-only agent run generation" >&2
 fi
 
+echo "===== build read-only plan run ====="
+
+if [ -n "${EVIDENCE_OUT:-}" ] && [ -f "$EVIDENCE_OUT" ]; then
+  PLAN_RUN_BUILDER=""
+
+  if [ -x "./scripts/build-plan-run.sh" ]; then
+    PLAN_RUN_BUILDER="./scripts/build-plan-run.sh"
+  elif [ -x "/app/scripts/build-plan-run.sh" ]; then
+    PLAN_RUN_BUILDER="/app/scripts/build-plan-run.sh"
+  fi
+
+  if [ -n "$PLAN_RUN_BUILDER" ]; then
+    REPORT_OUTPUT_DIR="$(dirname "$EVIDENCE_OUT")"
+    EVIDENCE_BASENAME="$(basename "$EVIDENCE_OUT")"
+    EVIDENCE_SUFFIX="${EVIDENCE_BASENAME#release-evidence-}"
+    AGENT_RUN_JSON="$REPORT_OUTPUT_DIR/agent-run-$EVIDENCE_SUFFIX"
+
+    if [ -f "$AGENT_RUN_JSON" ]; then
+      echo "Running read-only plan run builder: $PLAN_RUN_BUILDER"
+      if RELEASE_REPORT_DIR="$REPORT_OUTPUT_DIR" \
+        RELEASE_MEMORY_FILE="${RELEASE_MEMORY_FILE:-$REPORT_OUTPUT_DIR/release-memory.jsonl}" \
+        PLAN_RUN_OUTPUT_DIR="${PLAN_RUN_OUTPUT_DIR:-$REPORT_OUTPUT_DIR}" \
+        "$PLAN_RUN_BUILDER" "$AGENT_RUN_JSON" "$EVIDENCE_OUT"; then
+        true
+      else
+        echo "WARN: build-plan-run.sh failed, continue release advice pipeline" >&2
+      fi
+    else
+      echo "WARN: expected agent run file not found, skip plan run generation: $AGENT_RUN_JSON" >&2
+    fi
+  else
+    echo "WARN: build-plan-run.sh not found, skip read-only plan run generation" >&2
+  fi
+else
+  echo "WARN: release evidence not found, skip read-only plan run generation" >&2
+fi
+
 echo "===== build evidence control-plane record ====="
 
 if [ -f "${EVIDENCE_OUT:-}" ]; then

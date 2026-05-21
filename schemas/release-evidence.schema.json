@@ -160,6 +160,13 @@
             "null"
           ],
           "description": "Path to the generated read-only agent run JSON."
+        },
+        "planRun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated read-only planning run JSON."
         }
       }
     },
@@ -199,6 +206,57 @@
             "priority": {
               "type": [
                 "string",
+                "null"
+              ]
+            },
+            "willExecute": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "guardrails": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": true
+        },
+        "planRun": {
+          "type": "object",
+          "properties": {
+            "planRunId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sourceAgentRunId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "mode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "planType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "priority": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "retrievedEvidenceCount": {
+              "type": [
+                "integer",
                 "null"
               ]
             },
@@ -341,6 +399,13 @@
         "null"
       ],
       "description": "Read-only agent run id linked to this release evidence bundle."
+    },
+    "planRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Read-only planning run id linked to this release evidence bundle."
     }
   }
 }

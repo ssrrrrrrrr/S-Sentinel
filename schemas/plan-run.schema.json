@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S Sentinel Agent Plan Run",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "planRunId",
+    "sourceAgentRunId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "release",
+    "inputs",
+    "retrieval",
+    "plan",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "agent.plan.run/v1alpha1"
+    },
+    "planRunId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceAgentRunId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "read_only_planning"
+      ]
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "releaseId",
+        "releaseResult"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policyDecision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failedMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "riskLevel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "riskScore": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "agentRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseEvidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseIntelligence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "releaseMemory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artifacts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "retrieval": {
+      "type": "object",
+      "required": [
+        "strategy",
+        "query",
+        "retrievedEvidence"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "query": {
+          "type": "object"
+        },
+        "retrievedEvidence": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "summary": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "planType",
+        "priority",
+        "summary",
+        "investigationSteps",
+        "candidateFollowUpActions",
+        "willExecute"
+      ],
+      "properties": {
+        "planType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "investigationSteps": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "candidateFollowUpActions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "readOnly",
+        "willExecute",
+        "doesNotModifyKubernetes",
+        "doesNotModifyGitOps",
+        "doesNotRollback",
+        "doesNotPromote",
+        "doesNotPatchResources",
+        "doesNotDeleteResources",
+        "doesNotBuildImages",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "readOnly": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "doesNotModifyKubernetes": {
+          "type": "boolean"
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean"
+        },
+        "doesNotRollback": {
+          "type": "boolean"
+        },
+        "doesNotPromote": {
+          "type": "boolean"
+        },
+        "doesNotPatchResources": {
+          "type": "boolean"
+        },
+        "doesNotDeleteResources": {
+          "type": "boolean"
+        },
+        "doesNotBuildImages": {
+          "type": "boolean"
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

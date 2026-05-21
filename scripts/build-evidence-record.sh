@@ -265,6 +265,13 @@ agent_run = load_json(agent_run_path)
 agent_recommendation = as_dict(agent_run.get("recommendation"))
 agent_guardrails = as_dict(agent_run.get("guardrails"))
 
+plan_run_path = resolve_ref(artifacts.get("planRun"), evidence_path)
+plan_run = load_json(plan_run_path)
+plan_obj = as_dict(plan_run.get("plan"))
+plan_retrieval = as_dict(plan_run.get("retrieval"))
+plan_retrieval_summary = as_dict(plan_retrieval.get("summary"))
+plan_guardrails = as_dict(plan_run.get("guardrails"))
+
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
     "releaseEvidence": str(evidence_path),
@@ -276,6 +283,7 @@ link_map = {
     "runbook": artifacts.get("runbook"),
     "rca": artifacts.get("rca"),
     "agentRun": artifacts.get("agentRun"),
+    "planRun": artifacts.get("planRun"),
 }
 
 artifact_defs = [
@@ -293,6 +301,7 @@ artifact_defs = [
     ("releaseIntelligence", artifacts.get("releaseIntelligence"), False),
     ("releaseIntelligenceReport", artifacts.get("releaseIntelligenceReport"), False),
     ("agentRun", link_map["agentRun"], False),
+    ("planRun", link_map["planRun"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -376,6 +385,21 @@ record = {
         )),
         "sourceAgentRun": nullable_string(link_map.get("agentRun")),
         "guardrails": agent_guardrails,
+    },
+    "plan": {
+        "planRunId": nullable_string(plan_run.get("planRunId")),
+        "mode": nullable_string(plan_run.get("mode")),
+        "sourceAgentRunId": nullable_string(plan_run.get("sourceAgentRunId")),
+        "planType": nullable_string(plan_obj.get("planType")),
+        "priority": nullable_string(plan_obj.get("priority")),
+        "willExecute": bool_or_none(first_not_none(
+            plan_obj.get("willExecute"),
+            plan_guardrails.get("willExecute"),
+        )),
+        "sourcePlanRun": nullable_string(link_map.get("planRun")),
+        "retrievedEvidenceCount": plan_retrieval_summary.get("retrievedEvidenceCount"),
+        "topScore": plan_retrieval_summary.get("topScore"),
+        "guardrails": plan_guardrails,
     },
     "slo": {
         "sloId": slo_id,

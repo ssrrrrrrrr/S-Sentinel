@@ -276,6 +276,13 @@
             "null"
           ],
           "description": "Path to the generated read-only agent run JSON."
+        },
+        "planRun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated read-only planning run JSON."
         }
       }
     },
@@ -491,6 +498,70 @@
         "sourceAgentRun": {
           "type": [
             "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "planRunId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceAgentRunId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "priority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "willExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sourcePlanRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retrievedEvidenceCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "topScore": {
+          "type": [
+            "integer",
+            "number",
             "null"
           ]
         },
