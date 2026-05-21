@@ -12,6 +12,7 @@ import {
   OverviewProductView,
   RCAProductView,
   RunbookProductView,
+  TimelineProductView,
 } from "@/components/product-views/ProductViews"
 import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
 import { SafetyPanel } from "./SafetyPanel"
@@ -76,6 +77,10 @@ export function ReleaseResourcePanel({
           </div>
         ) : resourceQuery.data ? (
           <div className="mt-4 space-y-5">
+            {activeTab === "Timeline" ? (
+              <TimelineProductView selected={selected} />
+            ) : null}
+
             {activeTab === "Action Plan" && !isMarkdownContent(resourceQuery.data.contentType) ? (
               <ActionPlanProductView body={resourceQuery.data.body} />
             ) : null}

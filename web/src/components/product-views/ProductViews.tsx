@@ -7,3 +7,4 @@ export { OverviewProductView } from "./OverviewProductView"
 
 export { RunbookProductView } from "./RunbookProductView"
 export { RCAProductView } from "./RCAProductView"
+export { TimelineProductView } from "./TimelineProductView"

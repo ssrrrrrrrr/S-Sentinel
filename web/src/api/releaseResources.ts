@@ -19,6 +19,7 @@ export type ReleaseResourceContent = {
 
 const resourcePathByTab: Record<string, ReleaseResourceKind> = {
   "概览": "summary",
+  Timeline: "summary",
   Evidence: "evidence",
   "Action Plan": "action-plan",
   Intelligence: "intelligence",
