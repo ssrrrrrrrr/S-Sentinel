@@ -349,10 +349,12 @@ main() {
   bash -n scripts/build-agent-run.sh
   bash -n scripts/build-plan-run.sh
   bash -n scripts/build-execution-request.sh
+  bash -n scripts/build-supply-chain-decision.sh
   bash -n scripts/test-release-intelligence.sh
   bash -n scripts/test-readonly-release-agent.sh
   bash -n scripts/test-agent-planning.sh
   bash -n scripts/test-execution-request.sh
+  bash -n scripts/test-supply-chain-decision.sh
   bash -n scripts/test-agent-tool-router-intelligence.sh
   bash -n scripts/test-advisor-release-intelligence.sh
   bash -n scripts/test-release-summary-intelligence.sh
@@ -385,6 +387,7 @@ main() {
   ./scripts/test-readonly-release-agent.sh "$TEST_TMP/readonly-release-agent"
   ./scripts/test-agent-planning.sh "$TEST_TMP/agent-planning"
   ./scripts/test-execution-request.sh "$TEST_TMP/execution-request"
+  ./scripts/test-supply-chain-decision.sh "$TEST_TMP/supply-chain-decision"
   ./scripts/test-release-summary-intelligence.sh "$TEST_TMP/release-summary-intelligence"
   ./scripts/test-ai-advice-intelligence.sh "$TEST_TMP/ai-advice-intelligence"
   ./scripts/test-approval-record.sh "$TEST_TMP/approval-record"

@@ -290,6 +290,13 @@
             "null"
           ],
           "description": "Path to the generated policy-bound execution request JSON."
+        },
+        "supplyChainDecision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated supply-chain safety decision JSON."
         }
       }
     },
@@ -648,6 +655,124 @@
           ]
         },
         "sourceExecutionRequest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "supplyChain": {
+      "type": "object",
+      "properties": {
+        "supplyChainDecisionId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "requiresHumanApproval": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "riskLevel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "riskScore": {
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ]
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageTag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "usesMutableTag": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "gitopsManifest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gitopsManifestFound": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "gitopsReleaseTag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "blockingReasons": {
+          "type": "array"
+        },
+        "warningReasons": {
+          "type": "array"
+        },
+        "willExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sourceSupplyChainDecision": {
           "type": [
             "string",
             "null"

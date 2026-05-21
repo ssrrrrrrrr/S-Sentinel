@@ -862,6 +862,31 @@ LINK_ACTION_PLAN_PY
         echo "WARN: expected release evidence file not found, skip action plan generation: $EVIDENCE_OUT" >&2
       fi
 
+      SUPPLY_CHAIN_DECISION_BUILDER=""
+
+      if [ -x "./scripts/build-supply-chain-decision.sh" ]; then
+        SUPPLY_CHAIN_DECISION_BUILDER="./scripts/build-supply-chain-decision.sh"
+      elif [ -x "/app/scripts/build-supply-chain-decision.sh" ]; then
+        SUPPLY_CHAIN_DECISION_BUILDER="/app/scripts/build-supply-chain-decision.sh"
+      fi
+
+      if [ -n "$SUPPLY_CHAIN_DECISION_BUILDER" ] && [ -f "$EVIDENCE_OUT" ]; then
+        echo "Running supply-chain safety decision builder: $SUPPLY_CHAIN_DECISION_BUILDER"
+        RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR="${SUPPLY_CHAIN_DECISION_OUTPUT_DIR:-$OUT_DIR}"
+
+        if RELEASE_REPORT_DIR="$OUT_DIR" \
+          SUPPLY_CHAIN_DECISION_OUTPUT_DIR="$RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR" \
+          "$SUPPLY_CHAIN_DECISION_BUILDER" "$EVIDENCE_OUT"; then
+          validate_generated_release_contract "$EVIDENCE_OUT"
+        else
+          echo "WARN: build-supply-chain-decision.sh failed, continue release advice pipeline" >&2
+        fi
+      elif [ -z "$SUPPLY_CHAIN_DECISION_BUILDER" ]; then
+        echo "WARN: supply-chain decision builder not found, skip supply-chain safety check" >&2
+      else
+        echo "WARN: expected release evidence file not found, skip supply-chain safety check: $EVIDENCE_OUT" >&2
+      fi
+
       RELEASE_MEMORY_BUILDER=""
 
       if [ -x "./scripts/build-release-memory.sh" ]; then

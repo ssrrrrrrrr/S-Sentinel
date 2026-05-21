@@ -279,6 +279,14 @@ execution_policy_binding = as_dict(execution_request.get("policyBinding"))
 execution_approval = as_dict(execution_request.get("approval"))
 execution_guardrails = as_dict(execution_request.get("guardrails"))
 
+supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
+supply_chain_decision = load_json(supply_chain_decision_path)
+supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
+supply_chain_risk = as_dict(supply_chain_decision.get("risk"))
+supply_chain_image = as_dict(supply_chain_decision.get("image"))
+supply_chain_gitops = as_dict(supply_chain_decision.get("gitops"))
+supply_chain_guardrails = as_dict(supply_chain_decision.get("guardrails"))
+
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
     "releaseEvidence": str(evidence_path),
@@ -292,6 +300,7 @@ link_map = {
     "agentRun": artifacts.get("agentRun"),
     "planRun": artifacts.get("planRun"),
     "executionRequest": artifacts.get("executionRequest"),
+    "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
 artifact_defs = [
@@ -316,6 +325,9 @@ artifact_defs = [
     ("runbook", link_map["runbook"], False),
     ("rca", link_map["rca"], False),
 ]
+
+if link_map.get("supplyChainDecision"):
+    artifact_defs.append(("supplyChainDecision", link_map["supplyChainDecision"], False))
 
 artifact_records = {
     kind: artifact_entry(kind, ref, evidence_path, required)
@@ -428,6 +440,31 @@ record = {
         )),
         "sourceExecutionRequest": nullable_string(link_map.get("executionRequest")),
         "guardrails": execution_guardrails,
+    },
+    "supplyChain": {
+        "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),
+        "mode": nullable_string(supply_chain_decision.get("mode")),
+        "decision": nullable_string(supply_chain_decision_obj.get("decision")),
+        "allowed": bool_or_none(supply_chain_decision_obj.get("allowed")),
+        "requiresHumanApproval": bool_or_none(supply_chain_decision_obj.get("requiresHumanApproval")),
+        "riskLevel": nullable_string(supply_chain_risk.get("riskLevel")),
+        "riskScore": supply_chain_risk.get("riskScore"),
+        "image": nullable_string(supply_chain_image.get("image")),
+        "imageTag": nullable_string(supply_chain_image.get("imageTag")),
+        "imageDigest": nullable_string(supply_chain_image.get("imageDigest")),
+        "usesMutableTag": bool_or_none(supply_chain_image.get("usesMutableTag")),
+        "gitopsManifest": nullable_string(supply_chain_gitops.get("manifest")),
+        "gitopsManifestFound": bool_or_none(supply_chain_gitops.get("manifestFound")),
+        "gitopsReleaseTag": nullable_string(first_not_none(
+            supply_chain_gitops.get("releaseTag"),
+            supply_chain_gitops.get("imageTag"),
+        )),
+        "checkCount": len(supply_chain_decision.get("checks") or []),
+        "blockingReasons": [str(item) for item in as_list(supply_chain_decision_obj.get("blockingReasons"))],
+        "warningReasons": [str(item) for item in as_list(supply_chain_decision_obj.get("warningReasons"))],
+        "willExecute": bool_or_none(supply_chain_guardrails.get("willExecute")),
+        "sourceSupplyChainDecision": nullable_string(link_map.get("supplyChainDecision")),
+        "guardrails": supply_chain_guardrails,
     },
     "slo": {
         "sloId": slo_id,
