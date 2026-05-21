@@ -1,373 +1,254 @@
-# SLO Rollout Demo
+# S Sentinel
 
 ## 1. 项目简介
 
-SLO Rollout Demo 是一个基于 Kubernetes 的云原生发布可靠性项目。
+S Sentinel 是一个面向云原生发布可靠性的 SLO 驱动发布控制平台原型。
 
-项目最初目标是：在应用发布过程中，不只判断 Pod 是否启动成功，而是通过业务指标判断新版本是否真正健康，并在异常时自动中止发布。
+项目的核心目标是：在应用发布过程中，不只判断 Pod 是否启动成功，而是结合业务 SLO、渐进式发布策略、运行时证据、策略裁决、AI 分析和人工审批，判断一次发布是否真正安全、可靠、可继续推进。
 
-随着功能持续演进，项目已经从一个简单的 GitOps 灰度发布 Demo，升级为一个面向云原生发布可靠性的 SLO 驱动智能分析平台原型。
+当前项目已经从最初的 SLO Rollout Demo 演进为一个平台式 Release Control Plane，重点解决以下问题：
 
-当前项目围绕以下核心问题展开：
+- 本次发布是否满足 SLO？
+- Canary 是否可以继续放量？
+- 发布失败时，失败原因是什么？
+- AI 可以给出什么只读分析和调查建议？
+- 策略是否允许建议动作进入下一步？
+- 供应链、镜像、GitOps 目标状态是否可信？
+- 整个发布过程是否可追溯、可审计、可复盘？
 
-- 发布是否真的成功？
-- 新版本是否满足业务 SLO？
-- 发布失败时失败原因是什么？
-- 系统应该建议什么动作？
-- 历史上是否出现过类似失败？
-- 人工最终如何审批和留痕？
-- 整个发布过程是否可追溯、可审计？
+S Sentinel 当前默认保持只读安全边界：
 
-项目当前已经完成 watcher v1.20 版本验收，具备健康发布、故障发布、历史智能分析和人工审批记录的完整闭环。
+```text
+readOnly = true
+willExecute = false
+requiresHumanApprovalForExecution = true
+```
+
+也就是说，平台当前只做分析、证据汇聚、策略判断和执行申请，不自动执行 rollback、promote、patch、delete、commit、push 等高风险动作。
 
 ---
 
 ## 2. 实现功能
 
-### 2.1 GitOps 发布
+### 2.1 SLO-as-Code
 
-项目支持通过 GitHub Actions 手动触发发布。
-
-发布参数包括：
-
-- `image_tag`
-- `app_version`
-- `fault_rate`
-- `latency_ms`
-- `slo_error_rate_threshold`
-- `slo_p95_seconds_threshold`
-- `slo_min_request_count`
-
-发布流程会构建应用镜像，更新 GitOps Manifest，并由 Argo CD 将目标状态同步到 Kubernetes 集群。
-
-### 2.2 Canary 灰度发布
-
-项目使用 Argo Rollouts 实现 Canary 发布。
-
-新版本不会一次性全量替换，而是逐步放量，并在发布过程中执行 AnalysisRun 检查业务指标。
-
-当指标达标时继续放量；当指标异常时停止发布或进入降级状态。
-
-### 2.3 SLO 发布门禁
-
-项目通过 Prometheus 指标判断新版本是否健康。
-
-当前核心 SLO 指标包括：
+项目通过 `configs/services/*.slo.yaml` 定义服务级 SLO 配置，当前 demo-app 包含：
 
 - `request-count`
 - `error-rate`
 - `p95-latency`
 
-典型发布结果包括：
+对应 schema 位于 `schemas/slo-config.schema.json`。
 
-- `PASS`
-- `FAIL_BY_ERROR_RATE`
-- `FAIL_BY_P95_LATENCY`
-- `FAIL_BY_MULTIPLE_SLO`
+### 2.2 Progressive Delivery Strategy
 
-其中 `request-count` 用于避免低流量误判，`error-rate` 和 `p95-latency` 用于判断新版本是否出现错误率升高或性能退化。
+项目通过 `configs/services/*.strategy.yaml` 定义渐进式发布策略，当前支持 Canary 策略描述，包括：
 
-### 2.4 故障注入
+- 流量步骤
+- 暂停时间
+- SLO 分析指标
+- 失败策略
+- 人工审批策略
 
-`demo-app` 支持通过发布参数注入故障：
+对应 schema 位于 `schemas/progressive-delivery-strategy.schema.json`。
 
-- `FAULT_RATE`
-- `LATENCY_MS`
+### 2.3 GitOps 发布链路
 
-因此项目可以主动验证：
+项目保留 GitHub Actions + GitOps + Argo CD + Argo Rollouts 的发布链路。
 
-- 正常健康发布
-- 高错误率发布
-- 高延迟发布
-- 多 SLO 同时失败发布
+`demo-app/release-gitops.sh` 负责生成或更新发布相关 Kubernetes Manifest，并通过 Argo Rollouts 执行 Canary 发布和 Prometheus AnalysisRun 检查。
 
-这使项目不仅能演示成功发布，也能演示异常发布时的自动分析、证据生成和审批链路。
+### 2.4 Release Watcher
 
-### 2.5 可观测能力
-
-项目接入了完整观测链路：
-
-- Prometheus
-- Grafana
-- Alertmanager
-
-Grafana Dashboard 已经纳入仓库管理，具备 Dashboard as Code 能力。
-
-发布判断不只依赖 Kubernetes 资源状态，而是结合真实业务指标进行分析。
-
-### 2.6 Release Watcher
-
-项目包含独立的 Release Watcher 组件，用于感知 Rollout 和 AnalysisRun 状态变化，并生成发布相关证据。
-
-当前线上 watcher 镜像版本为：
-
-```text
-192.168.30.11:5000/release-rollout-watcher:v1.20
-```
-
-Watcher 当前保持安全模式：
-
-```text
-watch-only
-advisory_only
-dry_run
-approval_record_only
-```
-
-它不会自动执行 Rollback、Promote、Patch、Delete 等高风险操作。
-
-Release Portal API 文档见：[`docs/release-portal-api.md`](docs/release-portal-api.md)。
-
-### 2.7 Release Evidence
-
-Release Evidence 是一次发布的证据总索引。
-
-它会关联：
-
-- Release Context
-- Release Report
-- AI Advice
-- AI Decision
-- Policy Decision
-- Release Summary
-- Failure Evidence
-- Action Plan
-- Release Memory
-- Release Intelligence
-- Approval Record
-
-通过 Release Evidence，可以追溯一次发布从触发、分析、判断、建议动作到人工审批的完整过程。
-
-### 2.8 AI Release Advisor
-
-AI Release Advisor 用于读取发布报告和变更上下文，并生成辅助分析结论。
+`watcher` 用于感知 Rollout 和 AnalysisRun 状态变化，并生成发布上下文与证据。
 
 它会输出：
 
-- 发布结论
-- 风险判断
-- 失败指标
-- 建议动作
-- 下一步处理建议
+- Release Context
+- Release Event Archive
+- Release Result
+- Risk Score
+- Recommended Action
 
-AI Advisor 当前只负责分析和建议，不直接执行集群写操作。
+### 2.5 Evidence Control Plane
 
-### 2.9 Policy-as-Code Guardrails
+项目已经形成发布证据控制平面，核心对象包括：
 
-项目引入了 Policy-as-Code 安全策略层。
+- `ReleaseContext`
+- `ReleaseEvidence`
+- `EvidenceRecord`
+- `ReleaseTimeline`
+- `ReleaseSummary`
+- `ReleaseMemory`
+- `ReleaseIntelligence`
 
-策略文件位于：
+这些对象用于把一次发布从触发、观测、判断、建议、策略裁决到人工审批的过程串成完整证据链。
+
+### 2.6 Policy Guard
+
+项目通过 `scripts/evaluate-agent-decision.sh` 和 `policy/release-policy.yaml` 实现策略守卫。
+
+Policy Guard 会根据发布结果、AI 建议动作、渐进式发布策略和安全规则进行二次裁决，决定动作是：
+
+- 允许观察
+- 要求人工审批
+- 拒绝执行
+
+### 2.7 Read-only AI Release Agent
+
+项目已经引入只读 AI Release Agent。
+
+Agent 只负责读取证据、总结风险、生成建议，不直接修改 Kubernetes、GitOps、镜像或代码仓库。
+
+对应对象包括：
+
+- `AgentRun`
+- `PlanRun`
+- `ExecutionRequest`
+
+### 2.8 Agent Planning + RAG
+
+项目支持基于历史发布记忆的轻量 RAG 规划。
+
+`PlanRun` 会从 Release Memory 中检索相似发布记录，为当前失败发布生成调查步骤和候选后续动作。
+
+当前实现是规则检索版本，适合作为后续语义检索和向量化 RAG 的安全基线。
+
+### 2.9 Policy-bound Execution Request
+
+项目将“建议动作”和“真实执行”拆开。
+
+`ExecutionRequest` 只生成策略约束下的执行申请，记录请求动作、请求原因、策略绑定、审批状态、证据引用和安全边界。
+
+当前所有执行申请都保持：
 
 ```text
-policy/release-policy.yaml
-```
-
-策略层用于限制高风险动作，确保系统默认保持 advisory-only。
-
-即使 AI 建议执行高风险动作，Policy Evaluator 也会进行二次裁决，避免自动化误操作扩大故障。
-
-### 2.10 Failure Evidence
-
-当发布失败时，系统会生成 Failure Evidence。
-
-Failure Evidence 会记录：
-
-- 是否失败
-- 失败指标
-- 风险等级
-- 风险分数
-- Rollout 状态
-- AnalysisRun 状态
-- 可选 Kubernetes 现场证据
-- 安全边界说明
-
-它的作用是把失败现场沉淀为结构化证据，便于后续排查和复盘。
-
-### 2.11 Dry-run Action Plan
-
-Action Plan 用于把发布判断转化为可审计动作计划。
-
-例如多 SLO 失败时，Action Plan 会给出：
-
-- 查看 Rollout 的只读命令
-- 查看 AnalysisRun 的只读命令
-- 候选 abort 命令
-
-但所有动作都保持：
-
-```text
-executionMode = dry_run
+mode = request_only
 willExecute = false
 ```
 
-也就是说，Action Plan 只生成建议，不自动执行。
+### 2.10 Supply Chain Safety
 
-### 2.12 Release Memory
+项目通过 `SupplyChainDecision` 对发布对象做只读供应链检查，包括：
 
-Release Memory 用于沉淀历史发布记录。
+- release version 是否存在
+- commit 是否存在
+- image reference 是否存在
+- image digest 是否存在
+- 是否使用 mutable tag
+- GitOps 目标版本是否和 release version 对齐
 
-核心产物包括：
+对应 schema 位于 `schemas/supply-chain-decision.schema.json`。
 
-```text
-release-memory.jsonl
-release-memory-latest.json
-```
+### 2.11 Multi-env & Packaging
 
-它可以记录历史上的成功发布、失败发布、失败指标、最终动作和相关证据。
+项目已经引入多环境配置：
 
-### 2.13 Release Intelligence
+- `configs/environments/dev.yaml`
+- `configs/environments/staging.yaml`
+- `configs/environments/prod.yaml`
 
-Release Intelligence 基于 Release Evidence 和 Release Memory，对当前发布进行历史相似风险判断。
+环境配置包含 cluster、namespace、GitOps overlay、policy profile、supply chain 默认规则和安全默认值。
 
-典型风险模式包括：
+### 2.12 Release Portal
 
-- `healthy_release`
-- `new_slo_failure_pattern`
-- `similar_slo_failure_pattern`
-- `repeated_slo_failure_pattern`
+`web` 是 S Sentinel 的前端控制台，用于展示一次发布关联的控制平面对象。
 
-它可以判断当前失败是否和历史失败相似，并将结论写入 Release Summary 和 AI Advice。
+当前 Portal 已经支持：
 
-### 2.14 Human Approval Record
+- 发布列表
+- 发布详情
+- Evidence 展示
+- Release Summary
+- Intelligence
+- Action Plan
+- AI Advice
+- Timeline
+- Runbook
+- RCA
+- Environment-aware View
+- Control-plane Object Cards
 
-项目支持人工审批记录能力。
-
-审批状态包括：
-
-- `APPROVED`
-- `REJECTED`
-- `DEFERRED`
-- `NEEDS_MORE_EVIDENCE`
-
-审批记录会写回 Release Evidence，并同步汇入 Release Summary 和 AI Advice。
-
-即使人工审批为 `APPROVED`，系统仍然不会自动执行动作：
-
-```text
-executionMode = approval_record_only
-willExecute = false
-```
-
-### 2.15 v1.20 真实验收结果
-
-watcher v1.20 已完成真实环境验收。
-
-健康发布验收结果：
-
-```text
-releaseResult = PASS
-policyDecision = ALLOW
-finalAction = NOOP
-actionPlan.executionMode = dry_run
-actionPlan.willExecute = false
-releaseIntelligence.riskPattern = healthy_release
-```
-
-多 SLO 失败发布验收结果：
-
-```text
-releaseResult = FAIL_BY_MULTIPLE_SLO
-policyDecision = ALLOW_ADVISORY_ONLY
-finalAction = STOP_PROMOTION
-requiresHumanApproval = true
-failureEvidence.isFailure = true
-actionPlan.executionMode = dry_run
-actionPlan.willExecute = false
-releaseIntelligence.riskPattern = repeated_slo_failure_pattern
-```
-
-人工审批链路验收结果：
-
-```text
-approvalDecision = APPROVED
-approvedAction = STOP_PROMOTION
-executionMode = approval_record_only
-willExecute = false
-approvalRef.generated = true
-summary_has_approval = true
-advice_has_approval = true
-```
+Portal 当前也是只读入口，不提供直接执行入口。
 
 ---
 
 ## 3. 项目架构
 
-### 3.1 发布主链路
+### 3.1 总体链路
 
 ```text
-Developer / SRE
-↓
-GitHub Actions
-↓
-release-gitops.sh
-↓
-Git Repository
-↓
-Argo CD
-↓
-Kubernetes Cluster
-↓
-Argo Rollouts
-↓
-demo-app Canary Release
-↓
-Prometheus AnalysisRun
-↓
-PASS / FAIL 判断
+SLOConfig / ProgressiveDeliveryStrategy / EnvironmentConfig
+  -> GitOps Release Pipeline
+  -> Argo CD
+  -> Argo Rollouts
+  -> Prometheus AnalysisRun
+  -> Release Watcher
+  -> Release Context
+  -> AI Decision
+  -> Policy Decision
+  -> Release Evidence
+  -> Evidence Record
+  -> Agent Run / Plan Run / Execution Request / Supply Chain Decision
+  -> Release Portal
 ```
 
-### 3.2 分析与证据链路
+### 3.2 目录结构
 
-```text
-Rollout / AnalysisRun 状态变化
-↓
-Release Watcher
-↓
-ChangeContext
-↓
-Release Report
-↓
-AI Release Advisor
-↓
-Policy Evaluator
-↓
-Release Evidence
-↓
-Failure Evidence
-↓
-Dry-run Action Plan
-↓
-Release Memory
-↓
-Release Intelligence
-↓
-Release Summary / AI Advice
-↓
-Human Approval Record
-```
-
-### 3.3 组件职责
-
-| 组件 | 职责 |
+| 目录 | 说明 |
 |---|---|
-| GitHub Actions | 手动发布入口，接收发布参数 |
-| release-gitops.sh | 构建镜像、生成 GitOps Manifest |
-| Git Repository | 保存 Kubernetes 目标状态 |
-| Argo CD | 将 Git 中的目标状态同步到集群 |
-| Argo Rollouts | 执行 Canary 灰度发布 |
-| Prometheus | 采集业务指标并提供查询 |
-| AnalysisRun | 根据 SLO 指标判断新版本健康状态 |
-| Grafana | 展示请求量、错误率、延迟等指标 |
-| Alertmanager | 接收发布异常告警 |
-| Release Watcher | 感知发布状态并生成证据链 |
-| AI Release Advisor | 生成发布分析和建议动作 |
-| Policy Evaluator | 根据策略裁决建议动作是否安全 |
-| Release Evidence | 汇总一次发布的完整证据索引 |
-| Failure Evidence | 记录失败诊断证据 |
-| Action Plan | 生成 dry-run 动作计划 |
-| Release Memory | 记录历史发布记忆 |
-| Release Intelligence | 判断历史相似风险 |
-| Human Approval Record | 记录人工审批结果 |
-| Agent Tool Router | 提供受控工具入口 |
+| `.github/workflows` | GitHub Actions 发布与契约测试 |
+| `configs/environments` | dev、staging、prod 多环境配置 |
+| `configs/services` | 服务级 SLO 和渐进式发布策略 |
+| `demo-app` | 示例业务应用与 GitOps 发布脚本 |
+| `deploy` | Kubernetes、Argo Rollouts、Prometheus、Grafana 相关 Manifest |
+| `docs` | 项目文档与 Release Portal API 文档 |
+| `policy` | 发布策略与安全规则 |
+| `schemas` | S Sentinel 控制面对象 JSON Schema |
+| `scripts` | 证据生成、AI 分析、策略裁决、测试与校验脚本 |
+| `tests` | 发布契约测试 fixtures |
+| `watcher` | Release Watcher 与 Release Portal API |
+| `web` | S Sentinel Release Portal 前端 |
 
+### 3.3 控制面对象
 
+S Sentinel 当前围绕以下控制面对象组织发布可靠性能力：
+
+| 对象 | 作用 |
+|---|---|
+| `SLOConfig` | 定义服务发布健康标准 |
+| `ProgressiveDeliveryStrategy` | 定义 Canary 放量和失败处理策略 |
+| `EnvironmentConfig` | 定义环境、集群、命名空间、GitOps overlay 和安全默认值 |
+| `ReleaseContext` | 记录一次发布的运行时上下文 |
+| `ReleaseEvidence` | 汇总一次发布的证据索引 |
+| `EvidenceRecord` | 面向控制平面的证据记录 |
+| `AIDecision` | AI 发布分析结果 |
+| `PolicyDecision` | 策略裁决结果 |
+| `AgentRun` | 只读 AI Agent 运行记录 |
+| `PlanRun` | 基于证据和历史记忆生成的调查计划 |
+| `ExecutionRequest` | 策略约束下的执行申请 |
+| `SupplyChainDecision` | 发布对象供应链安全判断 |
+
+### 3.4 安全边界
+
+S Sentinel 当前定位为只读发布可靠性控制平面。
+
+系统可以：
+
+- 读取发布状态
+- 汇聚发布证据
+- 分析失败原因
+- 生成调查计划
+- 生成执行申请
+- 记录人工审批
+- 展示 Portal 视图
+
+系统不会自动：
+
+- rollback
+- promote
+- patch Kubernetes 资源
+- delete Kubernetes 资源
+- 修改 GitOps Manifest
+- 构建或推送镜像
+- commit 或 push 代码
