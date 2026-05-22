@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   Database,
   FileSearch,
@@ -9,7 +9,9 @@ import {
 } from "lucide-react"
 import {
   fetchEvidenceStoreObject,
+  fetchEvidenceStoreRefresh,
   fetchEvidenceStoreRelease,
+  fetchEvidenceStoreStatus,
   type EvidenceStoreJson,
 } from "@/api/evidenceStore"
 import { RawResourceViewer } from "@/components/common/RawResourceViewer"
@@ -124,6 +126,10 @@ function isNotFoundError(error: unknown) {
   return queryErrorMessage(error).includes("HTTP 404")
 }
 
+function isNotReadyError(error: unknown) {
+  return queryErrorMessage(error).includes("HTTP 409")
+}
+
 export function EvidenceStorePanel({
   selected,
   onTabChange,
@@ -134,10 +140,19 @@ export function EvidenceStorePanel({
   const [searchText, setSearchText] = useState("")
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
+  const statusQuery = useQuery({
+    queryKey: ["evidence-store-status"],
+    queryFn: fetchEvidenceStoreStatus,
+    staleTime: 15000,
+  })
+
+  const statusData = asRecord(statusQuery.data)
+  const evidenceStoreReady = statusData?.ready === true
+
   const releaseQuery = useQuery({
     queryKey: ["evidence-store-release", selected.releaseId],
     queryFn: () => fetchEvidenceStoreRelease(selected.releaseId, true),
-    enabled: Boolean(selected.releaseId),
+    enabled: Boolean(selected.releaseId) && evidenceStoreReady,
     staleTime: 15000,
   })
 
@@ -174,9 +189,32 @@ export function EvidenceStorePanel({
     staleTime: 15000,
   })
 
+  const refreshMutation = useMutation({
+    mutationFn: fetchEvidenceStoreRefresh,
+    onSuccess: () => {
+      void statusQuery.refetch()
+      void releaseQuery.refetch()
+      void detailQuery.refetch()
+    },
+  })
+
+  const refreshData = asRecord(refreshMutation.data)
+  const importResult = asRecord(refreshData?.importResult)
+  const statusReleaseList = asRecord(statusData?.releaseList)
+  const latestRelease = asRecord(refreshData?.latestRelease) ?? asRecord(statusData?.latestRelease)
+
+  const dbFile = field(statusData ?? {}, ["dbFile", "db_file"])
+  const releaseCount = field(importResult ?? statusReleaseList ?? {}, ["releaseCount", "release_count", "count"])
+  const importedObjects = field(importResult ?? {}, ["importedObjects", "imported_objects"], "-")
+  const skippedObjects = field(importResult ?? {}, ["skippedObjects", "skipped_objects"], "-")
+  const latestReleaseId = field(latestRelease ?? {}, ["release_id", "releaseId"])
+  const statusErrorMessage = statusQuery.isError ? queryErrorMessage(statusQuery.error) : ""
+  const refreshErrorMessage = refreshMutation.isError ? queryErrorMessage(refreshMutation.error) : ""
+
   const counts = useMemo(() => typeCounts(objectRows), [objectRows])
   const objectTypeCount = Object.keys(counts).length
   const releaseIndexMissing = releaseQuery.isError && isNotFoundError(releaseQuery.error)
+  const releaseDBNotReady = releaseQuery.isError && isNotReadyError(releaseQuery.error)
   const releaseQueryErrorMessage = releaseQuery.isError ? queryErrorMessage(releaseQuery.error) : ""
 
   return (
@@ -213,7 +251,93 @@ export function EvidenceStorePanel({
         </div>
       </div>
 
-      {releaseQuery.isLoading ? (
+      <div
+        className={`mt-4 rounded-2xl border p-4 ${
+          evidenceStoreReady
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-amber-200 bg-amber-50"
+        }`}
+      >
+        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+          <div>
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.2em] ${
+                evidenceStoreReady ? "text-emerald-700" : "text-amber-700"
+              }`}
+            >
+              EvidenceStore Status
+            </p>
+            <h4 className="mt-1 text-base font-semibold text-[#031a41]">
+              {statusQuery.isLoading
+                ? "Checking EvidenceStore..."
+                : evidenceStoreReady
+                  ? "Ready · SQLite index available"
+                  : "Not Ready · refresh required"}
+            </h4>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              查询接口现在只读读取 SQLite 索引；需要通过 Refresh 显式导入 release evidence。
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshMutation.isPending ? "animate-spin" : ""}`} />
+            {refreshMutation.isPending ? "Refreshing..." : "Refresh EvidenceStore"}
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-2 text-xs md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+            <p className="text-slate-500">DB</p>
+            <p className="mt-1 break-all font-mono font-semibold text-[#031a41]">{shortValue(dbFile, 56)}</p>
+          </div>
+          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+            <p className="text-slate-500">Releases</p>
+            <p className="mt-1 text-lg font-semibold text-[#031a41]">{releaseCount}</p>
+          </div>
+          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+            <p className="text-slate-500">Imported / Skipped</p>
+            <p className="mt-1 text-lg font-semibold text-[#031a41]">
+              {importedObjects}/{skippedObjects}
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+            <p className="text-slate-500">Latest Release</p>
+            <p className="mt-1 break-all font-mono font-semibold text-[#031a41]">
+              {shortValue(latestReleaseId)}
+            </p>
+          </div>
+        </div>
+
+        {statusQuery.isError ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-white/80 p-3 text-sm text-amber-800">
+            EvidenceStore status 读取失败：{statusErrorMessage}
+          </p>
+        ) : null}
+
+        {refreshMutation.isError ? (
+          <p className="mt-3 rounded-xl border border-amber-200 bg-white/80 p-3 text-sm text-amber-800">
+            EvidenceStore refresh 失败：{refreshErrorMessage}
+          </p>
+        ) : null}
+      </div>
+
+      {statusQuery.isLoading ? (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          正在检查 EvidenceStore status...
+        </div>
+      ) : !evidenceStoreReady ? (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-semibold">EvidenceStore DB 尚未准备好</p>
+          <p className="mt-2 leading-6">
+            当前查询接口不会再隐式导入 evidence。请点击上方 Refresh EvidenceStore，显式刷新 SQLite 索引后再查看对象详情。
+          </p>
+        </div>
+      ) : releaseQuery.isLoading ? (
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
           正在查询 EvidenceStore release detail...
         </div>
@@ -226,12 +350,18 @@ export function EvidenceStorePanel({
           }`}
         >
           <p className="font-semibold">
-            {releaseIndexMissing ? "当前 release 尚未进入 EvidenceStore 索引" : "EvidenceStore 查询失败"}
+            {releaseDBNotReady
+              ? "EvidenceStore DB 尚未刷新"
+              : releaseIndexMissing
+                ? "当前 release 尚未进入 EvidenceStore 索引"
+                : "EvidenceStore 查询失败"}
           </p>
           <p className="mt-2 leading-6">
-            {releaseIndexMissing
-              ? `EvidenceStore 没有找到 releaseId=${selected.releaseId}。这通常表示历史 release 尚未导入索引，或当前 EvidenceStore 尚未刷新。`
-              : `接口返回错误：${releaseQueryErrorMessage}`}
+            {releaseDBNotReady
+              ? "当前 SQLite 索引尚未初始化。请点击上方 Refresh EvidenceStore 后重试。"
+              : releaseIndexMissing
+                ? `EvidenceStore 没有找到 releaseId=${selected.releaseId}。这通常表示历史 release 尚未导入索引，或当前 EvidenceStore 尚未刷新。`
+                : `接口返回错误：${releaseQueryErrorMessage}`}
           </p>
         </div>
       ) : objectRows.length === 0 ? (
@@ -331,6 +461,7 @@ export function EvidenceStorePanel({
                 <button
                   type="button"
                   onClick={() => {
+                    void statusQuery.refetch()
                     void releaseQuery.refetch()
                     void detailQuery.refetch()
                   }}
