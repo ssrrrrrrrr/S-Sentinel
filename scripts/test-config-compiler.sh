@@ -102,8 +102,13 @@ for env, namespace in expected_namespaces.items():
     inventory = plan["hardcodeInventory"]
     assert inventory["status"] == "known_demo_bindings_present", inventory
     binding_ids = {item["id"] for item in inventory["remainingBindings"]}
-    assert "prometheus-request-counter-demo" in binding_ids, binding_ids
-    assert "prometheus-latency-histogram-demo" in binding_ids, binding_ids
+    prom = plan["slo"]["observability"]["prometheus"]
+    assert prom["requestCounter"] == "demo_http_requests_total", prom
+    assert prom["latencyHistogram"] == "demo_http_request_duration_seconds_bucket", prom
+    assert prom["errorStatusRegex"] == "5..", prom
+
+    assert "prometheus-request-counter-demo" not in binding_ids, binding_ids
+    assert "prometheus-latency-histogram-demo" not in binding_ids, binding_ids
     assert "default-image-name-sre-demo-app" in binding_ids, binding_ids
     assert "prometheus-alert-name-demoapp" not in binding_ids, binding_ids
     assert "prometheus-project-label-demo" not in binding_ids, binding_ids

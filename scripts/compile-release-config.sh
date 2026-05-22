@@ -232,25 +232,62 @@ def prom_window(slo_doc: dict[str, Any]) -> str:
     return str(slo_doc.get("spec", {}).get("evaluation", {}).get("window", "1m"))
 
 
-def prom_query(metric_id: str, obj: dict[str, Any], namespace: str, window: str) -> LiteralStr:
+
+def prometheus_bindings(slo_doc: dict[str, Any]) -> dict[str, Any]:
+    prom = (
+        slo_doc.get("spec", {})
+        .get("observability", {})
+        .get("prometheus", {})
+    )
+    labels = prom.get("labels") or {}
+
+    return {
+        "requestCounter": str(prom.get("requestCounter") or "demo_http_requests_total"),
+        "latencyHistogram": str(prom.get("latencyHistogram") or "demo_http_request_duration_seconds_bucket"),
+        "errorStatusRegex": str(prom.get("errorStatusRegex") or "5.."),
+        "labels": {
+            "namespace": str(labels.get("namespace") or "namespace"),
+            "version": str(labels.get("version") or "version"),
+            "status": str(labels.get("status") or "status"),
+        },
+    }
+
+
+def prom_matchers(metric_bindings: dict[str, Any], namespace: str, version: str | None = None, status_regex: str | None = None) -> str:
+    labels = metric_bindings.get("labels") or {}
+    items = [f'{labels.get("namespace", "namespace")}="{namespace}"']
+
+    if version is not None:
+        items.append(f'{labels.get("version", "version")}="{version}"')
+
+    if status_regex is not None:
+        items.append(f'{labels.get("status", "status")}=~"{status_regex}"')
+
+    return ",".join(items)
+
+def prom_query(metric_id: str, obj: dict[str, Any], namespace: str, window: str, metric_bindings: dict[str, Any]) -> LiteralStr:
     obj_type = str(obj.get("type", ""))
+    request_counter = metric_bindings["requestCounter"]
+    latency_histogram = metric_bindings["latencyHistogram"]
+    version_matchers = prom_matchers(metric_bindings, namespace, image_tag)
+    error_matchers = prom_matchers(metric_bindings, namespace, image_tag, metric_bindings["errorStatusRegex"])
 
     if obj_type == "request_count":
         return LiteralStr(f'''(
-  sum(increase(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}"}}[{window}]))
+  sum(increase({request_counter}{{{version_matchers}}}[{window}]))
   or on() vector(0)
 )''')
 
     if obj_type == "error_rate":
         return LiteralStr(f'''(
   (
-    sum(rate(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}",status=~"5.."}}[{window}]))
+    sum(rate({request_counter}{{{error_matchers}}}[{window}]))
     or vector(0)
   )
   /
   clamp_min(
     (
-      sum(rate(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}"}}[{window}]))
+      sum(rate({request_counter}{{{version_matchers}}}[{window}]))
       or vector(0)
     ),
     0.001
@@ -262,7 +299,7 @@ def prom_query(metric_id: str, obj: dict[str, Any], namespace: str, window: str)
         return LiteralStr(f'''(
   histogram_quantile(
     {percentile:.2f},
-    sum(rate(demo_http_request_duration_seconds_bucket{{namespace="{namespace}",version="{image_tag}"}}[{window}])) by (le)
+    sum(rate({latency_histogram}{{{version_matchers}}}[{window}])) by (le)
   )
   or on() vector(0)
 )''')
@@ -277,20 +314,24 @@ def success_condition(metric_id: str, obj: dict[str, Any]) -> str:
     return f"result[0] {operator} {value}"
 
 
-def alert_expr(metric_id: str, obj: dict[str, Any], namespace: str, min_request_count: Any, window: str):
+def alert_expr(metric_id: str, obj: dict[str, Any], namespace: str, min_request_count: Any, window: str, metric_bindings: dict[str, Any]):
     operator, value, _unit = threshold(obj)
     obj_type = str(obj.get("type", ""))
+    request_counter = metric_bindings["requestCounter"]
+    latency_histogram = metric_bindings["latencyHistogram"]
+    namespace_matchers = prom_matchers(metric_bindings, namespace)
+    error_matchers = prom_matchers(metric_bindings, namespace, status_regex=metric_bindings["errorStatusRegex"])
 
     if obj_type == "error_rate":
         return LiteralStr(f'''(
   (
     sum by (version) (
-      rate(demo_http_requests_total{{namespace="{namespace}",status=~"5.."}}[{window}])
+      rate({request_counter}{{{error_matchers}}}[{window}])
     )
     /
     clamp_min(
       sum by (version) (
-        rate(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+        rate({request_counter}{{{namespace_matchers}}}[{window}])
       ),
       0.001
     )
@@ -299,7 +340,7 @@ def alert_expr(metric_id: str, obj: dict[str, Any], namespace: str, min_request_
 and on(version)
 (
   sum by (version) (
-    increase(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+    increase({request_counter}{{{namespace_matchers}}}[{window}])
   ) >= {min_request_count}
 )''')
 
@@ -309,14 +350,14 @@ and on(version)
   histogram_quantile(
     {percentile:.2f},
     sum by (version, le) (
-      rate(demo_http_request_duration_seconds_bucket{{namespace="{namespace}"}}[{window}])
+      rate({latency_histogram}{{{namespace_matchers}}}[{window}])
     )
   ) > {value}
 )
 and on(version)
 (
   sum by (version) (
-    increase(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+    increase({request_counter}{{{namespace_matchers}}}[{window}])
   ) >= {min_request_count}
 )''')
 
@@ -356,6 +397,7 @@ strategy_analysis = strategy_spec.get("analysis") or {}
 objectives = objective_by_id(slo_doc)
 metric_ids = strategy_analysis.get("metrics") or list(objectives.keys())
 window = prom_window(slo_doc)
+prometheus_metric_bindings = prometheus_bindings(slo_doc)
 
 min_request_count = (
     slo_spec.get("evaluation", {}).get("minRequestCount")
@@ -382,7 +424,7 @@ for metric_id in metric_ids:
         "provider": {
             "prometheus": {
                 "address": prometheus_addr,
-                "query": prom_query(metric_id, obj, namespace, window),
+                "query": prom_query(metric_id, obj, namespace, window, prometheus_metric_bindings),
             }
         },
     })
@@ -531,7 +573,7 @@ def alert_name_for(service_name: str, metric_id: str) -> str:
 rules = []
 for metric_id in metric_ids:
     obj = objectives[metric_id]
-    expr = alert_expr(metric_id, obj, namespace, min_request_count, window)
+    expr = alert_expr(metric_id, obj, namespace, min_request_count, window, prometheus_metric_bindings)
     if expr is None:
         continue
 
@@ -644,20 +686,6 @@ hardcode_inventory = {
             "resolution": "Read image repository from service catalog or EnvironmentConfig.",
         },
         {
-            "id": "prometheus-request-counter-demo",
-            "type": "metric-name",
-            "field": "prometheus.requestCounter",
-            "value": "demo_http_requests_total",
-            "resolution": "Read metric names from SLOConfig metric bindings or an ObservabilityContract.",
-        },
-        {
-            "id": "prometheus-latency-histogram-demo",
-            "type": "metric-name",
-            "field": "prometheus.latencyHistogram",
-            "value": "demo_http_request_duration_seconds_bucket",
-            "resolution": "Read histogram metric names from SLOConfig metric bindings or an ObservabilityContract.",
-        },
-        {
             "id": "demo-runtime-fault-env",
             "type": "demo-runtime-knob",
             "field": "Rollout.container.env",
@@ -703,6 +731,9 @@ rendered_release_plan = {
         "sloId": config_name(slo_doc),
         "window": window,
         "minRequestCount": min_request_count,
+        "observability": {
+            "prometheus": prometheus_metric_bindings,
+        },
         "objectives": [
             {
                 "id": metric_id,
