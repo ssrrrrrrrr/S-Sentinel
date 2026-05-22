@@ -258,6 +258,11 @@ if signed_gate_verification:
         "sbomPresent": signed_gate_verification_results.get("sbomPresent"),
         "provenancePresent": signed_gate_verification_results.get("provenancePresent"),
         "slsaLevelPresent": signed_gate_verification_results.get("slsaLevelPresent"),
+        "externalVerificationRequested": signed_gate_verification_results.get("externalVerificationRequested"),
+        "externalVerificationAllowed": signed_gate_verification_results.get("externalVerificationAllowed"),
+        "externalVerificationExecuted": signed_gate_verification_results.get("externalVerificationExecuted"),
+        "externalVerificationSucceeded": signed_gate_verification_results.get("externalVerificationSucceeded"),
+        "externalVerificationSkippedReason": signed_gate_verification_results.get("externalVerificationSkippedReason"),
         "canRunExternalVerification": signed_gate_verification_guardrails.get("canRunExternalVerification"),
         "doesNotRunExternalCommands": signed_gate_verification_guardrails.get("doesNotRunExternalCommands"),
     }
@@ -446,6 +451,22 @@ elif signed_gate_decision == "REQUIRE_HUMAN_APPROVAL" and policy_decision != "DE
     if signed_gate_warning_reasons:
         reason = "SignedReleaseGate requires human approval: " + "; ".join(signed_gate_warning_reasons)
 
+verification_deny_reasons: list[str] = []
+if signed_gate_verification_summary and policy_decision != "DENY":
+    if (
+        signed_gate_verification_summary.get("mode") == "external_command"
+        and signed_gate_verification_summary.get("externalVerificationExecuted") is True
+        and signed_gate_verification_summary.get("externalVerificationSucceeded") is False
+    ):
+        verification_deny_reasons.append("signed_release_gate_external_verification_failed")
+
+if verification_deny_reasons and policy_decision != "DENY":
+    policy_decision = "DENY"
+    allowed = False
+    reason = "SignedReleaseGate verification denied release: " + "; ".join(verification_deny_reasons)
+    matched_rules.append("signed_release_gate_verification_failed")
+    denied_reasons.extend(verification_deny_reasons)
+
 verification_approval_reasons: list[str] = []
 if signed_gate_verification_summary and policy_decision != "DENY" and signed_gate_decision != "BLOCK":
     if signed_gate_verification_summary.get("signatureVerified") is False:
@@ -458,6 +479,7 @@ if signed_gate_verification_summary and policy_decision != "DENY" and signed_gat
         verification_approval_reasons.append("signed_release_gate_provenance_missing")
     if (
         signed_gate_verification_summary.get("mode") == "external_command"
+        and signed_gate_verification_summary.get("externalVerificationExecuted") is False
         and signed_gate_verification_summary.get("canRunExternalVerification") is False
     ):
         verification_approval_reasons.append("signed_release_gate_external_verification_disabled")
@@ -534,6 +556,11 @@ policy_output = {
         "signedReleaseGateSBOMPresent": signed_gate_verification_summary.get("sbomPresent"),
         "signedReleaseGateProvenancePresent": signed_gate_verification_summary.get("provenancePresent"),
         "signedReleaseGateCanRunExternalVerification": signed_gate_verification_summary.get("canRunExternalVerification"),
+        "signedReleaseGateExternalVerificationRequested": signed_gate_verification_summary.get("externalVerificationRequested"),
+        "signedReleaseGateExternalVerificationAllowed": signed_gate_verification_summary.get("externalVerificationAllowed"),
+        "signedReleaseGateExternalVerificationExecuted": signed_gate_verification_summary.get("externalVerificationExecuted"),
+        "signedReleaseGateExternalVerificationSucceeded": signed_gate_verification_summary.get("externalVerificationSucceeded"),
+        "signedReleaseGateExternalVerificationSkippedReason": signed_gate_verification_summary.get("externalVerificationSkippedReason"),
     },
     "strategyPolicy": {
         "strategyId": nullable_string(strategy_id),

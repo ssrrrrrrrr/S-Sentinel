@@ -129,7 +129,12 @@ cat > "$SIGNED_GATE" <<'JSON'
       "sbomPresent": false,
       "provenancePresent": false,
       "slsaLevelPresent": false,
-      "slsaLevel": null
+      "slsaLevel": null,
+        "externalVerificationRequested": true,
+        "externalVerificationAllowed": false,
+        "externalVerificationExecuted": false,
+        "externalVerificationSucceeded": null,
+        "externalVerificationSkippedReason": "external_command_not_enabled"
     },
     "guardrails": {
       "readOnly": true,
@@ -213,6 +218,11 @@ assert policy_input["signedReleaseGateRef"]["verification"]["mode"] == "external
 assert policy_input["signedReleaseGateVerification"]["mode"] == "external_command", policy_input
 assert policy_input["signedReleaseGateVerification"]["signatureVerified"] is False, policy_input
 assert policy_input["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, policy_input
+assert policy_input["signedReleaseGateVerification"]["externalVerificationRequested"] is True, policy_input
+assert policy_input["signedReleaseGateVerification"]["externalVerificationAllowed"] is False, policy_input
+assert policy_input["signedReleaseGateVerification"]["externalVerificationExecuted"] is False, policy_input
+assert policy_input["signedReleaseGateVerification"]["externalVerificationSucceeded"] is None, policy_input
+assert policy_input["signedReleaseGateVerification"]["externalVerificationSkippedReason"] == "external_command_not_enabled", policy_input
 assert policy_input["signedReleaseGate"]["signedReleaseGateId"] == "srg-20260101-000000", policy_input
 
 assert result["schemaVersion"] == "policy.runtime.result/v1alpha1", result
@@ -230,6 +240,11 @@ assert result["signedReleaseGateVerification"]["mode"] == "external_command", re
 assert result["signedReleaseGateVerification"]["signatureVerified"] is False, result
 assert result["signedReleaseGateVerification"]["canRunExternalVerification"] is False, result
 assert result["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, result
+assert result["signedReleaseGateVerification"]["externalVerificationRequested"] is True, result
+assert result["signedReleaseGateVerification"]["externalVerificationAllowed"] is False, result
+assert result["signedReleaseGateVerification"]["externalVerificationExecuted"] is False, result
+assert result["signedReleaseGateVerification"]["externalVerificationSucceeded"] is None, result
+assert result["signedReleaseGateVerification"]["externalVerificationSkippedReason"] == "external_command_not_enabled", result
 assert result["policyDecision"]["signedReleaseGate"]["decision"] == "REQUIRE_HUMAN_APPROVAL", result
 assert "signed_release_gate_requires_human_approval" in result["policyDecision"]["matchedRules"], result
 assert result["safety"]["readOnly"] is True, result

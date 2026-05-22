@@ -151,6 +151,11 @@ cases = [
                 "sbomPresent": False,
                 "provenancePresent": False,
                 "slsaLevelPresent": False,
+                "externalVerificationRequested": True,
+                "externalVerificationAllowed": False,
+                "externalVerificationExecuted": False,
+                "externalVerificationSucceeded": None,
+                "externalVerificationSkippedReason": "external_command_not_enabled",
             },
             "guardrails": {
                 "readOnly": True,
@@ -164,6 +169,47 @@ cases = [
         "expectedFinalAction": "PROMOTE",
         "expectedAllowed": True,
         "expectedRule": "signed_release_gate_verification_requires_human_approval",
+    },
+    {
+        "name": "signed-gate-external-verification-failed-deny",
+        "releaseResult": "PASS",
+        "action": "PROMOTE",
+        "actionAllowed": True,
+        "actionRequiresApproval": False,
+        "rollbackAllowed": False,
+        "autoPromotionEnabled": True,
+        "strategyRequiresHumanApproval": False,
+        "signedGateDecision": "ALLOW",
+        "signedGateAllowed": True,
+        "signedGateVerification": {
+            "schemaVersion": "signed.release.gate.verification/v1alpha1",
+            "mode": "external_command",
+            "tool": "cosign",
+            "toolBinary": "/tmp/fake-cosign-fail",
+            "toolAvailable": True,
+            "results": {
+                "signatureVerified": True,
+                "sbomPresent": True,
+                "provenancePresent": True,
+                "slsaLevelPresent": True,
+                "externalVerificationRequested": True,
+                "externalVerificationAllowed": True,
+                "externalVerificationExecuted": True,
+                "externalVerificationSucceeded": False,
+                "externalVerificationSkippedReason": None,
+            },
+            "guardrails": {
+                "readOnly": True,
+                "willExecute": True,
+                "canRunExternalVerification": True,
+                "doesNotRunExternalCommands": False,
+                "doesNotVerifyExternalServices": False,
+            },
+        },
+        "expectedDecision": "DENY",
+        "expectedFinalAction": "PROMOTE",
+        "expectedAllowed": False,
+        "expectedRule": "signed_release_gate_verification_failed",
     },
     {
         "name": "signed-gate-block-deny",
@@ -333,9 +379,25 @@ dangerousActions:
 
     if case.get("signedGateVerification"):
         assert data["signedReleaseGate"]["verification"]["mode"] == "external_command", data
-        assert data["signedReleaseGate"]["verification"]["signatureVerified"] is False, data
-        assert "signed_release_gate_signature_not_verified" in data["approvalRequiredReasons"], data
-        assert "signed_release_gate_external_verification_disabled" in data["approvalRequiredReasons"], data
+
+        if case["name"] == "signed-gate-verification-requires-approval":
+            assert data["signedReleaseGate"]["verification"]["signatureVerified"] is False, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationRequested"] is True, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationAllowed"] is False, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationExecuted"] is False, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationSucceeded"] is None, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationSkippedReason"] == "external_command_not_enabled", data
+            assert "signed_release_gate_signature_not_verified" in data["approvalRequiredReasons"], data
+            assert "signed_release_gate_external_verification_disabled" in data["approvalRequiredReasons"], data
+
+        if case["name"] == "signed-gate-external-verification-failed-deny":
+            assert data["signedReleaseGate"]["verification"]["signatureVerified"] is True, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationRequested"] is True, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationAllowed"] is True, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationExecuted"] is True, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationSucceeded"] is False, data
+            assert data["signedReleaseGate"]["verification"]["externalVerificationSkippedReason"] is None, data
+            assert "signed_release_gate_external_verification_failed" in data["deniedReasons"], data
 
     print(f"PASS: {case['name']} => {case['expectedDecision']}/{case['expectedFinalAction']}")
 
