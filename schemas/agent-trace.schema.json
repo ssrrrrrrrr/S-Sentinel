@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "S Sentinel Agent Trace",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "agentTraceId",
+    "traceId",
+    "releaseId",
+    "generatedBy",
+    "generatedAt",
+    "release",
+    "correlation",
+    "agentRun",
+    "policyTrace",
+    "toolCallTraces",
+    "evidenceTrace",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "agent.trace/v1alpha1"
+    },
+    "agentTraceId": {
+      "type": "string"
+    },
+    "traceId": {
+      "type": "string"
+    },
+    "releaseId": {
+      "type": "string"
+    },
+    "generatedBy": {
+      "type": "string"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "release": {
+      "type": "object"
+    },
+    "correlation": {
+      "type": "object",
+      "properties": {
+        "releaseId": { "type": "string" },
+        "agentRunId": { "type": "string" },
+        "policyDecisionId": { "type": ["string", "null"] },
+        "policyRuntimeResultId": { "type": ["string", "null"] },
+        "signedReleaseGateId": { "type": ["string", "null"] }
+      }
+    },
+    "agentRun": {
+      "type": "object"
+    },
+    "policyTrace": {
+      "type": "object"
+    },
+    "signedReleaseGateTrace": {
+      "type": "object"
+    },
+    "toolCallTraces": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "evidenceTrace": {
+      "type": "object"
+    },
+    "guardrails": {
+      "type": "object"
+    }
+  }
+}
