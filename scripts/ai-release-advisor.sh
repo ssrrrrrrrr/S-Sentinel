@@ -683,8 +683,19 @@ PY
 validate_generated_release_contract "$DECISION_OUT"
 
 POLICY_EVALUATOR=""
+POLICY_EVALUATOR_MODE="legacy"
+POLICY_RUNTIME_ADAPTER=""
 
-if [ -x "./scripts/evaluate-agent-decision.sh" ]; then
+if [ -x "./scripts/policy-runtime-adapter.py" ]; then
+  POLICY_RUNTIME_ADAPTER="./scripts/policy-runtime-adapter.py"
+elif [ -x "/app/scripts/policy-runtime-adapter.py" ]; then
+  POLICY_RUNTIME_ADAPTER="/app/scripts/policy-runtime-adapter.py"
+fi
+
+if [ -n "$POLICY_RUNTIME_ADAPTER" ]; then
+  POLICY_EVALUATOR="$POLICY_RUNTIME_ADAPTER"
+  POLICY_EVALUATOR_MODE="runtime-adapter"
+elif [ -x "./scripts/evaluate-agent-decision.sh" ]; then
   POLICY_EVALUATOR="./scripts/evaluate-agent-decision.sh"
 elif [ -x "/app/scripts/evaluate-agent-decision.sh" ]; then
   POLICY_EVALUATOR="/app/scripts/evaluate-agent-decision.sh"
@@ -692,11 +703,28 @@ fi
 
 if [ -n "$POLICY_EVALUATOR" ]; then
   echo "Running policy evaluator: $POLICY_EVALUATOR"
-  "$POLICY_EVALUATOR" "$DECISION_OUT"
-
   DECISION_BASENAME="$(basename "$DECISION_OUT")"
   DECISION_SUFFIX="${DECISION_BASENAME#ai-decision-}"
   POLICY_OUT="${OUT_DIR}/policy-decision-${DECISION_SUFFIX}"
+
+  if [ "$POLICY_EVALUATOR_MODE" = "runtime-adapter" ]; then
+    POLICY_INPUT_OUT="${OUT_DIR}/policy-input-${DECISION_SUFFIX}"
+    POLICY_RUNTIME_OUT="${OUT_DIR}/policy-runtime-result-${DECISION_SUFFIX}"
+
+    "$POLICY_EVALUATOR" build-input \
+      --ai-decision "$DECISION_OUT" \
+      --policy-file "${RELEASE_POLICY_FILE:-policy/release-policy.yaml}" \
+      --output "$POLICY_INPUT_OUT"
+
+    "$POLICY_EVALUATOR" evaluate \
+      --runtime "${POLICY_RUNTIME:-local-python}" \
+      --policy-input "$POLICY_INPUT_OUT" \
+      --output "$POLICY_RUNTIME_OUT" \
+      --repo-dir "$(pwd)" \
+      --decision-output "$POLICY_OUT"
+  else
+    "$POLICY_EVALUATOR" "$DECISION_OUT"
+  fi
 
   if [ -f "$POLICY_OUT" ]; then
     EVIDENCE_BUILDER=""

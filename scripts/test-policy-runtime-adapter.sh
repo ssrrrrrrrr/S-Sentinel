@@ -11,6 +11,7 @@ mkdir -p "$TMP_DIR"
 AI_DECISION="$TMP_DIR/ai-decision-20260101-000000.json"
 POLICY_INPUT="$TMP_DIR/policy-input.json"
 POLICY_RESULT="$TMP_DIR/policy-runtime-result.json"
+POLICY_DECISION="$TMP_DIR/policy-decision-20260101-000000.json"
 
 cat > "$AI_DECISION" <<'JSON'
 {
@@ -100,19 +101,21 @@ echo "===== evaluate policy input ====="
   --runtime local-python \
   --policy-input "$POLICY_INPUT" \
   --output "$POLICY_RESULT" \
-  --repo-dir "$ROOT_DIR"
+  --repo-dir "$ROOT_DIR" \
+  --decision-output "$POLICY_DECISION"
 
 cat "$POLICY_RESULT"
 
 echo
 echo "===== assert policy runtime result ====="
-python3 - "$POLICY_INPUT" "$POLICY_RESULT" <<'PY'
+python3 - "$POLICY_INPUT" "$POLICY_RESULT" "$POLICY_DECISION" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 policy_input = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 result = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+plain_decision = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
 
 assert policy_input["schemaVersion"] == "policy.input/v1alpha1", policy_input
 assert policy_input["inputSummary"]["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", policy_input
@@ -126,6 +129,8 @@ assert result["policyDecision"]["allowed"] is True, result
 assert result["summary"]["requiresHumanApproval"] is True, result
 assert result["safety"]["readOnly"] is True, result
 assert result["safety"]["willExecute"] is False, result
+assert plain_decision["schemaVersion"] == "release.policy.evaluator/v1alpha1", plain_decision
+assert plain_decision["policyDecision"] == result["policyDecision"]["policyDecision"], plain_decision
 
 print("PASS: PolicyRuntimeAdapter local-python contract is valid")
 PY

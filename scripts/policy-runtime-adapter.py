@@ -67,7 +67,7 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path) -> No
     write_json(output, policy_input)
 
 
-def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path) -> None:
+def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path, decision_output: Path | None = None) -> None:
     policy_input = load_json(policy_input_file)
 
     source_decision_file = Path(str(policy_input.get("sourceDecisionFile") or ""))
@@ -143,6 +143,8 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path)
     }
 
     write_json(output, result)
+    if decision_output is not None:
+        write_json(decision_output, policy_decision)
 
 
 def main() -> int:
@@ -159,6 +161,7 @@ def main() -> int:
     evaluate.add_argument("--policy-input", required=True)
     evaluate.add_argument("--output", required=True)
     evaluate.add_argument("--repo-dir", default=".")
+    evaluate.add_argument("--decision-output")
 
     args = parser.parse_args()
 
@@ -175,6 +178,7 @@ def main() -> int:
             Path(args.policy_input),
             Path(args.output),
             Path(args.repo_dir).resolve(),
+            Path(args.decision_output) if args.decision_output else None,
         )
         return 0
 
