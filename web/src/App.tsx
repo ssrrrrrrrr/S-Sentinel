@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/layout/DashboardHeader"
 import { PortalInformationArchitecture } from "@/components/layout/PortalInformationArchitecture"
 import { StageBanner } from "@/components/layout/StageBanner"
 import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObjectCards"
+import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
 import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwarePortalPanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
@@ -96,6 +97,12 @@ function App() {
             <ReleaseMetricGrid selected={selected} />
 
             <ControlPlaneObjectCards
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <ControlPlaneGraph
               selected={selected}
               evidenceQuery={environmentEvidenceQuery}
               onTabChange={setActiveTab}
