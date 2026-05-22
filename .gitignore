@@ -31,3 +31,5 @@ watcher/config.yaml
 .DS_Store
 
 !docs/release-reports/TEMPLATE.md
+# generated config compiler artifacts
+build/compiled/

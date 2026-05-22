@@ -1,0 +1,636 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+ENV_NAME="dev"
+SERVICE="demo-app"
+IMAGE_TAG="v36-compiled"
+APP_VERSION="v36"
+FAULT_RATE="0"
+LATENCY_MS="0"
+OUTPUT_DIR="build/compiled"
+
+REGISTRY="${REGISTRY:-192.168.30.11:30500}"
+IMAGE_NAME="${IMAGE_NAME:-sre/demo-app}"
+PROMETHEUS_ADDR="${PROMETHEUS_ADDR:-http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090}"
+PROMETHEUS_RULE_NAMESPACE="${PROMETHEUS_RULE_NAMESPACE:-monitoring}"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/compile-release-config.sh [options]
+
+Options:
+  --env ENV                 Environment name. Default: dev
+  --service NAME            Service name. Default: demo-app
+  --image-tag TAG           Release image tag. Default: v36-compiled
+  --app-version VERSION     App version. Default: v36
+  --fault-rate VALUE        Demo fault rate. Default: 0
+  --latency-ms VALUE        Demo latency ms. Default: 0
+  --output-dir DIR          Output root directory. Default: build/compiled
+  -h, --help                Show help
+
+Environment:
+  REGISTRY                  Image registry. Default: 192.168.30.11:30500
+  IMAGE_NAME                Image name. Default: sre/demo-app
+  PROMETHEUS_ADDR           Prometheus address used by AnalysisTemplate
+  PROMETHEUS_RULE_NAMESPACE PrometheusRule namespace. Default: monitoring
+
+Behavior:
+  - Reads EnvironmentConfig, SLOConfig, and ProgressiveDeliveryStrategy.
+  - Renders GitOps artifacts into build/compiled/<env>/ by default.
+  - Does not apply Kubernetes resources.
+  - Does not commit or push Git changes.
+  - Does not build or push images.
+USAGE
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --env)
+      ENV_NAME="${2:?missing value for --env}"
+      shift 2
+      ;;
+    --service)
+      SERVICE="${2:?missing value for --service}"
+      shift 2
+      ;;
+    --image-tag)
+      IMAGE_TAG="${2:?missing value for --image-tag}"
+      shift 2
+      ;;
+    --app-version)
+      APP_VERSION="${2:?missing value for --app-version}"
+      shift 2
+      ;;
+    --fault-rate)
+      FAULT_RATE="${2:?missing value for --fault-rate}"
+      shift 2
+      ;;
+    --latency-ms)
+      LATENCY_MS="${2:?missing value for --latency-ms}"
+      shift 2
+      ;;
+    --output-dir)
+      OUTPUT_DIR="${2:?missing value for --output-dir}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+python3 - "$ROOT_DIR" "$ENV_NAME" "$SERVICE" "$IMAGE_TAG" "$APP_VERSION" "$FAULT_RATE" "$LATENCY_MS" "$OUTPUT_DIR" "$REGISTRY" "$IMAGE_NAME" "$PROMETHEUS_ADDR" "$PROMETHEUS_RULE_NAMESPACE" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+try:
+    import yaml
+except Exception as exc:
+    raise SystemExit(f"ERROR: PyYAML is required: {exc}")
+
+root = Path(sys.argv[1])
+env_name = sys.argv[2]
+service = sys.argv[3]
+image_tag = sys.argv[4]
+app_version = sys.argv[5]
+fault_rate = sys.argv[6]
+latency_ms = sys.argv[7]
+output_root = Path(sys.argv[8])
+registry = sys.argv[9]
+image_name = sys.argv[10]
+prometheus_addr = sys.argv[11]
+prometheus_rule_namespace = sys.argv[12]
+
+if not output_root.is_absolute():
+    output_root = root / output_root
+
+out_dir = output_root / env_name
+remote_image = f"{registry}/{image_name}:{image_tag}"
+
+
+class LiteralStr(str):
+    pass
+
+
+def literal_str_representer(dumper: yaml.Dumper, data: LiteralStr):
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+
+
+yaml.SafeDumper.add_representer(LiteralStr, literal_str_representer)
+
+
+def read_yaml(rel_path: str) -> dict[str, Any]:
+    path = root / rel_path
+    if not path.is_file():
+        raise SystemExit(f"ERROR: missing YAML file: {rel_path}")
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit(f"ERROR: YAML file must be an object: {rel_path}")
+    return data
+
+
+def write_yaml(path: Path, data: dict[str, Any]) -> None:
+    path.write_text(
+        yaml.safe_dump(data, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+
+
+def write_json(path: Path, data: dict[str, Any]) -> None:
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def config_name(doc: dict[str, Any]) -> str:
+    return str(doc.get("metadata", {}).get("name", ""))
+
+
+def config_service(doc: dict[str, Any]) -> str:
+    return str(doc.get("metadata", {}).get("service", ""))
+
+
+def select_config(
+    refs: list[str],
+    default_profile: str | None,
+    expected_kind: str,
+) -> tuple[str, dict[str, Any]]:
+    loaded: list[tuple[str, dict[str, Any]]] = []
+
+    for ref in refs:
+        doc = read_yaml(ref)
+        if doc.get("kind") != expected_kind:
+            continue
+        loaded.append((ref, doc))
+
+    for ref, doc in loaded:
+        if default_profile and config_name(doc) == default_profile:
+            return ref, doc
+
+    for ref, doc in loaded:
+        if config_service(doc) == service:
+            return ref, doc
+
+    if loaded:
+        return loaded[0]
+
+    raise SystemExit(f"ERROR: no {expected_kind} config found from refs={refs}")
+
+
+def objective_by_id(slo_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    objectives = slo_doc.get("spec", {}).get("objectives", [])
+    if not isinstance(objectives, list):
+        raise SystemExit("ERROR: spec.objectives must be a list in SLOConfig")
+    result = {}
+    for obj in objectives:
+        obj_id = obj.get("id")
+        if obj_id:
+            result[str(obj_id)] = obj
+    return result
+
+
+def threshold(obj: dict[str, Any]) -> tuple[str, Any, str]:
+    data = obj.get("threshold") or {}
+    operator = str(data.get("operator", ""))
+    value = data.get("value")
+    unit = str(data.get("unit", ""))
+    if not operator or value is None:
+        raise SystemExit(f"ERROR: objective {obj.get('id')} missing threshold.operator/value")
+    return operator, value, unit
+
+
+def prom_window(slo_doc: dict[str, Any]) -> str:
+    return str(slo_doc.get("spec", {}).get("evaluation", {}).get("window", "1m"))
+
+
+def prom_query(metric_id: str, obj: dict[str, Any], namespace: str, window: str) -> LiteralStr:
+    obj_type = str(obj.get("type", ""))
+
+    if obj_type == "request_count":
+        return LiteralStr(f'''(
+  sum(increase(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}"}}[{window}]))
+  or on() vector(0)
+)''')
+
+    if obj_type == "error_rate":
+        return LiteralStr(f'''(
+  (
+    sum(rate(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}",status=~"5.."}}[{window}]))
+    or vector(0)
+  )
+  /
+  clamp_min(
+    (
+      sum(rate(demo_http_requests_total{{namespace="{namespace}",version="{image_tag}"}}[{window}]))
+      or vector(0)
+    ),
+    0.001
+  )
+) * 100''')
+
+    if obj_type == "latency":
+        percentile = float(obj.get("percentile", 95)) / 100
+        return LiteralStr(f'''(
+  histogram_quantile(
+    {percentile:.2f},
+    sum(rate(demo_http_request_duration_seconds_bucket{{namespace="{namespace}",version="{image_tag}"}}[{window}])) by (le)
+  )
+  or on() vector(0)
+)''')
+
+    raise SystemExit(f"ERROR: unsupported objective type for {metric_id}: {obj_type}")
+
+
+def success_condition(metric_id: str, obj: dict[str, Any]) -> str:
+    operator, value, _unit = threshold(obj)
+    if str(obj.get("type")) == "latency":
+        return f"isNaN(result[0]) || result[0] {operator} {value}"
+    return f"result[0] {operator} {value}"
+
+
+def alert_expr(metric_id: str, obj: dict[str, Any], namespace: str, min_request_count: Any, window: str):
+    operator, value, _unit = threshold(obj)
+    obj_type = str(obj.get("type", ""))
+
+    if obj_type == "error_rate":
+        return LiteralStr(f'''(
+  (
+    sum by (version) (
+      rate(demo_http_requests_total{{namespace="{namespace}",status=~"5.."}}[{window}])
+    )
+    /
+    clamp_min(
+      sum by (version) (
+        rate(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+      ),
+      0.001
+    )
+  ) * 100 > {value}
+)
+and on(version)
+(
+  sum by (version) (
+    increase(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+  ) >= {min_request_count}
+)''')
+
+    if obj_type == "latency":
+        percentile = float(obj.get("percentile", 95)) / 100
+        return LiteralStr(f'''(
+  histogram_quantile(
+    {percentile:.2f},
+    sum by (version, le) (
+      rate(demo_http_request_duration_seconds_bucket{{namespace="{namespace}"}}[{window}])
+    )
+  ) > {value}
+)
+and on(version)
+(
+  sum by (version) (
+    increase(demo_http_requests_total{{namespace="{namespace}"}}[{window}])
+  ) >= {min_request_count}
+)''')
+
+    return None
+
+
+env_ref = f"configs/environments/{env_name}.yaml"
+env_doc = read_yaml(env_ref)
+env_spec = env_doc.get("spec") or {}
+
+namespace = str(env_spec.get("kubernetes", {}).get("namespace") or "slo-rollout")
+cluster_name = str(env_spec.get("cluster", {}).get("name") or "unknown")
+environment_class = str(env_spec.get("cluster", {}).get("environmentClass") or "unknown")
+policy_profile = str(env_spec.get("policies", {}).get("policyProfile") or "unknown")
+overlay_path = str(env_spec.get("gitops", {}).get("overlayPath") or f"deploy/overlays/{env_name}")
+
+slo_refs = env_spec.get("slo", {}).get("configRefs") or []
+strategy_refs = env_spec.get("strategy", {}).get("configRefs") or []
+
+slo_ref, slo_doc = select_config(
+    slo_refs,
+    env_spec.get("slo", {}).get("defaultProfile"),
+    "SLOConfig",
+)
+
+strategy_ref, strategy_doc = select_config(
+    strategy_refs,
+    env_spec.get("strategy", {}).get("defaultProfile"),
+    "ProgressiveDeliveryStrategy",
+)
+
+slo_spec = slo_doc.get("spec") or {}
+strategy_spec = strategy_doc.get("spec") or {}
+strategy_analysis = strategy_spec.get("analysis") or {}
+
+objectives = objective_by_id(slo_doc)
+metric_ids = strategy_analysis.get("metrics") or list(objectives.keys())
+window = prom_window(slo_doc)
+
+min_request_count = (
+    slo_spec.get("evaluation", {}).get("minRequestCount")
+    or objectives.get("request-count", {}).get("threshold", {}).get("value")
+    or 20
+)
+
+analysis_template_name = f"{service}-error-rate"
+analysis_interval = str(strategy_analysis.get("interval") or "30s")
+analysis_failure_limit = int(strategy_analysis.get("maxFailures") or 1)
+
+metrics = []
+for metric_id in metric_ids:
+    if metric_id not in objectives:
+        raise SystemExit(f"ERROR: strategy references missing SLO objective: {metric_id}")
+
+    obj = objectives[metric_id]
+    metrics.append({
+        "name": metric_id,
+        "interval": analysis_interval,
+        "count": 3,
+        "failureLimit": analysis_failure_limit,
+        "successCondition": success_condition(metric_id, obj),
+        "provider": {
+            "prometheus": {
+                "address": prometheus_addr,
+                "query": prom_query(metric_id, obj, namespace, window),
+            }
+        },
+    })
+
+analysis_yaml = {
+    "apiVersion": "argoproj.io/v1alpha1",
+    "kind": "AnalysisTemplate",
+    "metadata": {
+        "name": analysis_template_name,
+        "namespace": namespace,
+        "labels": {
+            "app": service,
+            "ssentinel.io/generated-by": "config-compiler",
+            "ssentinel.io/env": env_name,
+        },
+    },
+    "spec": {
+        "metrics": metrics,
+    },
+}
+
+rollout_steps = []
+traffic_steps = strategy_spec.get("traffic", {}).get("steps") or []
+for step in traffic_steps:
+    weight = step.get("setWeight")
+    if weight is None:
+        raise SystemExit(f"ERROR: traffic step missing setWeight: {step}")
+
+    rollout_steps.append({"setWeight": int(weight)})
+
+    pause = str(step.get("pause") or "0s")
+    if pause and pause != "0s":
+        rollout_steps.append({"pause": {"duration": pause}})
+
+    if int(weight) < 100:
+        rollout_steps.append({
+            "analysis": {
+                "templates": [
+                    {"templateName": analysis_template_name}
+                ]
+            }
+        })
+
+rollout_yaml = {
+    "apiVersion": "argoproj.io/v1alpha1",
+    "kind": "Rollout",
+    "metadata": {
+        "name": service,
+        "namespace": namespace,
+        "labels": {
+            "app": service,
+            "ssentinel.io/generated-by": "config-compiler",
+            "ssentinel.io/env": env_name,
+        },
+    },
+    "spec": {
+        "replicas": 3,
+        "revisionHistoryLimit": 3,
+        "selector": {
+            "matchLabels": {
+                "app": service,
+            }
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "app": service,
+                    "version": image_tag,
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "name": service,
+                        "image": remote_image,
+                        "imagePullPolicy": "IfNotPresent",
+                        "ports": [
+                            {
+                                "containerPort": 8080,
+                                "name": "http",
+                            }
+                        ],
+                        "env": [
+                            {"name": "VERSION", "value": app_version},
+                            {"name": "RELEASE_TAG", "value": image_tag},
+                            {"name": "FAULT_RATE", "value": fault_rate},
+                            {"name": "LATENCY_MS", "value": latency_ms},
+                        ],
+                        "readinessProbe": {
+                            "httpGet": {
+                                "path": "/healthz",
+                                "port": 8080,
+                            },
+                            "initialDelaySeconds": 3,
+                            "periodSeconds": 5,
+                        },
+                        "livenessProbe": {
+                            "httpGet": {
+                                "path": "/healthz",
+                                "port": 8080,
+                            },
+                            "initialDelaySeconds": 10,
+                            "periodSeconds": 10,
+                        },
+                    }
+                ]
+            },
+        },
+        "strategy": {
+            "canary": {
+                "steps": rollout_steps,
+            }
+        },
+    },
+}
+
+rules = []
+for metric_id in metric_ids:
+    obj = objectives[metric_id]
+    expr = alert_expr(metric_id, obj, namespace, min_request_count, window)
+    if expr is None:
+        continue
+
+    obj_type = str(obj.get("type", ""))
+    _operator, value, unit = threshold(obj)
+
+    if obj_type == "error_rate":
+        alert_name = "DemoAppCanaryHighErrorRate"
+        summary = f"{service} canary error rate is too high"
+        description = f'version={{{{ $labels.version }}}} 5xx error rate is above {value}{unit if unit != "percent" else "%"}.'
+    elif obj_type == "latency":
+        percentile = obj.get("percentile", 95)
+        alert_name = f"DemoAppCanaryHighP{percentile}Latency"
+        summary = f"{service} canary p{percentile} latency is too high"
+        description = f'version={{{{ $labels.version }}}} p{percentile} latency is above {value}s.'
+    else:
+        continue
+
+    rules.append({
+        "alert": alert_name,
+        "expr": expr,
+        "for": "30s",
+        "labels": {
+            "severity": str(obj.get("severity") or "warning"),
+            "project": "slo-rollout-demo",
+            "component": service,
+            "alert_type": "rollout-slo",
+            "ssentinel.io/generated-by": "config-compiler",
+            "ssentinel.io/env": env_name,
+        },
+        "annotations": {
+            "summary": summary,
+            "description": description,
+            "runbook": f"kubectl describe rollout {service} -n {namespace}",
+        },
+    })
+
+prometheusrule_yaml = {
+    "apiVersion": "monitoring.coreos.com/v1",
+    "kind": "PrometheusRule",
+    "metadata": {
+        "name": f"{service}-rollout-alerts",
+        "namespace": prometheus_rule_namespace,
+        "labels": {
+            "release": "prometheus-stack",
+            "ssentinel.io/generated-by": "config-compiler",
+            "ssentinel.io/env": env_name,
+        },
+    },
+    "spec": {
+        "groups": [
+            {
+                "name": f"{service}-rollout.rules",
+                "rules": rules,
+            }
+        ]
+    },
+}
+
+kustomization_yaml = {
+    "apiVersion": "kustomize.config.k8s.io/v1beta1",
+    "kind": "Kustomization",
+    "resources": [
+        "analysis.yaml",
+        "prometheusrule.yaml",
+        "rollout.yaml",
+    ],
+}
+
+rendered_release_plan = {
+    "schemaVersion": "ssentinel.rendered-release-plan/v1alpha1",
+    "kind": "RenderedReleasePlan",
+    "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    "generatedBy": "scripts/compile-release-config.sh",
+    "release": {
+        "service": service,
+        "env": env_name,
+        "namespace": namespace,
+        "clusterName": cluster_name,
+        "environmentClass": environment_class,
+        "policyProfile": policy_profile,
+        "image": remote_image,
+        "imageTag": image_tag,
+        "appVersion": app_version,
+        "faultRate": fault_rate,
+        "latencyMs": latency_ms,
+    },
+    "inputs": {
+        "environmentConfigRef": env_ref,
+        "sloConfigRef": slo_ref,
+        "strategyConfigRef": strategy_ref,
+        "overlayPath": overlay_path,
+    },
+    "slo": {
+        "sloId": config_name(slo_doc),
+        "window": window,
+        "minRequestCount": min_request_count,
+        "objectives": [
+            {
+                "id": metric_id,
+                "type": objectives[metric_id].get("type"),
+                "threshold": objectives[metric_id].get("threshold"),
+                "severity": objectives[metric_id].get("severity"),
+            }
+            for metric_id in metric_ids
+        ],
+    },
+    "strategy": {
+        "strategyId": config_name(strategy_doc),
+        "strategyType": strategy_spec.get("strategyType"),
+        "trafficSteps": traffic_steps,
+        "analysis": strategy_analysis,
+        "failurePolicy": strategy_spec.get("failurePolicy") or {},
+        "promotionPolicy": strategy_spec.get("promotionPolicy") or {},
+    },
+    "outputs": {
+        "outputDir": str(out_dir.relative_to(root) if out_dir.is_relative_to(root) else out_dir),
+        "analysisTemplate": "analysis.yaml",
+        "rollout": "rollout.yaml",
+        "prometheusRule": "prometheusrule.yaml",
+        "kustomization": "kustomization.yaml",
+        "renderedReleasePlan": "rendered-release-plan.json",
+    },
+    "guardrails": {
+        "doesNotApplyKubernetes": True,
+        "doesNotCommitOrPush": True,
+        "doesNotBuildImages": True,
+        "doesNotModifyCluster": True,
+    },
+}
+
+out_dir.mkdir(parents=True, exist_ok=True)
+
+write_yaml(out_dir / "analysis.yaml", analysis_yaml)
+write_yaml(out_dir / "rollout.yaml", rollout_yaml)
+write_yaml(out_dir / "prometheusrule.yaml", prometheusrule_yaml)
+write_yaml(out_dir / "kustomization.yaml", kustomization_yaml)
+write_json(out_dir / "rendered-release-plan.json", rendered_release_plan)
+
+print(f"PASS: compiled release config env={env_name} service={service}")
+print(f"outputDir={out_dir}")
+print(f"analysisTemplate={out_dir / 'analysis.yaml'}")
+print(f"rollout={out_dir / 'rollout.yaml'}")
+print(f"prometheusRule={out_dir / 'prometheusrule.yaml'}")
+print(f"renderedReleasePlan={out_dir / 'rendered-release-plan.json'}")
+PY
