@@ -9,6 +9,7 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 SUPPLY_CHAIN="$TMP_DIR/supply-chain-decision-20260101-000000.json"
+RELEASE_EVIDENCE="$TMP_DIR/release-evidence-20260101-000000.json"
 GATE="$TMP_DIR/signed-release-gate-20260101-000000.json"
 
 cat > "$SUPPLY_CHAIN" <<'JSON'
@@ -72,6 +73,38 @@ cat > "$SUPPLY_CHAIN" <<'JSON'
 }
 JSON
 
+
+echo "===== prepare release evidence link ====="
+python3 - "$SUPPLY_CHAIN" "$RELEASE_EVIDENCE" <<'PY_PREPARE'
+import json
+import sys
+from pathlib import Path
+
+supply_path = Path(sys.argv[1])
+evidence_path = Path(sys.argv[2])
+
+release_evidence = {
+    "schemaVersion": "release.evidence.bundle/v1alpha1",
+    "generatedBy": "test-signed-release-gate.sh",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "releaseId": "20260101-000000",
+    "service": "demo-app",
+    "namespace": "slo-rollout",
+    "env": "dev",
+    "releaseResult": "PASS",
+    "policyDecision": "ALLOW",
+    "finalAction": "NOOP",
+    "artifacts": {},
+    "decisionRefs": {}
+}
+evidence_path.write_text(json.dumps(release_evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+supply = json.loads(supply_path.read_text(encoding="utf-8"))
+source = supply.setdefault("source", {})
+source["releaseEvidence"] = str(evidence_path)
+supply_path.write_text(json.dumps(supply, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY_PREPARE
+
 echo "===== build signed release gate ====="
 SIGNED_RELEASE_GATE_OUTPUT_DIR="$TMP_DIR" ./scripts/build-signed-release-gate.sh "$SUPPLY_CHAIN"
 
@@ -107,6 +140,40 @@ assert "provenance_available" in check_ids, gate
 
 print("PASS: signed release gate contract is valid")
 PY
+
+echo
+echo "===== assert release evidence and EvidenceStore link ====="
+DB_FILE="$TMP_DIR/evidence-store.db"
+./scripts/evidence-store.py init-db --db "$DB_FILE" >/dev/null
+./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$TMP_DIR" > "$TMP_DIR/evidence-store-import.json"
+./scripts/evidence-store.py get-object \
+  --db "$DB_FILE" \
+  --object-type signedReleaseGate \
+  --object-id srg-20260101-000000 \
+  --release-id 20260101-000000 \
+  > "$TMP_DIR/signed-release-gate-object.json"
+
+python3 - "$RELEASE_EVIDENCE" "$TMP_DIR/evidence-store-import.json" "$TMP_DIR/signed-release-gate-object.json" <<'PY_ASSERT_LINK'
+import json
+import sys
+from pathlib import Path
+
+release_evidence = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+import_result = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+obj = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+
+assert release_evidence["artifacts"]["signedReleaseGate"].endswith("signed-release-gate-20260101-000000.json"), release_evidence
+assert release_evidence["decisionRefs"]["signedReleaseGate"]["decision"] == "REQUIRE_HUMAN_APPROVAL", release_evidence
+assert release_evidence["signedReleaseGateRef"]["allowed"] is False, release_evidence
+
+assert import_result["byType"]["signedReleaseGate"] == 1, import_result
+assert obj["schemaVersion"] == "evidence.store.object/v1alpha1", obj
+assert obj["object"]["object_type"] == "signedReleaseGate", obj
+assert obj["object"]["object_id"] == "srg-20260101-000000", obj
+
+print("PASS: signed release gate is linked and indexed")
+PY_ASSERT_LINK
+
 
 echo
 echo "PASS: signed release gate test passed"

@@ -251,7 +251,56 @@ gate = {
 }
 
 output_json.write_text(json.dumps(gate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
 shutil.copyfile(output_json, latest_json)
+
+def resolve_release_evidence_path(ref: Any) -> Path | None:
+    if not ref:
+        return None
+    raw = Path(str(ref))
+    candidates: list[Path] = []
+    if raw.is_absolute():
+        candidates.append(raw)
+    candidates.extend([
+        input_path.parent / raw,
+        input_path.parent / raw.name,
+        Path.cwd() / raw,
+        raw,
+    ])
+    for candidate in candidates:
+        try:
+            if candidate.exists() and candidate.is_file():
+                return candidate
+        except OSError:
+            continue
+    return None
+
+release_evidence_path = resolve_release_evidence_path(as_dict(supply.get("source")).get("releaseEvidence"))
+if release_evidence_path is not None:
+    release_evidence = load_json(release_evidence_path)
+    artifacts = release_evidence.setdefault("artifacts", {})
+    artifacts["signedReleaseGate"] = str(output_json)
+
+    decision_refs = release_evidence.setdefault("decisionRefs", {})
+    decision_refs["signedReleaseGate"] = {
+        "signedReleaseGateId": gate_id,
+        "decision": gate_decision,
+        "allowed": allowed,
+        "requiresHumanApproval": requires_human_approval,
+        "riskLevel": gate["risk"]["riskLevel"],
+        "riskScore": gate["risk"]["riskScore"],
+        "source": str(output_json),
+    }
+
+    release_evidence["signedReleaseGateRef"] = {
+        "json": str(output_json),
+        "decision": gate_decision,
+        "allowed": allowed,
+        "requiresHumanApproval": requires_human_approval,
+    }
+
+    release_evidence_path.write_text(json.dumps(release_evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Signed release gate linked into release evidence: {release_evidence_path}")
 
 print(json.dumps({
     "schemaVersion": "signed.release.gate.build/v1alpha1",

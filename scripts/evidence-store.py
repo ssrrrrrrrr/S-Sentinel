@@ -69,6 +69,15 @@ RESOURCE_SPECS = [
         "id_prefix": "prr-",
     },
     {
+        "object_type": "signedReleaseGate",
+        "schema_version": "signed.release.gate/v1alpha1",
+        "glob": "signed-release-gate-*.json",
+        "latest": "signed-release-gate-latest.json",
+        "prefix": "signed-release-gate-",
+        "id_key": "signedReleaseGateId",
+        "id_prefix": "srg-",
+    },
+    {
         "object_type": "supplyChainDecision",
         "glob": "supply-chain-decision-*.json",
         "latest": "supply-chain-decision-latest.json",

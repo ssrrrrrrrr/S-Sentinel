@@ -268,6 +268,7 @@ bundle = {
         "releaseSummary": str(summary_path),
         "actionPlan": None,
         "actionPlanReport": None,
+        "signedReleaseGate": None,
     },
     "decisionRefs": {
         "aiDecision": {
