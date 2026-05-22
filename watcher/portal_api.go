@@ -254,6 +254,7 @@ func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.R
 		"reportDir":        api.reportDir,
 		"dbFile":           dbFile,
 		"scriptFile":       scriptFile,
+		"pythonRuntime":    api.evidenceStorePythonBin(),
 		"refreshStateFile": refreshStateFile,
 		"ready":            false,
 	}
@@ -536,7 +537,7 @@ func (api *portalAPI) runEvidenceStoreCommand(r *http.Request, args ...string) (
 	}
 
 	commandArgs := append([]string{scriptFile}, args...)
-	cmd := exec.CommandContext(r.Context(), "python3", commandArgs...)
+	cmd := exec.CommandContext(r.Context(), api.evidenceStorePythonBin(), commandArgs...)
 	cmd.Dir = api.cfg.RepoDir
 
 	var stdout bytes.Buffer
@@ -557,6 +558,22 @@ func (api *portalAPI) evidenceStoreScriptFile() string {
 	}
 
 	return filepath.Join(api.cfg.RepoDir, "scripts", "evidence-store.py")
+}
+
+func (api *portalAPI) evidenceStorePythonBin() string {
+	if pythonBin := strings.TrimSpace(os.Getenv("S_SENTINEL_PYTHON_BIN")); pythonBin != "" {
+		return pythonBin
+	}
+
+	if _, err := exec.LookPath("python3"); err == nil {
+		return "python3"
+	}
+
+	if _, err := exec.LookPath("python"); err == nil {
+		return "python"
+	}
+
+	return "python3"
 }
 
 func (api *portalAPI) evidenceStoreDBFile() string {

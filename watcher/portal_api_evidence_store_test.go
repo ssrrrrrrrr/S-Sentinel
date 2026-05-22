@@ -82,6 +82,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, statusBeforeRefreshBody, "evidence.store.status/v1alpha1")
 	assertPortalBool(t, statusBeforeRefreshBody, "ready", false)
+	assertPortalStringNotEmpty(t, statusBeforeRefreshBody, "pythonRuntime")
 
 	initialRefreshBody := callPortalEvidenceStoreHandlerWithMethod(
 		t,
@@ -119,6 +120,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		"/api/evidence-store/status",
 	)
 	assertPortalSchema(t, statusBody, "evidence.store.status/v1alpha1")
+	assertPortalStringNotEmpty(t, statusBody, "pythonRuntime")
 	assertPortalBool(t, statusBody, "readOnly", true)
 	assertPortalBool(t, statusBody, "willExecute", false)
 
@@ -231,5 +233,29 @@ func assertPortalNestedNumber(t *testing.T, body map[string]interface{}, objectK
 
 	if got != expected {
 		t.Fatalf("expected %s.%s=%v, got=%v object=%v", objectKey, valueKey, expected, got, object)
+	}
+}
+
+func TestEvidenceStorePythonRuntimeEnvOverride(t *testing.T) {
+	t.Setenv("S_SENTINEL_PYTHON_BIN", "custom-python")
+
+	api := &portalAPI{}
+
+	got := api.evidenceStorePythonBin()
+	if got != "custom-python" {
+		t.Fatalf("expected python runtime override custom-python, got %s", got)
+	}
+}
+
+func assertPortalStringNotEmpty(t *testing.T, body map[string]interface{}, key string) {
+	t.Helper()
+
+	got, ok := body[key].(string)
+	if !ok {
+		t.Fatalf("expected %s to be a string, got body=%v", key, body)
+	}
+
+	if got == "" {
+		t.Fatalf("expected %s to be non-empty, got body=%v", key, body)
 	}
 }
