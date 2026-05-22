@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -41,10 +43,22 @@ def bool_value(value: Any) -> bool:
     return bool(value) if value is not None else False
 
 
+def env_truthy(name: str) -> bool:
+    value = os.environ.get(name, "").strip().lower()
+    return value in {"1", "true", "yes", "y", "on"}
+
+
+def truncate_text(value: str, limit: int = 4000) -> str:
+    if len(value) <= limit:
+        return value
+    return value[:limit] + "\n...[truncated]"
+
+
 def build_verification(
     supply_chain_decision: Path,
     mode: str,
     cosign_bin: str,
+    allow_external_command: bool = False,
 ) -> dict[str, Any]:
     if mode not in ALLOWED_MODES:
         raise SystemExit(f"ERROR: unsupported verification mode={mode}; allowed={sorted(ALLOWED_MODES)}")
@@ -69,16 +83,48 @@ def build_verification(
 
     verification_subject = image_ref or image_digest or "<image-reference>"
     normalized_cosign_bin = cosign_bin.strip() or "cosign"
-    tool_available = shutil.which(normalized_cosign_bin) is not None
 
     if mode == "admission":
         tool = "admission"
         tool_binary = None
         command_preview = None
+        tool_available = False
     else:
         tool = "cosign"
         tool_binary = normalized_cosign_bin
         command_preview = [normalized_cosign_bin, "verify", verification_subject]
+        tool_available = shutil.which(normalized_cosign_bin) is not None
+
+    external_requested = mode == "external_command"
+    external_allowed = bool(external_requested and allow_external_command)
+    can_run_external = bool(external_allowed and tool_available and command_preview)
+    external_executed = False
+    external_succeeded: bool | None = None
+    skipped_reason: str | None = None
+    command: list[str] | None = None
+    exit_code: int | None = None
+    stdout: str | None = None
+
+    if external_requested and can_run_external:
+        completed = subprocess.run(
+            command_preview,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=30,
+        )
+        external_executed = True
+        external_succeeded = completed.returncode == 0
+        command = command_preview
+        exit_code = completed.returncode
+        stdout = truncate_text(completed.stdout or "")
+    elif external_requested and not allow_external_command:
+        skipped_reason = "external_command_not_enabled"
+    elif external_requested and not tool_available:
+        skipped_reason = "tool_not_available"
+    else:
+        skipped_reason = "mode_does_not_execute_external_command"
 
     return {
         "schemaVersion": "signed.release.gate.verification/v1alpha1",
@@ -86,9 +132,10 @@ def build_verification(
         "tool": tool,
         "toolBinary": tool_binary,
         "toolAvailable": tool_available if tool_binary else False,
-        "command": None,
+        "command": command,
         "commandPreview": command_preview,
-        "exitCode": None,
+        "exitCode": exit_code,
+        "stdout": stdout,
         "checkedAt": now(),
         "subject": {
             "image": image_ref,
@@ -102,6 +149,11 @@ def build_verification(
             "provenancePresent": bool(provenance_ref),
             "slsaLevelPresent": bool(slsa_level),
             "slsaLevel": slsa_level,
+            "externalVerificationRequested": external_requested,
+            "externalVerificationAllowed": external_allowed,
+            "externalVerificationExecuted": external_executed,
+            "externalVerificationSucceeded": external_succeeded,
+            "externalVerificationSkippedReason": skipped_reason,
         },
         "source": {
             "supplyChainDecision": str(supply_chain_decision),
@@ -109,19 +161,25 @@ def build_verification(
         },
         "guardrails": {
             "readOnly": True,
-            "willExecute": False,
-            "canRunExternalVerification": False,
-            "doesNotRunExternalCommands": True,
-            "doesNotVerifyExternalServices": True,
+            "willExecute": external_executed,
+            "canRunExternalVerification": can_run_external,
+            "doesNotRunExternalCommands": not external_executed,
+            "doesNotVerifyExternalServices": not external_executed,
         },
     }
 
 
 def run_mode(args: argparse.Namespace, mode: str) -> int:
+    allow_external_command = bool(
+        args.allow_external_command
+        or env_truthy("S_SENTINEL_VERIFICATION_ALLOW_EXTERNAL_COMMAND")
+    )
+
     result = build_verification(
         supply_chain_decision=Path(args.supply_chain_decision),
         mode=mode,
         cosign_bin=args.cosign_bin,
+        allow_external_command=allow_external_command,
     )
     write_json(Path(args.output), result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -132,6 +190,11 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--supply-chain-decision", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--cosign-bin", default="cosign")
+    parser.add_argument(
+        "--allow-external-command",
+        action="store_true",
+        help="Allow external verification command execution. Default is preview only.",
+    )
 
 
 def main() -> int:
@@ -141,7 +204,7 @@ def main() -> int:
     input_parser = sub.add_parser("input-derived", help="Build read-only input-derived verification result.")
     add_common_args(input_parser)
 
-    external_parser = sub.add_parser("external-command-preview", help="Build external command preview without execution.")
+    external_parser = sub.add_parser("external-command-preview", help="Build external command verification result. Preview-only unless explicitly allowed.")
     add_common_args(external_parser)
 
     admission_parser = sub.add_parser("admission-placeholder", help="Build admission verification placeholder.")

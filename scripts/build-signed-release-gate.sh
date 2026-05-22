@@ -14,13 +14,15 @@ Environment:
   SIGNED_RELEASE_GATE_OUTPUT_DIR     Optional output directory.
   SIGNED_RELEASE_GATE_OUTPUT_FILE    Optional exact output file.
   SIGNED_RELEASE_GATE_VERIFICATION_MODE Optional verification mode: input_derived, external_command, admission. Default: input_derived.
-  S_SENTINEL_COSIGN_BIN              Optional cosign binary path/name for command preview only.
+  S_SENTINEL_COSIGN_BIN              Optional cosign binary path/name for command preview or explicitly enabled execution.
+  S_SENTINEL_VERIFICATION_ALLOW_EXTERNAL_COMMAND Set to 1 to allow external command execution. Default: 0.
 
 Behavior:
   - Reads supply-chain-decision-*.json.
   - Generates signed-release-gate-*.json and signed-release-gate-latest.json.
   - Performs read-only signed release gate checks.
-  - Does not sign images, verify external services, modify Kubernetes, GitOps, images, commits, or pushes.
+  - external_command mode is preview-only unless S_SENTINEL_VERIFICATION_ALLOW_EXTERNAL_COMMAND=1 is set.
+  - Does not sign images, modify Kubernetes, GitOps, images, commits, or pushes.
 USAGE
 }
 
