@@ -179,6 +179,38 @@ if slsa_level:
 else:
     add_check(checks, "slsa_attestation_available", "WARN", "medium", "SLSA attestation level is missing", {})
 
+verification = {
+    "schemaVersion": "signed.release.gate.verification/v1alpha1",
+    "mode": "input_derived",
+    "tool": "cosign",
+    "command": None,
+    "exitCode": None,
+    "checkedAt": now(),
+    "subject": {
+        "image": image_ref,
+        "imageDigest": image_digest,
+    },
+    "results": {
+        "imageDigestPresent": bool(image_digest),
+        "usesDigestReference": uses_digest_reference,
+        "signatureVerified": cosign_verified,
+        "sbomPresent": bool(sbom_ref),
+        "provenancePresent": bool(provenance_ref),
+        "slsaLevelPresent": bool(slsa_level),
+        "slsaLevel": slsa_level,
+    },
+    "source": {
+        "supplyChainDecision": str(input_path),
+        "attestationsPath": "attestations",
+    },
+    "guardrails": {
+        "readOnly": True,
+        "willExecute": False,
+        "doesNotRunExternalCommands": True,
+        "doesNotVerifyExternalServices": True,
+    },
+}
+
 if decision.get("decision") == "BLOCK":
     add_check(checks, "source_supply_chain_decision", "FAIL", "critical", "Source supply-chain decision is BLOCK", decision)
 else:
@@ -225,6 +257,7 @@ gate = {
         "cosign": {"verified": cosign_verified},
         "slsa": {"level": slsa_level, "present": bool(slsa_level)},
     },
+    "verification": verification,
     "checks": checks,
     "decision": {
         "decision": gate_decision,
