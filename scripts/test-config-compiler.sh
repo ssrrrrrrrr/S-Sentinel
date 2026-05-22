@@ -70,6 +70,7 @@ for env, namespace in expected_namespaces.items():
     assert rollout["metadata"]["namespace"] == namespace, rollout["metadata"]
     assert plan["release"]["namespace"] == namespace, plan["release"]
     assert plan["release"]["policyProfile"] == expected_policy_profiles[env], plan["release"]
+    assert plan["release"]["project"] == "slo-rollout-demo", plan["release"]
 
     metrics = {item["name"]: item for item in analysis["spec"]["metrics"]}
     assert set(metrics) == {"request-count", "error-rate", "p95-latency"}, metrics
@@ -105,6 +106,7 @@ for env, namespace in expected_namespaces.items():
     assert "prometheus-latency-histogram-demo" in binding_ids, binding_ids
     assert "default-image-name-sre-demo-app" in binding_ids, binding_ids
     assert "prometheus-alert-name-demoapp" not in binding_ids, binding_ids
+    assert "prometheus-project-label-demo" not in binding_ids, binding_ids
     assert inventory["guardrails"]["inventoryOnly"] is True, inventory["guardrails"]
 
     assert plan["guardrails"]["doesNotApplyKubernetes"] is True, plan["guardrails"]

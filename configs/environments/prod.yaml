@@ -7,6 +7,8 @@ metadata:
     ssentinel.io/component: environment-config
     ssentinel.io/profile: prod
 spec:
+  project:
+    name: slo-rollout-demo
   description: "Production profile with strict policy, manual approval, immutable image requirements, and read-only default guardrails."
   cluster:
     name: prod-cluster

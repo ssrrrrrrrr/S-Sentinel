@@ -331,6 +331,7 @@ namespace = str(env_spec.get("kubernetes", {}).get("namespace") or "slo-rollout"
 cluster_name = str(env_spec.get("cluster", {}).get("name") or "unknown")
 environment_class = str(env_spec.get("cluster", {}).get("environmentClass") or "unknown")
 policy_profile = str(env_spec.get("policies", {}).get("policyProfile") or "unknown")
+project_name = str(env_spec.get("project", {}).get("name") or "slo-rollout-demo")
 overlay_path = str(env_spec.get("gitops", {}).get("overlayPath") or f"deploy/overlays/{env_name}")
 
 slo_refs = env_spec.get("slo", {}).get("configRefs") or []
@@ -555,7 +556,7 @@ for metric_id in metric_ids:
         "for": "30s",
         "labels": {
             "severity": str(obj.get("severity") or "warning"),
-            "project": "slo-rollout-demo",
+            "project": project_name,
             "component": service,
             "alert_type": "rollout-slo",
             "ssentinel.io/generated-by": "config-compiler",
@@ -657,13 +658,6 @@ hardcode_inventory = {
             "resolution": "Read histogram metric names from SLOConfig metric bindings or an ObservabilityContract.",
         },
         {
-            "id": "prometheus-project-label-demo",
-            "type": "label-default",
-            "field": "PrometheusRule.labels.project",
-            "value": "slo-rollout-demo",
-            "resolution": "Read project or release system identity from EnvironmentConfig.",
-        },
-        {
             "id": "demo-runtime-fault-env",
             "type": "demo-runtime-knob",
             "field": "Rollout.container.env",
@@ -690,6 +684,7 @@ rendered_release_plan = {
         "clusterName": cluster_name,
         "environmentClass": environment_class,
         "policyProfile": policy_profile,
+        "project": project_name,
         "image": remote_image,
         "imageTag": image_tag,
         "appVersion": app_version,
