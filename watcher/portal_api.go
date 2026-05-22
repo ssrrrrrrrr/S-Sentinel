@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -92,6 +95,10 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases", api.handleReleaseList)
 	mux.HandleFunc("/api/releases/", api.handleReleaseDetail)
 	mux.HandleFunc("/api/releases/latest", api.handleLatestIndex)
+
+	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
+	mux.HandleFunc("/api/evidence-store/releases/", api.handleEvidenceStoreReleaseDetail)
+	mux.HandleFunc("/api/evidence-store/objects/", api.handleEvidenceStoreObjectDetail)
 	mux.HandleFunc("/api/releases/latest/evidence", api.handleLatestResource("releaseEvidence"))
 	mux.HandleFunc("/api/releases/latest/evidence-record", api.handleLatestResource("evidenceRecord"))
 	mux.HandleFunc("/api/releases/latest/summary", api.handleLatestResource("releaseSummary"))
@@ -225,6 +232,190 @@ func portalResourceDefs() []portalResourceDef {
 	}
 }
 
+func (api *portalAPI) handleEvidenceStoreReleaseList(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	query := r.URL.Query()
+	limit := strings.TrimSpace(query.Get("limit"))
+	if limit == "" {
+		limit = "50"
+	}
+
+	args := []string{
+		"list-releases",
+		"--limit", limit,
+	}
+
+	if service := strings.TrimSpace(query.Get("service")); service != "" {
+		args = append(args, "--service", service)
+	}
+
+	if env := strings.TrimSpace(query.Get("env")); env != "" {
+		args = append(args, "--env", env)
+	}
+
+	if releaseResult := strings.TrimSpace(query.Get("releaseResult")); releaseResult != "" {
+		args = append(args, "--release-result", releaseResult)
+	}
+
+	api.writeEvidenceStoreCommandResponse(w, r, args...)
+}
+
+func (api *portalAPI) handleEvidenceStoreReleaseDetail(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	releaseID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/evidence-store/releases/"), "/")
+	if releaseID == "" || strings.Contains(releaseID, "/") {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error": "evidence store release not found",
+			"path":  r.URL.Path,
+		})
+		return
+	}
+
+	args := []string{
+		"query-release",
+		"--release-id", releaseID,
+	}
+
+	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true") {
+		args = append(args, "--include-raw")
+	}
+
+	api.writeEvidenceStoreCommandResponse(w, r, args...)
+}
+
+func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	rest := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/evidence-store/objects/"), "/")
+	parts := strings.Split(rest, "/")
+	if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" || strings.TrimSpace(parts[1]) == "" {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"error": "evidence store object not found",
+			"path":  r.URL.Path,
+		})
+		return
+	}
+
+	args := []string{
+		"get-object",
+		"--object-type", strings.TrimSpace(parts[0]),
+		"--object-id", strings.TrimSpace(parts[1]),
+	}
+
+	if releaseID := strings.TrimSpace(r.URL.Query().Get("releaseId")); releaseID != "" {
+		args = append(args, "--release-id", releaseID)
+	}
+
+	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true") {
+		args = append(args, "--include-raw")
+	}
+
+	api.writeEvidenceStoreCommandResponse(w, r, args...)
+}
+
+func (api *portalAPI) writeEvidenceStoreCommandResponse(w http.ResponseWriter, r *http.Request, args ...string) {
+	dbFile, err := api.prepareEvidenceStoreDB(r)
+	if err != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to prepare evidence store", err)
+		return
+	}
+
+	if len(args) == 0 {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "empty evidence store command", nil)
+		return
+	}
+
+	commandArgs := append([]string{args[0], "--db", dbFile}, args[1:]...)
+
+	output, err := api.runEvidenceStoreCommand(r, commandArgs...)
+	if err != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to query evidence store", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-S-Sentinel-Evidence-Store-Mode", "sqlite-adapter")
+	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", dbFile)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(output)
+}
+
+func (api *portalAPI) prepareEvidenceStoreDB(r *http.Request) (string, error) {
+	dbFile := api.evidenceStoreDBFile()
+
+	if _, err := api.runEvidenceStoreCommand(r, "init-db", "--db", dbFile); err != nil {
+		return "", err
+	}
+
+	if _, err := api.runEvidenceStoreCommand(r, "import-dir", "--db", dbFile, "--report-dir", api.reportDir); err != nil {
+		return "", err
+	}
+
+	return dbFile, nil
+}
+
+func (api *portalAPI) runEvidenceStoreCommand(r *http.Request, args ...string) ([]byte, error) {
+	scriptFile := api.evidenceStoreScriptFile()
+	if _, err := os.Stat(scriptFile); err != nil {
+		return nil, fmt.Errorf("evidence store script unavailable: %s: %w", scriptFile, err)
+	}
+
+	commandArgs := append([]string{scriptFile}, args...)
+	cmd := exec.CommandContext(r.Context(), "python3", commandArgs...)
+	cmd.Dir = api.cfg.RepoDir
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return stdout.Bytes(), fmt.Errorf("evidence store command failed: %w: %s", err, strings.TrimSpace(stderr.String()))
+	}
+
+	return stdout.Bytes(), nil
+}
+
+func (api *portalAPI) evidenceStoreScriptFile() string {
+	if scriptFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_SCRIPT")); scriptFile != "" {
+		return scriptFile
+	}
+
+	return filepath.Join(api.cfg.RepoDir, "scripts", "evidence-store.py")
+}
+
+func (api *portalAPI) evidenceStoreDBFile() string {
+	if dbFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_DB")); dbFile != "" {
+		return dbFile
+	}
+
+	return filepath.Join(os.TempDir(), "s-sentinel-evidence-store", "portal-evidence-store.db")
+}
+
+func (api *portalAPI) writeEvidenceStoreError(w http.ResponseWriter, statusCode int, message string, err error) {
+	body := map[string]interface{}{
+		"schemaVersion": "evidence.store.adapter.error/v1alpha1",
+		"generatedAt":   time.Now().Format(time.RFC3339),
+		"error":         message,
+		"readOnly":      true,
+		"willExecute":   false,
+	}
+
+	if err != nil {
+		body["detail"] = err.Error()
+	}
+
+	writePortalJSON(w, statusCode, body)
+}
+
 func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) {
 	if !api.requireGET(w, r) {
 		return
@@ -234,6 +425,9 @@ func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) 
 	endpoints := []string{
 		"/api/releases",
 		"/api/releases/latest",
+		"/api/evidence-store/releases",
+		"/api/evidence-store/releases/{releaseId}",
+		"/api/evidence-store/objects/{objectType}/{objectId}",
 	}
 
 	for _, def := range portalResourceDefs() {

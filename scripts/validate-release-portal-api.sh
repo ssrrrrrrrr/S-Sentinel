@@ -225,6 +225,28 @@ if [ -n "$RELEASE_ID" ]; then
   check_json_expr "$TMP_DIR/release-detail.json" "detail safety.willExecute is false" '(data.get("safety") or {}).get("willExecute") is False'
 fi
 
+section "Validate EvidenceStore adapter"
+request "/api/evidence-store/releases?limit=5" "200" "$TMP_DIR/evidence-store-releases.json"
+check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list schema is valid" 'data.get("schemaVersion") == "evidence.store.releaseList/v1alpha1"'
+check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list is read model" 'isinstance(data.get("items"), list)'
+
+if [ -n "$RELEASE_ID" ]; then
+  request "/api/evidence-store/releases/${RELEASE_ID}" "200" "$TMP_DIR/evidence-store-release-detail.json"
+  check_json_expr "$TMP_DIR/evidence-store-release-detail.json" "evidence-store release detail schema is valid" 'data.get("schemaVersion") == "evidence.store.release/v1alpha1"'
+  check_json_expr "$TMP_DIR/evidence-store-release-detail.json" "evidence-store release detail has objects" 'isinstance(data.get("objects"), list) and len(data.get("objects")) >= 1'
+
+  OBJECT_TYPE="$(json_value "$TMP_DIR/evidence-store-release-detail.json" '(data.get("objects") or [{}])[0].get("object_type", "")')"
+  OBJECT_ID="$(json_value "$TMP_DIR/evidence-store-release-detail.json" '(data.get("objects") or [{}])[0].get("object_id", "")')"
+
+  if [ -n "$OBJECT_TYPE" ] && [ -n "$OBJECT_ID" ]; then
+    request "/api/evidence-store/objects/${OBJECT_TYPE}/${OBJECT_ID}?releaseId=${RELEASE_ID}" "200" "$TMP_DIR/evidence-store-object.json"
+    check_json_expr "$TMP_DIR/evidence-store-object.json" "evidence-store object schema is valid" 'data.get("schemaVersion") == "evidence.store.object/v1alpha1"'
+    check_json_expr "$TMP_DIR/evidence-store-object.json" "evidence-store object has summary" 'isinstance((data.get("object") or {}).get("summary"), dict)'
+  else
+    fail "unable to select evidence-store object from release detail"
+  fi
+fi
+
 section "Validate latest action-plan guardrails"
 request "/api/releases/latest/action-plan" "200" "$TMP_DIR/latest-action-plan.json"
 check_json_expr "$TMP_DIR/latest-action-plan.json" "latest action-plan willExecute is false" 'data.get("willExecute") is False'
