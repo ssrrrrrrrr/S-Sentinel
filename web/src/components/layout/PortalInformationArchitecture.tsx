@@ -1,36 +1,41 @@
-﻿import type { LatestReleaseResponse } from "@/types/release"
+import type { LatestReleaseResponse } from "@/types/release"
 
 type PortalLane = {
   title: string
   subtitle: string
   tabs: string[]
   signal: string
+  objects: string[]
 }
 
 const portalLanes: PortalLane[] = [
   {
-    title: "Release Control Plane",
-    subtitle: "从一次发布进入 SLO、证据、时间线和最终结果。",
+    title: "Release Operations",
+    subtitle: "从一次发布进入概览、SLO 结果、时间线和最终发布状态。",
     tabs: ["概览", "Evidence", "Timeline"],
-    signal: "release → evidence → timeline",
+    signal: "release → slo → result",
+    objects: ["releaseId", "service", "env", "version"],
+  },
+  {
+    title: "Evidence Control Plane",
+    subtitle: "把 release evidence、环境上下文和控制平面对象串成可审计证据链。",
+    tabs: ["Evidence", "Context", "概览"],
+    signal: "evidence → object → audit",
+    objects: ["evidenceId", "sloId", "imageDigest"],
   },
   {
     title: "Safety & Governance",
-    subtitle: "聚合策略裁决、安全边界、人工审批和执行申请视角。",
+    subtitle: "聚合 Policy Guard、Supply Chain Gate、人工审批和执行申请视角。",
     tabs: ["Evidence", "Action Plan", "Runbook"],
-    signal: "policy → approval → request",
+    signal: "policy → gate → approval",
+    objects: ["policyDecisionId", "signedReleaseGateId", "executionRequestId"],
   },
   {
-    title: "AI Advisor & Planning",
-    subtitle: "展示只读 AI 建议、智能分析、规划结果和调查线索。",
-    tabs: ["Intelligence", "AI Advice", "Action Plan"],
-    signal: "advisor → plan → recommendation",
-  },
-  {
-    title: "Environment & Packaging",
-    subtitle: "承接 Stage 34 的多环境、GitOps overlay 和 evidence 环境字段。",
-    tabs: ["Context", "Evidence", "概览"],
-    signal: "env → overlay → artifact",
+    title: "AI Advisor Observability",
+    subtitle: "展示只读 AI 建议、AgentTrace、规划结果和调查线索，先可观测再可执行。",
+    tabs: ["AI Advice", "Intelligence", "RCA"],
+    signal: "agent → trace → explanation",
+    objects: ["agentRunId", "agentTraceId", "traceId"],
   },
 ]
 
@@ -45,19 +50,22 @@ export function PortalInformationArchitecture({
   activeTab: string
   onTabChange: (tab: string) => void
 }) {
+  const safetyMode = latest?.safety?.readOnly === false ? "Writable" : "Read-only"
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm shadow-slate-200/60">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
-            Portal Information Architecture
+            Stage 41 · Portal as Product
           </p>
           <h3 className="mt-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            按控制平面对象组织 Release Portal，而不是继续堆叠零散报告。
+            将 Release Portal 整理成产品化控制台，而不是继续堆叠零散报告。
           </h3>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            Stage 35 将一次发布串成产品主线：环境、SLO、策略、供应链、AI Advisor、执行申请和 Evidence Record。
-            当前入口仍然保持只读，只做可观察和可审计展示。
+            当前阶段保持只读展示，优先把 Release、Evidence、Policy、Supply Chain、AI Advisor 和 AgentTrace
+            放到统一的信息架构里。后续再逐步补 Evidence Search、Policy Explanation、Supply Chain Gate View
+            和 Agent Trace View。
           </p>
         </div>
 
@@ -67,10 +75,8 @@ export function PortalInformationArchitecture({
             <p className="mt-1 text-lg font-semibold text-[#031a41]">{releaseCount}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="text-slate-500">Safety Mode</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">
-              {latest?.safety?.readOnly === false ? "Writable" : "Read-only"}
-            </p>
+            <p className="text-slate-500">Portal Mode</p>
+            <p className="mt-1 text-lg font-semibold text-[#031a41]">{safetyMode}</p>
           </div>
         </div>
       </div>
@@ -87,13 +93,29 @@ export function PortalInformationArchitecture({
                 <p className="mt-1 text-xs font-medium text-cyan-700">{lane.signal}</p>
               </div>
               <span className="rounded-full border border-cyan-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
-                Stage 35
+                Stage 41
               </span>
             </div>
 
-            <p className="mt-3 min-h-[48px] text-sm leading-6 text-slate-600">
+            <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
               {lane.subtitle}
             </p>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Key Objects
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {lane.objects.map((objectName) => (
+                  <span
+                    key={`${lane.title}-${objectName}`}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-slate-600"
+                  >
+                    {objectName}
+                  </span>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {lane.tabs.map((tab) => (
