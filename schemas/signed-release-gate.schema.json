@@ -134,10 +134,27 @@
           "required": [
             "readOnly",
             "willExecute",
+            "canRunExternalVerification",
             "doesNotRunExternalCommands",
             "doesNotVerifyExternalServices"
           ],
           "additionalProperties": true
+        },
+        "toolBinary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "toolAvailable": {
+          "type": "boolean"
+        },
+        "commandPreview": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "canRunExternalVerification": {
+          "type": "boolean"
         }
       },
       "additionalProperties": true

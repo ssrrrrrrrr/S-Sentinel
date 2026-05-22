@@ -106,7 +106,10 @@ supply_path.write_text(json.dumps(supply, ensure_ascii=False, indent=2) + "\n", 
 PY_PREPARE
 
 echo "===== build signed release gate ====="
-SIGNED_RELEASE_GATE_OUTPUT_DIR="$TMP_DIR" ./scripts/build-signed-release-gate.sh "$SUPPLY_CHAIN"
+SIGNED_RELEASE_GATE_OUTPUT_DIR="$TMP_DIR" \
+SIGNED_RELEASE_GATE_VERIFICATION_MODE="external_command" \
+S_SENTINEL_COSIGN_BIN="/tmp/ssentinel-missing-cosign" \
+  ./scripts/build-signed-release-gate.sh "$SUPPLY_CHAIN"
 
 echo
 echo "===== assert signed release gate ====="
@@ -130,9 +133,12 @@ assert gate["attestations"]["cosign"]["verified"] is False, gate
 
 verification = gate["verification"]
 assert verification["schemaVersion"] == "signed.release.gate.verification/v1alpha1", verification
-assert verification["mode"] == "input_derived", verification
+assert verification["mode"] == "external_command", verification
 assert verification["tool"] == "cosign", verification
+assert verification["toolBinary"] == "/tmp/ssentinel-missing-cosign", verification
+assert verification["toolAvailable"] is False, verification
 assert verification["command"] is None, verification
+assert verification["commandPreview"] == ["/tmp/ssentinel-missing-cosign", "verify", "registry.local/demo-app@sha256:111"], verification
 assert verification["exitCode"] is None, verification
 assert verification["subject"]["imageDigest"] == "sha256:111", verification
 assert verification["results"]["imageDigestPresent"] is True, verification
@@ -142,6 +148,7 @@ assert verification["results"]["sbomPresent"] is False, verification
 assert verification["results"]["provenancePresent"] is False, verification
 assert verification["guardrails"]["readOnly"] is True, verification
 assert verification["guardrails"]["willExecute"] is False, verification
+assert verification["guardrails"]["canRunExternalVerification"] is False, verification
 assert verification["guardrails"]["doesNotRunExternalCommands"] is True, verification
 
 assert gate["guardrails"]["readOnly"] is True, gate

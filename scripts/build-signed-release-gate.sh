@@ -13,6 +13,8 @@ Environment:
   RELEASE_REPORT_DIR                 Optional report directory.
   SIGNED_RELEASE_GATE_OUTPUT_DIR     Optional output directory.
   SIGNED_RELEASE_GATE_OUTPUT_FILE    Optional exact output file.
+  SIGNED_RELEASE_GATE_VERIFICATION_MODE Optional verification mode: input_derived, external_command, admission. Default: input_derived.
+  S_SENTINEL_COSIGN_BIN              Optional cosign binary path/name for command preview only.
 
 Behavior:
   - Reads supply-chain-decision-*.json.
@@ -59,6 +61,7 @@ python3 - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY'
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -179,11 +182,26 @@ if slsa_level:
 else:
     add_check(checks, "slsa_attestation_available", "WARN", "medium", "SLSA attestation level is missing", {})
 
+verification_mode = os.environ.get("SIGNED_RELEASE_GATE_VERIFICATION_MODE", "input_derived").strip() or "input_derived"
+allowed_verification_modes = {"input_derived", "external_command", "admission"}
+if verification_mode not in allowed_verification_modes:
+    raise SystemExit(
+        "ERROR: unsupported SIGNED_RELEASE_GATE_VERIFICATION_MODE="
+        f"{verification_mode}; allowed={sorted(allowed_verification_modes)}"
+    )
+
+cosign_bin = os.environ.get("S_SENTINEL_COSIGN_BIN", "cosign").strip() or "cosign"
+tool_available = shutil.which(cosign_bin) is not None
+verification_subject = image_ref or image_digest or "<image-reference>"
+
 verification = {
     "schemaVersion": "signed.release.gate.verification/v1alpha1",
-    "mode": "input_derived",
+    "mode": verification_mode,
     "tool": "cosign",
+    "toolBinary": cosign_bin,
+    "toolAvailable": tool_available,
     "command": None,
+    "commandPreview": [cosign_bin, "verify", verification_subject],
     "exitCode": None,
     "checkedAt": now(),
     "subject": {
@@ -206,6 +224,7 @@ verification = {
     "guardrails": {
         "readOnly": True,
         "willExecute": False,
+        "canRunExternalVerification": False,
         "doesNotRunExternalCommands": True,
         "doesNotVerifyExternalServices": True,
     },
