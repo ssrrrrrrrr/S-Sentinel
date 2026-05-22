@@ -4,6 +4,19 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
+export PYTHON_BIN
+
 TEST_OUT="${TEST_OUT:-/tmp/ssentinel-config-compiler-test}"
 rm -rf "$TEST_OUT"
 mkdir -p "$TEST_OUT"
@@ -25,7 +38,7 @@ for env in dev staging prod; do
   grep -q "kind: PrometheusRule" /tmp/ssentinel-compiled-${env}.yaml
 done
 
-python3 - "$TEST_OUT" <<'PY'
+"$PYTHON_BIN" - "$TEST_OUT" <<'PY'
 import json
 import sys
 from pathlib import Path

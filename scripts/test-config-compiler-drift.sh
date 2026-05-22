@@ -6,6 +6,19 @@ WORK_ROOT="${WORK_ROOT:-/tmp/ssentinel-config-compiler-drift}"
 REPO_COPY="$WORK_ROOT/repo"
 OUT_DIR="$WORK_ROOT/out"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
+export PYTHON_BIN
+
 rm -rf "$WORK_ROOT"
 mkdir -p "$REPO_COPY/scripts" "$OUT_DIR"
 
@@ -26,7 +39,7 @@ echo "===== baseline compile ====="
   --output-dir "$OUT_DIR/baseline"
 
 echo "===== mutate SLOConfig thresholds ====="
-python3 - <<'PY'
+"$PYTHON_BIN" - <<'PY'
 from pathlib import Path
 import yaml
 
@@ -51,7 +64,7 @@ PY
   --output-dir "$OUT_DIR/slo-mutated"
 
 echo "===== mutate ProgressiveDeliveryStrategy steps ====="
-python3 - <<'PY'
+"$PYTHON_BIN" - <<'PY'
 from pathlib import Path
 import yaml
 
@@ -77,7 +90,7 @@ PY
   --output-dir "$OUT_DIR/strategy-mutated"
 
 echo "===== verify drift behavior ====="
-python3 - "$OUT_DIR" <<'PY'
+"$PYTHON_BIN" - "$OUT_DIR" <<'PY'
 import sys
 from pathlib import Path
 import yaml

@@ -16,6 +16,19 @@ IMAGE_NAME="${IMAGE_NAME:-sre/demo-app}"
 PROMETHEUS_ADDR="${PROMETHEUS_ADDR:-http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090}"
 PROMETHEUS_RULE_NAMESPACE="${PROMETHEUS_RULE_NAMESPACE:-monitoring}"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
+export PYTHON_BIN
+
 usage() {
   cat <<'USAGE'
 Usage:
@@ -34,6 +47,7 @@ Options:
 Environment:
   REGISTRY                  Image registry. Default: 192.168.30.11:30500
   IMAGE_NAME                Image name. Default: sre/demo-app
+  PYTHON_BIN                Python runtime. Default: python3, fallback: python
   PROMETHEUS_ADDR           Prometheus address used by AnalysisTemplate
   PROMETHEUS_RULE_NAMESPACE PrometheusRule namespace. Default: monitoring
 
@@ -88,7 +102,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-python3 - "$ROOT_DIR" "$ENV_NAME" "$SERVICE" "$IMAGE_TAG" "$APP_VERSION" "$FAULT_RATE" "$LATENCY_MS" "$OUTPUT_DIR" "$REGISTRY" "$IMAGE_NAME" "$PROMETHEUS_ADDR" "$PROMETHEUS_RULE_NAMESPACE" <<'PY'
+"$PYTHON_BIN" - "$ROOT_DIR" "$ENV_NAME" "$SERVICE" "$IMAGE_TAG" "$APP_VERSION" "$FAULT_RATE" "$LATENCY_MS" "$OUTPUT_DIR" "$REGISTRY" "$IMAGE_NAME" "$PROMETHEUS_ADDR" "$PROMETHEUS_RULE_NAMESPACE" <<'PY'
 from __future__ import annotations
 
 import json
