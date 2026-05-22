@@ -13,6 +13,7 @@ import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
 import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwarePortalPanel"
 import { EvidenceStorePanel } from "@/components/release/EvidenceStorePanel"
 import { PolicyExplanationPanel } from "@/components/release/PolicyExplanationPanel"
+import { SupplyChainGatePanel } from "@/components/release/SupplyChainGatePanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
@@ -116,6 +117,12 @@ function App() {
             />
 
             <PolicyExplanationPanel
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <SupplyChainGatePanel
               selected={selected}
               evidenceQuery={environmentEvidenceQuery}
               onTabChange={setActiveTab}
