@@ -260,6 +260,37 @@ cat > "$FIXTURE_DIR/supply-chain-decision-$RELEASE_ID.json" <<JSON
     "requiresHumanApproval": true,
     "allowed": true
   },
+  "verification": {
+    "schemaVersion": "signed.release.gate.verification/v1alpha1",
+    "mode": "external_command",
+    "tool": "cosign",
+    "toolBinary": "/tmp/ssentinel-missing-cosign",
+    "toolAvailable": false,
+    "command": null,
+    "commandPreview": ["/tmp/ssentinel-missing-cosign", "verify", "192.168.30.11:30500/sre/demo-app:v-test"],
+    "exitCode": null,
+    "checkedAt": "2026-01-01T00:00:05Z",
+    "subject": {
+      "image": "192.168.30.11:30500/sre/demo-app:v-test",
+      "imageDigest": null
+    },
+    "results": {
+      "imageDigestPresent": false,
+      "usesDigestReference": false,
+      "signatureVerified": false,
+      "sbomPresent": false,
+      "provenancePresent": false,
+      "slsaLevelPresent": false,
+      "slsaLevel": null
+    },
+    "guardrails": {
+      "readOnly": true,
+      "willExecute": false,
+      "canRunExternalVerification": false,
+      "doesNotRunExternalCommands": true,
+      "doesNotVerifyExternalServices": true
+    }
+  },
   "risk": {
     "riskLevel": "high",
     "riskScore": 70
@@ -360,7 +391,15 @@ assert obj["schemaVersion"] == "evidence.store.object/v1alpha1"
 assert obj["release"]["release_id"] == "20260101-000000", obj["release"]
 assert obj["object"]["object_type"] == "supplyChainDecision", obj["object"]
 assert obj["object"]["object_id"] == "sc-20260101-000000", obj["object"]
-assert obj["object"]["summary"]["decision"] == "REQUIRE_HUMAN_APPROVAL", obj["object"]["summary"]
+summary = obj["object"]["summary"]
+assert summary["decision"] == "REQUIRE_HUMAN_APPROVAL", summary
+assert summary["verificationMode"] == "external_command", summary
+assert summary["verificationToolAvailable"] is False, summary
+assert summary["signatureVerified"] is False, summary
+assert summary["sbomPresent"] is False, summary
+assert summary["provenancePresent"] is False, summary
+assert summary["canRunExternalVerification"] is False, summary
+assert summary["verification"]["doesNotRunExternalCommands"] is True, summary
 
 print("PASS: EvidenceStore list and object query are valid")
 PY_ASSERT_LIST_OBJECT

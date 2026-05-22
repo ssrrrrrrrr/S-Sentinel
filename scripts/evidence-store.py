@@ -357,6 +357,30 @@ def extract_release_fields(data: dict[str, Any], release_id: str) -> dict[str, A
     }
 
 
+
+
+def compact_verification_summary(data: dict[str, Any]) -> dict[str, Any]:
+    verification = as_dict(data.get("verification"))
+    if not verification:
+        return {}
+
+    results = as_dict(verification.get("results"))
+    guardrails = as_dict(verification.get("guardrails"))
+
+    return {
+        "schemaVersion": verification.get("schemaVersion"),
+        "mode": verification.get("mode"),
+        "tool": verification.get("tool"),
+        "toolBinary": verification.get("toolBinary"),
+        "toolAvailable": verification.get("toolAvailable"),
+        "signatureVerified": results.get("signatureVerified"),
+        "sbomPresent": results.get("sbomPresent"),
+        "provenancePresent": results.get("provenancePresent"),
+        "slsaLevelPresent": results.get("slsaLevelPresent"),
+        "canRunExternalVerification": guardrails.get("canRunExternalVerification"),
+        "doesNotRunExternalCommands": guardrails.get("doesNotRunExternalCommands"),
+    }
+
 def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, Any]:
     release = as_dict(data.get("release"))
     summary = as_dict(data.get("summary"))
@@ -365,8 +389,9 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     plan = as_dict(data.get("plan"))
     recommendation = as_dict(data.get("recommendation"))
     risk = as_dict(data.get("risk"))
+    verification_summary = compact_verification_summary(data)
 
-    return {
+    result = {
         "objectType": object_type,
         "schemaVersion": data.get("schemaVersion"),
         "generatedBy": data.get("generatedBy"),
@@ -405,6 +430,17 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             request.get("willExecute"),
         ),
     }
+
+    if verification_summary:
+        result["verification"] = verification_summary
+        result["verificationMode"] = verification_summary.get("mode")
+        result["verificationToolAvailable"] = verification_summary.get("toolAvailable")
+        result["signatureVerified"] = verification_summary.get("signatureVerified")
+        result["sbomPresent"] = verification_summary.get("sbomPresent")
+        result["provenancePresent"] = verification_summary.get("provenancePresent")
+        result["canRunExternalVerification"] = verification_summary.get("canRunExternalVerification")
+
+    return result
 
 
 def init_db(conn: sqlite3.Connection) -> None:
