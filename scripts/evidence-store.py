@@ -97,6 +97,18 @@ RESOURCE_SPECS = [
 ]
 
 
+CURRENT_DB_SCHEMA_VERSION = 1
+CURRENT_DB_SCHEMA_ID = "evidence.store.sqlite/v1alpha1"
+SCHEMA_MIGRATIONS = [
+    {
+        "migrationId": "001_initial_evidence_store",
+        "schemaVersion": CURRENT_DB_SCHEMA_ID,
+        "version": CURRENT_DB_SCHEMA_VERSION,
+        "description": "Create initial EvidenceStore release, object, artifact, and schema metadata tables.",
+    },
+]
+
+
 SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;
 
@@ -161,6 +173,20 @@ CREATE TABLE IF NOT EXISTS release_artifacts (
 
 CREATE INDEX IF NOT EXISTS idx_release_artifacts_release
   ON release_artifacts(release_id);
+
+CREATE TABLE IF NOT EXISTS evidence_store_metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS evidence_schema_migrations (
+  migration_id TEXT PRIMARY KEY,
+  schema_version TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  description TEXT NOT NULL,
+  applied_at TEXT NOT NULL
+);
 """
 
 
@@ -443,10 +469,95 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     return result
 
 
+
+def sqlite_user_version(conn: sqlite3.Connection) -> int:
+    row = conn.execute("PRAGMA user_version").fetchone()
+    if row is None:
+        return 0
+    return int(row[0] or 0)
+
+
+def set_sqlite_user_version(conn: sqlite3.Connection, version: int) -> None:
+    safe_version = int(version)
+    conn.execute(f"PRAGMA user_version = {safe_version}")
+
+
+def record_schema_metadata(conn: sqlite3.Connection) -> None:
+    applied_at = now_iso()
+
+    for migration in SCHEMA_MIGRATIONS:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO evidence_schema_migrations (
+              migration_id, schema_version, version, description, applied_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                migration["migrationId"],
+                migration["schemaVersion"],
+                migration["version"],
+                migration["description"],
+                applied_at,
+            ),
+        )
+
+    metadata = {
+        "schemaVersion": CURRENT_DB_SCHEMA_ID,
+        "currentVersion": str(CURRENT_DB_SCHEMA_VERSION),
+        "migrationCount": str(len(SCHEMA_MIGRATIONS)),
+    }
+
+    for key, value in metadata.items():
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO evidence_store_metadata (
+              key, value, updated_at
+            ) VALUES (?, ?, ?)
+            """,
+            (key, value, applied_at),
+        )
+
+    set_sqlite_user_version(conn, CURRENT_DB_SCHEMA_VERSION)
+
+
+def schema_state(conn: sqlite3.Connection) -> dict[str, Any]:
+    migrations = [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT migration_id, schema_version, version, description, applied_at
+            FROM evidence_schema_migrations
+            ORDER BY version ASC, migration_id ASC
+            """
+        ).fetchall()
+    ]
+
+    metadata = {
+        str(row["key"]): str(row["value"])
+        for row in conn.execute(
+            """
+            SELECT key, value
+            FROM evidence_store_metadata
+            ORDER BY key ASC
+            """
+        ).fetchall()
+    }
+
+    return {
+        "schemaVersion": "evidence.store.schema/v1alpha1",
+        "generatedAt": now_iso(),
+        "storeSchemaVersion": CURRENT_DB_SCHEMA_ID,
+        "currentVersion": CURRENT_DB_SCHEMA_VERSION,
+        "sqliteUserVersion": sqlite_user_version(conn),
+        "metadata": metadata,
+        "migrationCount": len(migrations),
+        "migrations": migrations,
+    }
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
+    record_schema_metadata(conn)
     conn.commit()
-
 
 def upsert_release(conn: sqlite3.Connection, fields: dict[str, Any], seen_at: str) -> None:
     conn.execute(
@@ -914,6 +1025,9 @@ def main() -> int:
     init_parser = sub.add_parser("init-db", help="Initialize SQLite EvidenceStore DB.")
     init_parser.add_argument("--db", required=True)
 
+    schema_parser = sub.add_parser("schema", help="Show SQLite EvidenceStore schema and migration state.")
+    schema_parser.add_argument("--db", required=True)
+
     import_parser = sub.add_parser("import-dir", help="Import report JSON files into SQLite.")
     import_parser.add_argument("--db", required=True)
     import_parser.add_argument("--report-dir", required=True)
@@ -948,7 +1062,15 @@ def main() -> int:
                 "schemaVersion": "evidence.store.init/v1alpha1",
                 "db": str(db_path),
                 "status": "initialized",
+                "storeSchema": schema_state(conn),
             }, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "schema":
+            init_db(conn)
+            result = schema_state(conn)
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
 
         if args.command == "import-dir":
