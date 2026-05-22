@@ -176,4 +176,13 @@ PY_ASSERT_LINK
 
 
 echo
+echo
+echo "===== assert ai-release-advisor signed gate integration ====="
+grep -q 'SIGNED_RELEASE_GATE_BUILDER' scripts/ai-release-advisor.sh
+grep -q 'build-signed-release-gate.sh' scripts/ai-release-advisor.sh
+grep -q 'SIGNED_RELEASE_GATE_OUTPUT_DIR' scripts/ai-release-advisor.sh
+grep -q 'supply-chain-decision-${DECISION_SUFFIX}' scripts/ai-release-advisor.sh
+grep -q 'Running signed release gate builder' scripts/ai-release-advisor.sh
+echo "PASS: ai-release-advisor signed release gate integration is wired"
+
 echo "PASS: signed release gate test passed"

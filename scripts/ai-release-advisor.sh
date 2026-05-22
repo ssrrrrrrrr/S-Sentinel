@@ -905,6 +905,35 @@ LINK_ACTION_PLAN_PY
         if RELEASE_REPORT_DIR="$OUT_DIR" \
           SUPPLY_CHAIN_DECISION_OUTPUT_DIR="$RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR" \
           "$SUPPLY_CHAIN_DECISION_BUILDER" "$EVIDENCE_OUT"; then
+          SUPPLY_CHAIN_DECISION_JSON="$RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR/supply-chain-decision-${DECISION_SUFFIX}"
+
+          if [ ! -f "$SUPPLY_CHAIN_DECISION_JSON" ] && [ -f "$RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR/supply-chain-decision-latest.json" ]; then
+            SUPPLY_CHAIN_DECISION_JSON="$RESOLVED_SUPPLY_CHAIN_DECISION_OUTPUT_DIR/supply-chain-decision-latest.json"
+          fi
+
+          SIGNED_RELEASE_GATE_BUILDER=""
+
+          if [ -x "./scripts/build-signed-release-gate.sh" ]; then
+            SIGNED_RELEASE_GATE_BUILDER="./scripts/build-signed-release-gate.sh"
+          elif [ -x "/app/scripts/build-signed-release-gate.sh" ]; then
+            SIGNED_RELEASE_GATE_BUILDER="/app/scripts/build-signed-release-gate.sh"
+          fi
+
+          if [ -n "$SIGNED_RELEASE_GATE_BUILDER" ] && [ -f "$SUPPLY_CHAIN_DECISION_JSON" ]; then
+            echo "Running signed release gate builder: $SIGNED_RELEASE_GATE_BUILDER"
+            RESOLVED_SIGNED_RELEASE_GATE_OUTPUT_DIR="${SIGNED_RELEASE_GATE_OUTPUT_DIR:-$OUT_DIR}"
+
+            RELEASE_REPORT_DIR="$OUT_DIR" \
+            SIGNED_RELEASE_GATE_OUTPUT_DIR="$RESOLVED_SIGNED_RELEASE_GATE_OUTPUT_DIR" \
+              "$SIGNED_RELEASE_GATE_BUILDER" "$SUPPLY_CHAIN_DECISION_JSON" || {
+                echo "WARN: build-signed-release-gate.sh failed, continue release advice pipeline" >&2
+              }
+          elif [ -z "$SIGNED_RELEASE_GATE_BUILDER" ]; then
+            echo "WARN: signed release gate builder not found, skip signed release gate" >&2
+          else
+            echo "WARN: expected supply-chain decision file not found, skip signed release gate: $SUPPLY_CHAIN_DECISION_JSON" >&2
+          fi
+
           validate_generated_release_contract "$EVIDENCE_OUT"
         else
           echo "WARN: build-supply-chain-decision.sh failed, continue release advice pipeline" >&2
