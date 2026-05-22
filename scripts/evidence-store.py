@@ -700,8 +700,8 @@ def list_releases(
         {where_sql}
         GROUP BY r.release_id
         ORDER BY
-          COALESCE(r.generated_at, r.last_seen_at, r.release_id) DESC,
-          r.release_id DESC
+          r.release_id DESC,
+          COALESCE(r.generated_at, r.last_seen_at) DESC
         LIMIT ?
         """,
         (*params, safe_limit),
