@@ -93,6 +93,22 @@
             }
           }
         },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
         "observability": {
           "type": "object",
           "additionalProperties": false,

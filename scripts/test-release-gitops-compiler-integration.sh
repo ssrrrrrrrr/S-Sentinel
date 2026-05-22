@@ -47,7 +47,6 @@ echo "===== compile dry output for release script inputs ====="
 rm -rf "$TEST_OUT"
 
 REGISTRY="192.168.30.11:30500" \
-IMAGE_NAME="sre/demo-app" \
 ./scripts/compile-release-config.sh \
   --env dev \
   --service demo-app \

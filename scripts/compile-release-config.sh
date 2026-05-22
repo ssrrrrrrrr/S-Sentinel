@@ -12,7 +12,7 @@ LATENCY_MS="0"
 OUTPUT_DIR="build/compiled"
 
 REGISTRY="${REGISTRY:-192.168.30.11:30500}"
-IMAGE_NAME="${IMAGE_NAME:-sre/demo-app}"
+IMAGE_NAME="${IMAGE_NAME:-}"
 PROMETHEUS_ADDR="${PROMETHEUS_ADDR:-http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090}"
 PROMETHEUS_RULE_NAMESPACE="${PROMETHEUS_RULE_NAMESPACE:-monitoring}"
 
@@ -46,7 +46,7 @@ Options:
 
 Environment:
   REGISTRY                  Image registry. Default: 192.168.30.11:30500
-  IMAGE_NAME                Image name. Default: sre/demo-app
+  IMAGE_NAME                Optional image repository override. Default: SLOConfig spec.runtime.image.repository
   PYTHON_BIN                Python runtime. Default: python3, fallback: python
   PROMETHEUS_ADDR           Prometheus address used by AnalysisTemplate
   PROMETHEUS_RULE_NAMESPACE PrometheusRule namespace. Default: monitoring
@@ -133,7 +133,6 @@ if not output_root.is_absolute():
     output_root = root / output_root
 
 out_dir = output_root / env_name
-remote_image = f"{registry}/{image_name}:{image_tag}"
 
 
 class LiteralStr(str):
@@ -391,6 +390,11 @@ strategy_ref, strategy_doc = select_config(
 )
 
 slo_spec = slo_doc.get("spec") or {}
+runtime_spec = slo_spec.get("runtime") or {}
+image_spec = runtime_spec.get("image") or {}
+image_repository = str(image_name or image_spec.get("repository") or "sre/demo-app")
+remote_image = f"{registry}/{image_repository}:{image_tag}"
+
 strategy_spec = strategy_doc.get("spec") or {}
 strategy_analysis = strategy_spec.get("analysis") or {}
 
@@ -679,13 +683,6 @@ hardcode_inventory = {
             "resolution": "Make service selection come from service catalog or require --service explicitly.",
         },
         {
-            "id": "default-image-name-sre-demo-app",
-            "type": "env-default",
-            "field": "IMAGE_NAME",
-            "value": "sre/demo-app",
-            "resolution": "Read image repository from service catalog or EnvironmentConfig.",
-        },
-        {
             "id": "demo-runtime-fault-env",
             "type": "demo-runtime-knob",
             "field": "Rollout.container.env",
@@ -713,6 +710,7 @@ rendered_release_plan = {
         "environmentClass": environment_class,
         "policyProfile": policy_profile,
         "project": project_name,
+        "imageRepository": image_repository,
         "image": remote_image,
         "imageTag": image_tag,
         "appVersion": app_version,
