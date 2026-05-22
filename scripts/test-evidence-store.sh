@@ -4,6 +4,17 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 TMP_DIR="${TMP_DIR:-/tmp/ssentinel-evidence-store-test}"
 FIXTURE_DIR="$TMP_DIR/reports"
 DB_FILE="$TMP_DIR/evidence-store.db"
@@ -274,7 +285,7 @@ cat "$QUERY_JSON"
 
 echo
 echo "===== assert query result ====="
-python3 - "$QUERY_JSON" <<'PY'
+"$PYTHON_BIN" - "$QUERY_JSON" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -330,7 +341,7 @@ cat "$OBJECT_JSON"
 
 echo
 echo "===== assert list and object query ====="
-python3 - "$LIST_JSON" "$OBJECT_JSON" <<'PY_ASSERT_LIST_OBJECT'
+"$PYTHON_BIN" - "$LIST_JSON" "$OBJECT_JSON" <<'PY_ASSERT_LIST_OBJECT'
 import json
 import sys
 from pathlib import Path

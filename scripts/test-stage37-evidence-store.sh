@@ -4,6 +4,17 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 TMP_DIR="${TMP_DIR:-/tmp/ssentinel-stage37-evidence-store-test}"
 DB_FILE="$TMP_DIR/evidence-store.db"
 REPORT_DIR="${REPORT_DIR:-/data/nfs/slo-rollout-watcher/reports}"
@@ -35,7 +46,7 @@ assert_file_contains() {
 }
 
 section "Stage 37 syntax checks"
-python3 -m py_compile scripts/evidence-store.py
+"$PYTHON_BIN" -m py_compile scripts/evidence-store.py
 bash -n scripts/test-evidence-store.sh
 bash -n scripts/validate-release-portal-api.sh
 
@@ -54,7 +65,7 @@ section "Stage 37 real reports import"
 ./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$REPORT_DIR" > "$TMP_DIR/import-dir.json"
 cat "$TMP_DIR/import-dir.json"
 
-python3 - "$TMP_DIR/import-dir.json" <<'PY'
+"$PYTHON_BIN" - "$TMP_DIR/import-dir.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -67,7 +78,7 @@ print("PASS: real report import result is valid")
 PY
 
 section "Stage 37 real EvidenceStore object graph"
-python3 - "$DB_FILE" "$TMP_DIR/stage37-release-id.txt" <<'PY'
+"$PYTHON_BIN" - "$DB_FILE" "$TMP_DIR/stage37-release-id.txt" <<'PY'
 import sqlite3
 import sys
 from pathlib import Path
@@ -125,7 +136,7 @@ RELEASE_ID="$(cat "$TMP_DIR/stage37-release-id.txt")"
   --db "$DB_FILE" \
   --limit 5 > "$TMP_DIR/list-releases.json"
 
-SUPPLY_CHAIN_ID="$(python3 - "$DB_FILE" "$RELEASE_ID" <<'PY'
+SUPPLY_CHAIN_ID="$("$PYTHON_BIN" - "$DB_FILE" "$RELEASE_ID" <<'PY'
 import sqlite3
 import sys
 
@@ -154,7 +165,7 @@ PY
   --object-id "$SUPPLY_CHAIN_ID" \
   --release-id "$RELEASE_ID" > "$TMP_DIR/get-object.json"
 
-python3 - "$TMP_DIR/query-release.json" "$TMP_DIR/list-releases.json" "$TMP_DIR/get-object.json" <<'PY'
+"$PYTHON_BIN" - "$TMP_DIR/query-release.json" "$TMP_DIR/list-releases.json" "$TMP_DIR/get-object.json" <<'PY'
 import json
 import sys
 from pathlib import Path
