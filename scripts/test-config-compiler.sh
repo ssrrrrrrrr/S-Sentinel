@@ -104,6 +104,7 @@ for env, namespace in expected_namespaces.items():
     assert "prometheus-request-counter-demo" in binding_ids, binding_ids
     assert "prometheus-latency-histogram-demo" in binding_ids, binding_ids
     assert "default-image-name-sre-demo-app" in binding_ids, binding_ids
+    assert "prometheus-alert-name-demoapp" not in binding_ids, binding_ids
     assert inventory["guardrails"]["inventoryOnly"] is True, inventory["guardrails"]
 
     assert plan["guardrails"]["doesNotApplyKubernetes"] is True, plan["guardrails"]

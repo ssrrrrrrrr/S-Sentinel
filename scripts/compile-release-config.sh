@@ -498,6 +498,35 @@ rollout_yaml = {
     },
 }
 
+
+def pascal_case(value: str) -> str:
+    parts = []
+    current = []
+    for ch in str(value):
+        if ch.isalnum():
+            current.append(ch)
+        elif current:
+            parts.append("".join(current))
+            current = []
+    if current:
+        parts.append("".join(current))
+
+    converted = []
+    for part in parts:
+        if part.lower().startswith("p") and part[1:].isdigit():
+            converted.append(part.upper())
+        elif part.isupper():
+            converted.append(part)
+        else:
+            converted.append(part[:1].upper() + part[1:])
+
+    return "".join(converted)
+
+
+def alert_name_for(service_name: str, metric_id: str) -> str:
+    return f"{pascal_case(service_name)}Canary{pascal_case(metric_id)}SLOViolation"
+
+
 rules = []
 for metric_id in metric_ids:
     obj = objectives[metric_id]
@@ -509,12 +538,12 @@ for metric_id in metric_ids:
     _operator, value, unit = threshold(obj)
 
     if obj_type == "error_rate":
-        alert_name = "DemoAppCanaryHighErrorRate"
+        alert_name = alert_name_for(service, metric_id)
         summary = f"{service} canary error rate is too high"
         description = f'version={{{{ $labels.version }}}} 5xx error rate is above {value}{unit if unit != "percent" else "%"}.'
     elif obj_type == "latency":
         percentile = obj.get("percentile", 95)
-        alert_name = f"DemoAppCanaryHighP{percentile}Latency"
+        alert_name = alert_name_for(service, metric_id)
         summary = f"{service} canary p{percentile} latency is too high"
         description = f'version={{{{ $labels.version }}}} p{percentile} latency is above {value}s.'
     else:
@@ -626,13 +655,6 @@ hardcode_inventory = {
             "field": "prometheus.latencyHistogram",
             "value": "demo_http_request_duration_seconds_bucket",
             "resolution": "Read histogram metric names from SLOConfig metric bindings or an ObservabilityContract.",
-        },
-        {
-            "id": "prometheus-alert-name-demoapp",
-            "type": "alert-name",
-            "field": "PrometheusRule.rules.alert",
-            "value": "DemoAppCanaryHighErrorRate/DemoAppCanaryHighP95Latency",
-            "resolution": "Derive alert names from service name and SLO objective ids.",
         },
         {
             "id": "prometheus-project-label-demo",
