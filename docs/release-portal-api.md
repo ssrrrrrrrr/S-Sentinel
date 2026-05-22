@@ -100,6 +100,41 @@ GET /api/releases/20260519-193458/intelligence
 
 如果资源不存在，接口会返回 404，并给出当前 release 可用的 `availableResources`。
 
+
+### 2.6 Evidence API / EvidenceStore 查询接口
+
+Stage43 开始，Release Portal API 增加了一组 canonical Evidence API，用于从 SQLite EvidenceStore 查询结构化发布证据。
+
+接口清单：
+
+    GET /api/evidence/releases
+    GET /api/evidence/releases/{releaseId}
+    GET /api/evidence/objects/{objectType}/{objectId}
+    GET /api/evidence/artifacts
+    GET /api/evidence/search
+    GET /api/evidence/verification-summary
+    GET /api/evidence/graph
+
+说明：
+
+- `/api/evidence/releases` 查询 EvidenceStore 中的发布列表。
+- `/api/evidence/releases/{releaseId}` 查询单次发布聚合后的 evidence objects 和 artifacts。
+- `/api/evidence/objects/{objectType}/{objectId}` 查询单个 evidence object，可通过 `releaseId` 缩小范围。
+- `/api/evidence/artifacts` 查询 release artifacts，可通过 `releaseId`、`artifactKind` 过滤。
+- `/api/evidence/search` 搜索 evidence objects，支持 `q`、`objectType`、`releaseId`、`limit`、`includeRaw`。
+- `/api/evidence/verification-summary` 查询 Signed Release Gate 等对象中的 verification summary。
+- `/api/evidence/graph` 查询单次发布的 evidence graph，返回 release、evidence object、artifact、verification summary 之间的节点和边。
+
+兼容性接口：
+
+    GET /api/evidence-store/releases
+    GET /api/evidence-store/releases/{releaseId}
+    GET /api/evidence-store/objects/{objectType}/{objectId}
+
+这些旧路径继续保留，用于兼容 Stage41/42 Portal 与 EvidenceStore 调用方。
+
+---
+
 ---
 
 ## 3. 返回字段说明
@@ -198,6 +233,65 @@ X-Release-Portal-File
 ```
 
 用于确认本次响应来自哪个发布、哪个资源、哪个底层文件。
+
+
+### 3.4 Evidence API 返回结构
+
+Evidence API 返回结构化 JSON，核心 schema 包括：
+
+    evidence.store.releaseList/v1alpha1
+    evidence.store.release/v1alpha1
+    evidence.store.object/v1alpha1
+    evidence.store.artifactList/v1alpha1
+    evidence.store.search/v1alpha1
+    evidence.store.verificationSummary/v1alpha1
+    evidence.store.graph/v1alpha1
+
+常见查询参数：
+
+    limit
+    service
+    env
+    releaseResult
+    releaseId
+    objectType
+    objectId
+    artifactKind
+    q
+    includeRaw
+
+`/api/evidence/verification-summary` 的关键字段：
+
+    latest
+    items
+    verificationMode
+    verificationTool
+    verificationToolAvailable
+    signatureVerified
+    sbomPresent
+    provenancePresent
+    canRunExternalVerification
+    doesNotRunExternalCommands
+
+`/api/evidence/graph` 的关键字段：
+
+    releaseId
+    release
+    objectCount
+    artifactCount
+    verificationSummary
+    nodeCount
+    edgeCount
+    nodes
+    edges
+
+其中：
+
+- `nodes[]` 表示 release、evidence object、artifact、verification summary 等节点。
+- `edges[]` 表示 release 与 evidence object、artifact、verification summary 之间的关系。
+- 该接口只负责查询 EvidenceStore，不执行任何发布、回滚、验证或修复动作。
+
+---
 
 ---
 
@@ -320,4 +414,50 @@ Stage 37 新增只读 EvidenceStore 查询入口，不替换原有 /api/releases
 阶段级验收脚本：
 
 - scripts/test-stage37-evidence-store.sh
+
+
+### 5.2 Stage43 Evidence API 兼容性验收
+
+Stage43 Evidence API 的轻量验收脚本：
+
+    scripts/test-stage43-evidence-api.sh
+
+该脚本覆盖：
+
+旧 CLI：
+
+    init-db
+    import-dir
+    list-releases
+    query-release
+    get-object
+
+新 CLI：
+
+    schema
+    list-artifacts
+    search-objects
+    verification-summary
+    graph
+
+旧 API：
+
+    GET /api/evidence-store/releases
+    GET /api/evidence-store/releases/{releaseId}
+    GET /api/evidence-store/objects/{objectType}/{objectId}
+
+新 API：
+
+    GET /api/evidence/releases
+    GET /api/evidence/releases/{releaseId}
+    GET /api/evidence/objects/{objectType}/{objectId}
+    GET /api/evidence/artifacts
+    GET /api/evidence/search
+    GET /api/evidence/verification-summary
+    GET /api/evidence/graph
+
+通过标志：
+
+    stage43 evidence api compatibility assertions passed
+    stage43 evidence api compatibility PASS
 
