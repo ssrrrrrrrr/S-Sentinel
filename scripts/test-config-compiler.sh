@@ -69,6 +69,8 @@ for env, namespace in expected_namespaces.items():
     assert analysis["metadata"]["namespace"] == namespace, analysis["metadata"]
     assert rollout["metadata"]["namespace"] == namespace, rollout["metadata"]
     assert plan["release"]["namespace"] == namespace, plan["release"]
+    assert plan["release"]["service"] == "demo-app", plan["release"]
+    assert plan["release"]["serviceSource"] == "sloConfig", plan["release"]
     assert plan["release"]["policyProfile"] == expected_policy_profiles[env], plan["release"]
     assert plan["release"]["project"] == "slo-rollout-demo", plan["release"]
     assert plan["release"]["imageRepository"] == "sre/demo-app", plan["release"]
@@ -110,6 +112,7 @@ for env, namespace in expected_namespaces.items():
 
     assert "prometheus-request-counter-demo" not in binding_ids, binding_ids
     assert "prometheus-latency-histogram-demo" not in binding_ids, binding_ids
+    assert "default-service-demo-app" not in binding_ids, binding_ids
     assert "default-image-name-sre-demo-app" not in binding_ids, binding_ids
     assert "prometheus-alert-name-demoapp" not in binding_ids, binding_ids
     assert "prometheus-project-label-demo" not in binding_ids, binding_ids

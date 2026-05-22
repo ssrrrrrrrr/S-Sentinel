@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ENV_NAME="dev"
-SERVICE="demo-app"
+SERVICE=""
 IMAGE_TAG="v36-compiled"
 APP_VERSION="v36"
 FAULT_RATE="0"
@@ -36,7 +36,7 @@ Usage:
 
 Options:
   --env ENV                 Environment name. Default: dev
-  --service NAME            Service name. Default: demo-app
+  --service NAME            Optional service override. Default: selected SLOConfig metadata.service
   --image-tag TAG           Release image tag. Default: v36-compiled
   --app-version VERSION     App version. Default: v36
   --fault-rate VALUE        Demo fault rate. Default: 0
@@ -118,7 +118,8 @@ except Exception as exc:
 
 root = Path(sys.argv[1])
 env_name = sys.argv[2]
-service = sys.argv[3]
+requested_service = sys.argv[3]
+service = requested_service
 image_tag = sys.argv[4]
 app_version = sys.argv[5]
 fault_rate = sys.argv[6]
@@ -388,6 +389,22 @@ strategy_ref, strategy_doc = select_config(
     env_spec.get("strategy", {}).get("defaultProfile"),
     "ProgressiveDeliveryStrategy",
 )
+
+service_source = "cli"
+if not service:
+    service = config_service(slo_doc)
+    service_source = "sloConfig"
+
+if not service:
+    service = config_service(strategy_doc)
+    service_source = "strategyConfig"
+
+if not service:
+    raise SystemExit("ERROR: service was not provided and selected configs do not define metadata.service")
+
+strategy_service = config_service(strategy_doc)
+if strategy_service and strategy_service != service:
+    raise SystemExit(f"ERROR: strategy service mismatch: expected {service}, got {strategy_service}")
 
 slo_spec = slo_doc.get("spec") or {}
 runtime_spec = slo_spec.get("runtime") or {}
@@ -676,13 +693,6 @@ hardcode_inventory = {
     "summary": "RenderedReleasePlan records known demo bindings so they can be removed safely in later hardening steps.",
     "remainingBindings": [
         {
-            "id": "default-service-demo-app",
-            "type": "cli-default",
-            "field": "SERVICE",
-            "value": "demo-app",
-            "resolution": "Make service selection come from service catalog or require --service explicitly.",
-        },
-        {
             "id": "demo-runtime-fault-env",
             "type": "demo-runtime-knob",
             "field": "Rollout.container.env",
@@ -704,6 +714,7 @@ rendered_release_plan = {
     "generatedBy": "scripts/compile-release-config.sh",
     "release": {
         "service": service,
+        "serviceSource": service_source,
         "env": env_name,
         "namespace": namespace,
         "clusterName": cluster_name,
