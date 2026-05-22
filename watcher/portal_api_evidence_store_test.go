@@ -114,6 +114,27 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, objectBody, "evidence.store.object/v1alpha1")
 
+	canonicalListBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreReleaseList,
+		"/api/evidence/releases?limit=10",
+	)
+	assertPortalSchema(t, canonicalListBody, "evidence.store.releaseList/v1alpha1")
+
+	canonicalDetailBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreReleaseDetail,
+		"/api/evidence/releases/"+releaseID,
+	)
+	assertPortalSchema(t, canonicalDetailBody, "evidence.store.release/v1alpha1")
+
+	canonicalObjectBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreObjectDetail,
+		"/api/evidence/objects/releaseEvidence/re-"+releaseID+"?releaseId="+releaseID,
+	)
+	assertPortalSchema(t, canonicalObjectBody, "evidence.store.object/v1alpha1")
+
 	statusBody := callPortalEvidenceStoreHandler(
 		t,
 		api.handleEvidenceStoreStatus,

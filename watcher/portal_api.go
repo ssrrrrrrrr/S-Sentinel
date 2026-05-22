@@ -99,6 +99,11 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/evidence-store/status", api.handleEvidenceStoreStatus)
 	mux.HandleFunc("/api/evidence-store/refresh", api.handleEvidenceStoreRefresh)
 
+	mux.HandleFunc("/api/evidence/releases", api.handleEvidenceStoreReleaseList)
+	mux.HandleFunc("/api/evidence/releases/", api.handleEvidenceStoreReleaseDetail)
+	mux.HandleFunc("/api/evidence/objects/", api.handleEvidenceStoreObjectDetail)
+
+	// Backward-compatible Stage41/42 EvidenceStore routes.
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
 	mux.HandleFunc("/api/evidence-store/releases/", api.handleEvidenceStoreReleaseDetail)
 	mux.HandleFunc("/api/evidence-store/objects/", api.handleEvidenceStoreObjectDetail)
@@ -421,7 +426,7 @@ func (api *portalAPI) handleEvidenceStoreReleaseDetail(w http.ResponseWriter, r 
 		return
 	}
 
-	releaseID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/evidence-store/releases/"), "/")
+	releaseID := strings.Trim(evidencePathSuffix(r.URL.Path, "/api/evidence/releases/", "/api/evidence-store/releases/"), "/")
 	if releaseID == "" || strings.Contains(releaseID, "/") {
 		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
 			"error": "evidence store release not found",
@@ -443,7 +448,7 @@ func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *
 		return
 	}
 
-	rest := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/evidence-store/objects/"), "/")
+	rest := strings.Trim(evidencePathSuffix(r.URL.Path, "/api/evidence/objects/", "/api/evidence-store/objects/"), "/")
 	parts := strings.Split(rest, "/")
 	if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" || strings.TrimSpace(parts[1]) == "" {
 		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
@@ -461,6 +466,16 @@ func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *
 			IncludeRaw: strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true"),
 		})
 	})
+}
+
+func evidencePathSuffix(path string, prefixes ...string) string {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(path, prefix) {
+			return strings.TrimPrefix(path, prefix)
+		}
+	}
+
+	return path
 }
 
 func (api *portalAPI) writeEvidenceRepositoryResponse(
@@ -624,6 +639,9 @@ func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) 
 	endpoints := []string{
 		"/api/releases",
 		"/api/releases/latest",
+		"/api/evidence/releases",
+		"/api/evidence/releases/{releaseId}",
+		"/api/evidence/objects/{objectType}/{objectId}",
 		"/api/evidence-store/releases",
 		"/api/evidence-store/releases/{releaseId}",
 		"/api/evidence-store/objects/{objectType}/{objectId}",
