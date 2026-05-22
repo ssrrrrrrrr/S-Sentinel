@@ -571,6 +571,91 @@ kustomization_yaml = {
     ],
 }
 
+
+source_config_refs = {
+    "environmentConfig": {
+        "path": env_ref,
+        "kind": env_doc.get("kind"),
+        "name": config_name(env_doc),
+        "env": env_name,
+    },
+    "sloConfig": {
+        "path": slo_ref,
+        "kind": slo_doc.get("kind"),
+        "name": config_name(slo_doc),
+        "service": config_service(slo_doc),
+    },
+    "progressiveDeliveryStrategy": {
+        "path": strategy_ref,
+        "kind": strategy_doc.get("kind"),
+        "name": config_name(strategy_doc),
+        "service": config_service(strategy_doc),
+    },
+}
+
+hardcode_inventory = {
+    "schemaVersion": "ssentinel.hardcode-inventory/v1alpha1",
+    "status": "known_demo_bindings_present",
+    "mode": "inventory_only",
+    "summary": "RenderedReleasePlan records known demo bindings so they can be removed safely in later hardening steps.",
+    "remainingBindings": [
+        {
+            "id": "default-service-demo-app",
+            "type": "cli-default",
+            "field": "SERVICE",
+            "value": "demo-app",
+            "resolution": "Make service selection come from service catalog or require --service explicitly.",
+        },
+        {
+            "id": "default-image-name-sre-demo-app",
+            "type": "env-default",
+            "field": "IMAGE_NAME",
+            "value": "sre/demo-app",
+            "resolution": "Read image repository from service catalog or EnvironmentConfig.",
+        },
+        {
+            "id": "prometheus-request-counter-demo",
+            "type": "metric-name",
+            "field": "prometheus.requestCounter",
+            "value": "demo_http_requests_total",
+            "resolution": "Read metric names from SLOConfig metric bindings or an ObservabilityContract.",
+        },
+        {
+            "id": "prometheus-latency-histogram-demo",
+            "type": "metric-name",
+            "field": "prometheus.latencyHistogram",
+            "value": "demo_http_request_duration_seconds_bucket",
+            "resolution": "Read histogram metric names from SLOConfig metric bindings or an ObservabilityContract.",
+        },
+        {
+            "id": "prometheus-alert-name-demoapp",
+            "type": "alert-name",
+            "field": "PrometheusRule.rules.alert",
+            "value": "DemoAppCanaryHighErrorRate/DemoAppCanaryHighP95Latency",
+            "resolution": "Derive alert names from service name and SLO objective ids.",
+        },
+        {
+            "id": "prometheus-project-label-demo",
+            "type": "label-default",
+            "field": "PrometheusRule.labels.project",
+            "value": "slo-rollout-demo",
+            "resolution": "Read project or release system identity from EnvironmentConfig.",
+        },
+        {
+            "id": "demo-runtime-fault-env",
+            "type": "demo-runtime-knob",
+            "field": "Rollout.container.env",
+            "value": "FAULT_RATE/LATENCY_MS",
+            "resolution": "Move demo-only runtime knobs into a service profile or test fixture.",
+        },
+    ],
+    "guardrails": {
+        "inventoryOnly": True,
+        "doesNotChangeRenderedManifests": True,
+        "doesNotApplyKubernetes": True,
+    },
+}
+
 rendered_release_plan = {
     "schemaVersion": "ssentinel.rendered-release-plan/v1alpha1",
     "kind": "RenderedReleasePlan",
@@ -595,6 +680,8 @@ rendered_release_plan = {
         "strategyConfigRef": strategy_ref,
         "overlayPath": overlay_path,
     },
+    "sourceConfigRefs": source_config_refs,
+    "hardcodeInventory": hardcode_inventory,
     "slo": {
         "sloId": config_name(slo_doc),
         "window": window,

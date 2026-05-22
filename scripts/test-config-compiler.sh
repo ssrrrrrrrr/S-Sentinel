@@ -92,6 +92,20 @@ for env, namespace in expected_namespaces.items():
 
     assert plan["inputs"]["sloConfigRef"] == "configs/services/demo-app.slo.yaml", plan["inputs"]
     assert plan["inputs"]["strategyConfigRef"] == "configs/services/demo-app.strategy.yaml", plan["inputs"]
+
+    source_refs = plan["sourceConfigRefs"]
+    assert source_refs["environmentConfig"]["path"] == f"configs/environments/{env}.yaml", source_refs
+    assert source_refs["sloConfig"]["name"] == "demo-app-canary-slo", source_refs
+    assert source_refs["progressiveDeliveryStrategy"]["name"] == "demo-app-canary-strategy", source_refs
+
+    inventory = plan["hardcodeInventory"]
+    assert inventory["status"] == "known_demo_bindings_present", inventory
+    binding_ids = {item["id"] for item in inventory["remainingBindings"]}
+    assert "prometheus-request-counter-demo" in binding_ids, binding_ids
+    assert "prometheus-latency-histogram-demo" in binding_ids, binding_ids
+    assert "default-image-name-sre-demo-app" in binding_ids, binding_ids
+    assert inventory["guardrails"]["inventoryOnly"] is True, inventory["guardrails"]
+
     assert plan["guardrails"]["doesNotApplyKubernetes"] is True, plan["guardrails"]
     assert plan["guardrails"]["doesNotCommitOrPush"] is True, plan["guardrails"]
     assert plan["guardrails"]["doesNotBuildImages"] is True, plan["guardrails"]
