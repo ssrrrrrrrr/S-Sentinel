@@ -947,6 +947,142 @@ def get_object(
     }
 
 
+
+def list_artifacts(
+    conn: sqlite3.Connection,
+    limit: int,
+    release_id: str | None = None,
+    artifact_kind: str | None = None,
+) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    where = []
+    params: list[Any] = []
+
+    if release_id:
+        where.append("release_id = ?")
+        params.append(release_id)
+
+    if artifact_kind:
+        where.append("artifact_kind = ?")
+        params.append(artifact_kind)
+
+    where_sql = ""
+    if where:
+        where_sql = "WHERE " + " AND ".join(where)
+
+    safe_limit = max(1, min(int(limit), 500))
+
+    rows = conn.execute(
+        f"""
+        SELECT release_id, artifact_kind, path, exists_flag, content_type,
+               size_bytes, modified_at, source_object_pk
+        FROM release_artifacts
+        {where_sql}
+        ORDER BY release_id DESC, artifact_kind ASC, path ASC
+        LIMIT ?
+        """,
+        (*params, safe_limit),
+    ).fetchall()
+
+    items = []
+    for row in rows:
+        item = row_to_dict(row) or {}
+        if item.get("exists_flag") is not None:
+            item["exists"] = bool(item.pop("exists_flag"))
+        else:
+            item.pop("exists_flag", None)
+        items.append(item)
+
+    return {
+        "schemaVersion": "evidence.store.artifactList/v1alpha1",
+        "generatedAt": now_iso(),
+        "count": len(items),
+        "limit": safe_limit,
+        "filters": {
+            "releaseId": release_id,
+            "artifactKind": artifact_kind,
+        },
+        "items": items,
+    }
+
+
+def search_objects(
+    conn: sqlite3.Connection,
+    query: str | None,
+    limit: int,
+    object_type: str | None = None,
+    release_id: str | None = None,
+    include_raw: bool = False,
+) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    where = []
+    params: list[Any] = []
+
+    if object_type:
+        where.append("object_type = ?")
+        params.append(object_type)
+
+    if release_id:
+        where.append("release_id = ?")
+        params.append(release_id)
+
+    normalized_query = (query or "").strip()
+    if normalized_query:
+        like = f"%{normalized_query}%"
+        where.append(
+            """(
+              object_type LIKE ?
+              OR object_id LIKE ?
+              OR release_id LIKE ?
+              OR schema_version LIKE ?
+              OR source_path LIKE ?
+              OR summary_json LIKE ?
+              OR raw_json LIKE ?
+            )"""
+        )
+        params.extend([like, like, like, like, like, like, like])
+
+    where_sql = ""
+    if where:
+        where_sql = "WHERE " + " AND ".join(where)
+
+    safe_limit = max(1, min(int(limit), 500))
+
+    rows = conn.execute(
+        f"""
+        SELECT object_type, object_id, release_id, schema_version,
+               source_path, source_mtime, content_sha256, generated_at,
+               imported_at, summary_json, raw_json
+        FROM evidence_objects
+        {where_sql}
+        ORDER BY imported_at DESC, object_type ASC, object_id ASC
+        LIMIT ?
+        """,
+        (*params, safe_limit),
+    ).fetchall()
+
+    items = []
+    for row in rows:
+        item = normalize_object_row(row, include_raw)
+        if item is not None:
+            items.append(item)
+
+    return {
+        "schemaVersion": "evidence.store.search/v1alpha1",
+        "generatedAt": now_iso(),
+        "count": len(items),
+        "limit": safe_limit,
+        "filters": {
+            "query": normalized_query,
+            "objectType": object_type,
+            "releaseId": release_id,
+            "includeRaw": include_raw,
+        },
+        "items": items,
+    }
+
 def query_release(conn: sqlite3.Connection, release_id: str, include_raw: bool) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
 
@@ -1051,6 +1187,20 @@ def main() -> int:
     object_parser.add_argument("--release-id")
     object_parser.add_argument("--include-raw", action="store_true")
 
+    artifacts_parser = sub.add_parser("list-artifacts", help="List release artifacts from SQLite.")
+    artifacts_parser.add_argument("--db", required=True)
+    artifacts_parser.add_argument("--limit", type=int, default=50)
+    artifacts_parser.add_argument("--release-id")
+    artifacts_parser.add_argument("--artifact-kind")
+
+    search_parser = sub.add_parser("search-objects", help="Search evidence objects from SQLite.")
+    search_parser.add_argument("--db", required=True)
+    search_parser.add_argument("--query", default="")
+    search_parser.add_argument("--limit", type=int, default=50)
+    search_parser.add_argument("--object-type")
+    search_parser.add_argument("--release-id")
+    search_parser.add_argument("--include-raw", action="store_true")
+
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -1104,6 +1254,30 @@ def main() -> int:
                 args.object_id,
                 args.release_id,
                 args.include_raw,
+            )
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "list-artifacts":
+            result = list_artifacts(
+                conn,
+                args.limit,
+                release_id=args.release_id,
+                artifact_kind=args.artifact_kind,
+            )
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "search-objects":
+            result = search_objects(
+                conn,
+                args.query,
+                args.limit,
+                object_type=args.object_type,
+                release_id=args.release_id,
+                include_raw=args.include_raw,
             )
             result["db"] = str(db_path)
             print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -9,6 +9,8 @@ type EvidenceRepository interface {
 	ListReleases(r *http.Request, query EvidenceReleaseListQuery) (*EvidenceRepositoryResponse, error)
 	GetRelease(r *http.Request, query EvidenceReleaseQuery) (*EvidenceRepositoryResponse, error)
 	GetObject(r *http.Request, query EvidenceObjectQuery) (*EvidenceRepositoryResponse, error)
+	ListArtifacts(r *http.Request, query EvidenceArtifactListQuery) (*EvidenceRepositoryResponse, error)
+	SearchObjects(r *http.Request, query EvidenceSearchQuery) (*EvidenceRepositoryResponse, error)
 }
 
 type EvidenceReleaseListQuery struct {
@@ -26,6 +28,20 @@ type EvidenceReleaseQuery struct {
 type EvidenceObjectQuery struct {
 	ObjectType string
 	ObjectID   string
+	ReleaseID  string
+	IncludeRaw bool
+}
+
+type EvidenceArtifactListQuery struct {
+	Limit        string
+	ReleaseID    string
+	ArtifactKind string
+}
+
+type EvidenceSearchQuery struct {
+	Query      string
+	Limit      string
+	ObjectType string
 	ReleaseID  string
 	IncludeRaw bool
 }
@@ -116,6 +132,55 @@ func (repo *CLIEvidenceRepository) GetObject(r *http.Request, query EvidenceObje
 		"get-object",
 		"--object-type", strings.TrimSpace(query.ObjectType),
 		"--object-id", strings.TrimSpace(query.ObjectID),
+	}
+
+	if releaseID := strings.TrimSpace(query.ReleaseID); releaseID != "" {
+		args = append(args, "--release-id", releaseID)
+	}
+
+	if query.IncludeRaw {
+		args = append(args, "--include-raw")
+	}
+
+	return repo.query(r, args...)
+}
+
+func (repo *CLIEvidenceRepository) ListArtifacts(r *http.Request, query EvidenceArtifactListQuery) (*EvidenceRepositoryResponse, error) {
+	limit := strings.TrimSpace(query.Limit)
+	if limit == "" {
+		limit = "50"
+	}
+
+	args := []string{
+		"list-artifacts",
+		"--limit", limit,
+	}
+
+	if releaseID := strings.TrimSpace(query.ReleaseID); releaseID != "" {
+		args = append(args, "--release-id", releaseID)
+	}
+
+	if artifactKind := strings.TrimSpace(query.ArtifactKind); artifactKind != "" {
+		args = append(args, "--artifact-kind", artifactKind)
+	}
+
+	return repo.query(r, args...)
+}
+
+func (repo *CLIEvidenceRepository) SearchObjects(r *http.Request, query EvidenceSearchQuery) (*EvidenceRepositoryResponse, error) {
+	limit := strings.TrimSpace(query.Limit)
+	if limit == "" {
+		limit = "50"
+	}
+
+	args := []string{
+		"search-objects",
+		"--query", strings.TrimSpace(query.Query),
+		"--limit", limit,
+	}
+
+	if objectType := strings.TrimSpace(query.ObjectType); objectType != "" {
+		args = append(args, "--object-type", objectType)
 	}
 
 	if releaseID := strings.TrimSpace(query.ReleaseID); releaseID != "" {

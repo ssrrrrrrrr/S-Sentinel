@@ -135,6 +135,21 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, canonicalObjectBody, "evidence.store.object/v1alpha1")
 
+	artifactListBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceArtifactList,
+		"/api/evidence/artifacts?releaseId="+releaseID,
+	)
+	assertPortalSchema(t, artifactListBody, "evidence.store.artifactList/v1alpha1")
+
+	searchBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceSearch,
+		"/api/evidence/search?q=demo-app&limit=10",
+	)
+	assertPortalSchema(t, searchBody, "evidence.store.search/v1alpha1")
+	assertPortalNestedBool(t, searchBody, "filters", "includeRaw", false)
+
 	statusBody := callPortalEvidenceStoreHandler(
 		t,
 		api.handleEvidenceStoreStatus,
@@ -250,6 +265,24 @@ func assertPortalNestedNumber(t *testing.T, body map[string]interface{}, objectK
 	got, ok := object[valueKey].(float64)
 	if !ok {
 		t.Fatalf("expected %s.%s to be a number, got object=%v", objectKey, valueKey, object)
+	}
+
+	if got != expected {
+		t.Fatalf("expected %s.%s=%v, got=%v object=%v", objectKey, valueKey, expected, got, object)
+	}
+}
+
+func assertPortalNestedBool(t *testing.T, body map[string]interface{}, objectKey string, valueKey string, expected bool) {
+	t.Helper()
+
+	object, ok := body[objectKey].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected %s object, got body=%v", objectKey, body)
+	}
+
+	got, ok := object[valueKey].(bool)
+	if !ok {
+		t.Fatalf("expected %s.%s to be a bool, got object=%v", objectKey, valueKey, object)
 	}
 
 	if got != expected {

@@ -102,6 +102,8 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/evidence/releases", api.handleEvidenceStoreReleaseList)
 	mux.HandleFunc("/api/evidence/releases/", api.handleEvidenceStoreReleaseDetail)
 	mux.HandleFunc("/api/evidence/objects/", api.handleEvidenceStoreObjectDetail)
+	mux.HandleFunc("/api/evidence/artifacts", api.handleEvidenceArtifactList)
+	mux.HandleFunc("/api/evidence/search", api.handleEvidenceSearch)
 
 	// Backward-compatible Stage41/42 EvidenceStore routes.
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
@@ -468,6 +470,38 @@ func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *
 	})
 }
 
+func (api *portalAPI) handleEvidenceArtifactList(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	query := r.URL.Query()
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.ListArtifacts(r, EvidenceArtifactListQuery{
+			Limit:        query.Get("limit"),
+			ReleaseID:    query.Get("releaseId"),
+			ArtifactKind: query.Get("artifactKind"),
+		})
+	})
+}
+
+func (api *portalAPI) handleEvidenceSearch(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	query := r.URL.Query()
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.SearchObjects(r, EvidenceSearchQuery{
+			Query:      query.Get("q"),
+			Limit:      query.Get("limit"),
+			ObjectType: query.Get("objectType"),
+			ReleaseID:  query.Get("releaseId"),
+			IncludeRaw: strings.EqualFold(strings.TrimSpace(query.Get("includeRaw")), "true"),
+		})
+	})
+}
+
 func evidencePathSuffix(path string, prefixes ...string) string {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(path, prefix) {
@@ -642,6 +676,8 @@ func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) 
 		"/api/evidence/releases",
 		"/api/evidence/releases/{releaseId}",
 		"/api/evidence/objects/{objectType}/{objectId}",
+		"/api/evidence/artifacts",
+		"/api/evidence/search",
 		"/api/evidence-store/releases",
 		"/api/evidence-store/releases/{releaseId}",
 		"/api/evidence-store/objects/{objectType}/{objectId}",
