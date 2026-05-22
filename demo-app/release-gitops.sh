@@ -13,9 +13,7 @@ APP_VERSION="$2"
 FAULT_RATE="$3"
 LATENCY_MS="$4"
 
-SLO_ERROR_RATE_THRESHOLD="${SLO_ERROR_RATE_THRESHOLD:-5}"
-SLO_P95_SECONDS_THRESHOLD="${SLO_P95_SECONDS_THRESHOLD:-0.3}"
-SLO_MIN_REQUEST_COUNT="${SLO_MIN_REQUEST_COUNT:-20}"
+S_SENTINEL_ENV="${S_SENTINEL_ENV:-dev}"
 
 REGISTRY="192.168.30.11:30500"
 IMAGE_NAME="sre/demo-app"
@@ -31,14 +29,45 @@ LOCAL_IMAGE="docker.io/library/demo-app:${IMAGE_TAG}"
 REMOTE_IMAGE="${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 TAR_FILE="demo-app-${IMAGE_TAG}.tar"
 
+SLO_CONFIG_FILE="${ROOT_DIR}/configs/services/demo-app.slo.yaml"
+SLO_ERROR_RATE_THRESHOLD="$(python3 - "$SLO_CONFIG_FILE" <<'PY'
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+for obj in data["spec"]["objectives"]:
+    if obj["id"] == "error-rate":
+        print(obj["threshold"]["value"])
+        break
+PY
+)"
+SLO_P95_SECONDS_THRESHOLD="$(python3 - "$SLO_CONFIG_FILE" <<'PY'
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+for obj in data["spec"]["objectives"]:
+    if obj["id"] == "p95-latency":
+        print(obj["threshold"]["value"])
+        break
+PY
+)"
+SLO_MIN_REQUEST_COUNT="$(python3 - "$SLO_CONFIG_FILE" <<'PY'
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+print(data["spec"]["evaluation"]["minRequestCount"])
+PY
+)"
+
 echo "========== GitOps Release Info =========="
 echo "IMAGE_TAG:    ${IMAGE_TAG}"
 echo "APP_VERSION:  ${APP_VERSION}"
 echo "FAULT_RATE:   ${FAULT_RATE}"
 echo "LATENCY_MS:   ${LATENCY_MS}"
-echo "SLO_ERROR_RATE_THRESHOLD: ${SLO_ERROR_RATE_THRESHOLD}"
-echo "SLO_P95_SECONDS_THRESHOLD: ${SLO_P95_SECONDS_THRESHOLD}"
-echo "SLO_MIN_REQUEST_COUNT: ${SLO_MIN_REQUEST_COUNT}"
+echo "S_SENTINEL_ENV: ${S_SENTINEL_ENV}"
+echo "SLO_CONFIG_FILE: ${SLO_CONFIG_FILE}"
+echo "SLO_ERROR_RATE_THRESHOLD(config): ${SLO_ERROR_RATE_THRESHOLD}"
+echo "SLO_P95_SECONDS_THRESHOLD(config): ${SLO_P95_SECONDS_THRESHOLD}"
+echo "SLO_MIN_REQUEST_COUNT(config): ${SLO_MIN_REQUEST_COUNT}"
 echo "REMOTE_IMAGE: ${REMOTE_IMAGE}"
 echo "BASE_DIR:     ${BASE_DIR}"
 echo "========================================="
@@ -66,138 +95,43 @@ echo "[4/7] Tag and push image to private registry..."
 ctr -n k8s.io images tag --force "${LOCAL_IMAGE}" "${REMOTE_IMAGE}"
 ctr -n k8s.io images push --plain-http "${REMOTE_IMAGE}"
 
-echo "[5/7] Render GitOps manifests into deploy/base..."
+echo "[5/7] Compile GitOps manifests from S Sentinel configs..."
 
-cat > "${BASE_DIR}/analysis.yaml" <<EOF_ANALYSIS
-apiVersion: argoproj.io/v1alpha1
-kind: AnalysisTemplate
-metadata:
-  name: demo-app-error-rate
-  namespace: ${NAMESPACE}
-spec:
-  metrics:
-  - name: request-count
-    interval: 20s
-    count: 3
-    failureLimit: 1
-    successCondition: result[0] >= ${SLO_MIN_REQUEST_COUNT}
-    provider:
-      prometheus:
-        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
-          (
-            sum(increase(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m]))
-            or on() vector(0)
-          )
+cd "${ROOT_DIR}"
 
-  - name: error-rate
-    interval: 20s
-    count: 3
-    failureLimit: 1
-    successCondition: result[0] < ${SLO_ERROR_RATE_THRESHOLD}
-    provider:
-      prometheus:
-        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
-          (
-            (
-              sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}",status=~"5.."}[1m]))
-              or vector(0)
-            )
-            /
-            clamp_min(
-              (
-                sum(rate(demo_http_requests_total{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m]))
-                or vector(0)
-              ),
-              0.001
-            )
-          ) * 100
+COMPILED_ROOT="${COMPILED_ROOT:-/tmp/ssentinel-release-compiled}"
+COMPILED_DIR="${COMPILED_ROOT}/${S_SENTINEL_ENV}"
 
-  - name: p95-latency
-    interval: 20s
-    count: 3
-    failureLimit: 1
-    successCondition: isNaN(result[0]) || result[0] < ${SLO_P95_SECONDS_THRESHOLD}
-    provider:
-      prometheus:
-        address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
-          (
-            histogram_quantile(
-              0.95,
-              sum(rate(demo_http_request_duration_seconds_bucket{namespace="${NAMESPACE}",version="${IMAGE_TAG}"}[1m])) by (le)
-            )
-            or on() vector(0)
-          )
-EOF_ANALYSIS
+rm -rf "${COMPILED_DIR}"
 
-cat > "${BASE_DIR}/rollout.yaml" <<EOF_ROLLOUT
-apiVersion: argoproj.io/v1alpha1
-kind: Rollout
-metadata:
-  name: ${ROLLOUT_NAME}
-  namespace: ${NAMESPACE}
-  labels:
-    app: demo-app
-spec:
-  replicas: 3
-  revisionHistoryLimit: 3
-  selector:
-    matchLabels:
-      app: demo-app
-  template:
-    metadata:
-      labels:
-        app: demo-app
-        version: ${IMAGE_TAG}
-    spec:
-      containers:
-      - name: demo-app
-        image: ${REMOTE_IMAGE}
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-          name: http
-        env:
-        - name: VERSION
-          value: "${APP_VERSION}"
-        - name: RELEASE_TAG
-          value: "${IMAGE_TAG}"
-        - name: FAULT_RATE
-          value: "${FAULT_RATE}"
-        - name: LATENCY_MS
-          value: "${LATENCY_MS}"
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 3
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 10
-  strategy:
-    canary:
-      steps:
-      - setWeight: 20
-      - pause:
-          duration: 30s
-      - analysis:
-          templates:
-          - templateName: demo-app-error-rate
-      - setWeight: 50
-      - pause:
-          duration: 30s
-      - analysis:
-          templates:
-          - templateName: demo-app-error-rate
-      - setWeight: 100
-EOF_ROLLOUT
+REGISTRY="${REGISTRY}" \
+IMAGE_NAME="${IMAGE_NAME}" \
+./scripts/compile-release-config.sh \
+  --env "${S_SENTINEL_ENV}" \
+  --service "${ROLLOUT_NAME}" \
+  --image-tag "${IMAGE_TAG}" \
+  --app-version "${APP_VERSION}" \
+  --fault-rate "${FAULT_RATE}" \
+  --latency-ms "${LATENCY_MS}" \
+  --output-dir "${COMPILED_ROOT}"
 
+cp "${COMPILED_DIR}/analysis.yaml" "${BASE_DIR}/analysis.yaml"
+cp "${COMPILED_DIR}/rollout.yaml" "${BASE_DIR}/rollout.yaml"
+cp "${COMPILED_DIR}/prometheusrule.yaml" "${BASE_DIR}/prometheusrule.yaml"
+
+NAMESPACE="$(python3 - "$COMPILED_DIR/rendered-release-plan.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+print(data["release"]["namespace"])
+PY
+)"
+
+echo "Compiled GitOps manifests copied into deploy/base:"
+echo "- ${BASE_DIR}/analysis.yaml"
+echo "- ${BASE_DIR}/rollout.yaml"
+echo "- ${BASE_DIR}/prometheusrule.yaml"
+echo "Compiled namespace: ${NAMESPACE}"
 cd "${ROOT_DIR}"
 
 echo "[6/7] Validate kustomize render..."
@@ -277,7 +211,7 @@ else
   echo "WARN: evaluate-change-risk.sh not found, skip pre-release change risk evaluation"
 fi
 
-git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml"
+git add "${BASE_DIR}/analysis.yaml" "${BASE_DIR}/rollout.yaml" "${BASE_DIR}/prometheusrule.yaml"
 
 # Release reports and ChangeContext files are runtime artifacts.
 # They are written to NFS or local ignored directories and should not be committed.

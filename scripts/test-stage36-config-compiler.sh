@@ -11,6 +11,7 @@ echo "===== syntax check ====="
 bash -n scripts/compile-release-config.sh
 bash -n scripts/test-config-compiler.sh
 bash -n scripts/test-config-compiler-drift.sh
+bash -n scripts/test-release-gitops-compiler-integration.sh
 
 echo
 echo "===== compiler multi-env test ====="
@@ -19,6 +20,10 @@ echo "===== compiler multi-env test ====="
 echo
 echo "===== compiler drift test ====="
 ./scripts/test-config-compiler-drift.sh
+
+echo
+echo "===== release script compiler integration test ====="
+./scripts/test-release-gitops-compiler-integration.sh
 
 echo
 echo "PASS: Stage 36 Config Compiler acceptance passed"
