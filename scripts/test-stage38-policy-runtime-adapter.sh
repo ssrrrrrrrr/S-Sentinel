@@ -4,8 +4,19 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 echo "===== Stage 38 syntax checks ====="
-python3 -m py_compile scripts/policy-runtime-adapter.py scripts/evidence-store.py
+"$PYTHON_BIN" -m py_compile scripts/policy-runtime-adapter.py scripts/evidence-store.py
 bash -n scripts/ai-release-advisor.sh
 bash -n scripts/test-policy-runtime-adapter.sh
 bash -n scripts/test-policy-guard.sh

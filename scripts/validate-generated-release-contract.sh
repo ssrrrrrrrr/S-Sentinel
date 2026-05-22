@@ -34,14 +34,18 @@ if [ ! -f "$TARGET_FILE" ]; then
   warn_or_fail "release contract validation skipped: target file not found: $TARGET_FILE"
 fi
 
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-  if command -v python >/dev/null 2>&1; then
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
     PYTHON_BIN="python"
   else
     warn_or_fail "release contract validation skipped: python3/python not found"
   fi
+fi
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  warn_or_fail "release contract validation skipped: python runtime not found: $PYTHON_BIN"
 fi
 
 if [ ! -f "$VALIDATOR" ]; then

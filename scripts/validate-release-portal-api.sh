@@ -8,6 +8,17 @@ fi
 BASE_URL="${1:-${RELEASE_PORTAL_BASE_URL:-http://127.0.0.1:8080}}"
 BASE_URL="${BASE_URL%/}"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-3}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-10}"
 TMP_DIR="${RELEASE_PORTAL_VALIDATE_TMP:-/tmp/slo-release-portal-api-validate-$(date +%Y%m%d-%H%M%S)}"
@@ -77,7 +88,7 @@ check_json_expr() {
   local expression="$3"
   local rc
 
-  python3 - "$file" "$expression" <<'PY'
+  "$PYTHON_BIN" - "$file" "$expression" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -126,7 +137,7 @@ json_value() {
   local file="$1"
   local expression="$2"
 
-  python3 - "$file" "$expression" <<'PY'
+  "$PYTHON_BIN" - "$file" "$expression" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -148,7 +159,7 @@ resource_exists_in_detail() {
   local detail_file="$1"
   local kind="$2"
 
-  python3 - "$detail_file" "$kind" <<'PY'
+  "$PYTHON_BIN" - "$detail_file" "$kind" <<'PY'
 import json
 import sys
 from pathlib import Path
