@@ -944,6 +944,29 @@ LINK_ACTION_PLAN_PY
         echo "WARN: expected release evidence file not found, skip supply-chain safety check: $EVIDENCE_OUT" >&2
       fi
 
+      AGENT_TRACE_BUILDER=""
+
+      if [ -x "./scripts/build-agent-trace.sh" ]; then
+        AGENT_TRACE_BUILDER="./scripts/build-agent-trace.sh"
+      elif [ -x "/app/scripts/build-agent-trace.sh" ]; then
+        AGENT_TRACE_BUILDER="/app/scripts/build-agent-trace.sh"
+      fi
+
+      if [ -n "$AGENT_TRACE_BUILDER" ] && [ -f "$DECISION_OUT" ]; then
+        echo "Running agent trace builder: $AGENT_TRACE_BUILDER"
+        RESOLVED_AGENT_TRACE_OUTPUT_DIR="${AGENT_TRACE_OUTPUT_DIR:-$OUT_DIR}"
+
+        RELEASE_REPORT_DIR="$OUT_DIR" \
+        AGENT_TRACE_OUTPUT_DIR="$RESOLVED_AGENT_TRACE_OUTPUT_DIR" \
+          "$AGENT_TRACE_BUILDER" "$DECISION_OUT" || {
+            echo "WARN: build-agent-trace.sh failed, continue release advice pipeline" >&2
+          }
+      elif [ -z "$AGENT_TRACE_BUILDER" ]; then
+        echo "WARN: agent trace builder not found, skip agent trace generation" >&2
+      else
+        echo "WARN: expected AI decision file not found, skip agent trace generation: $DECISION_OUT" >&2
+      fi
+
       RELEASE_MEMORY_BUILDER=""
 
       if [ -x "./scripts/build-release-memory.sh" ]; then

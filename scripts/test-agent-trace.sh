@@ -217,4 +217,13 @@ assert latest["agentTraceId"] == trace["agentTraceId"], latest
 print("PASS: agent trace contract is valid")
 PY
 
+echo
+echo "===== assert ai-release-advisor agent trace integration ====="
+grep -q 'AGENT_TRACE_BUILDER' scripts/ai-release-advisor.sh
+grep -q 'build-agent-trace.sh' scripts/ai-release-advisor.sh
+grep -q 'AGENT_TRACE_OUTPUT_DIR' scripts/ai-release-advisor.sh
+grep -q 'Running agent trace builder' scripts/ai-release-advisor.sh
+grep -q 'build-agent-trace.sh failed' scripts/ai-release-advisor.sh
+echo "PASS: ai-release-advisor agent trace integration is wired"
+
 echo "PASS: agent trace test passed"
