@@ -130,6 +130,42 @@ cases = [
         "expectedRule": "signed_release_gate_requires_human_approval",
     },
     {
+        "name": "signed-gate-verification-requires-approval",
+        "releaseResult": "PASS",
+        "action": "PROMOTE",
+        "actionAllowed": True,
+        "actionRequiresApproval": False,
+        "rollbackAllowed": False,
+        "autoPromotionEnabled": True,
+        "strategyRequiresHumanApproval": False,
+        "signedGateDecision": "ALLOW",
+        "signedGateAllowed": True,
+        "signedGateVerification": {
+            "schemaVersion": "signed.release.gate.verification/v1alpha1",
+            "mode": "external_command",
+            "tool": "cosign",
+            "toolBinary": "/tmp/ssentinel-missing-cosign",
+            "toolAvailable": False,
+            "results": {
+                "signatureVerified": False,
+                "sbomPresent": False,
+                "provenancePresent": False,
+                "slsaLevelPresent": False,
+            },
+            "guardrails": {
+                "readOnly": True,
+                "willExecute": False,
+                "canRunExternalVerification": False,
+                "doesNotRunExternalCommands": True,
+                "doesNotVerifyExternalServices": True,
+            },
+        },
+        "expectedDecision": "REQUIRE_HUMAN_APPROVAL",
+        "expectedFinalAction": "PROMOTE",
+        "expectedAllowed": True,
+        "expectedRule": "signed_release_gate_verification_requires_human_approval",
+    },
+    {
         "name": "signed-gate-block-deny",
         "releaseResult": "PASS",
         "action": "PROMOTE",
@@ -263,6 +299,9 @@ dangerousActions:
             },
         }
 
+        if case.get("signedGateVerification"):
+            ai_decision["signedReleaseGate"]["verification"] = case["signedGateVerification"]
+
     ai_path.write_text(json.dumps(ai_decision, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     env = os.environ.copy()
@@ -291,6 +330,12 @@ dangerousActions:
     assert data["strategyPolicy"]["strategyId"] == "demo-app-canary-strategy", data
     assert data["safety"]["readOnly"] is True, data
     assert data["safety"]["willExecute"] is False, data
+
+    if case.get("signedGateVerification"):
+        assert data["signedReleaseGate"]["verification"]["mode"] == "external_command", data
+        assert data["signedReleaseGate"]["verification"]["signatureVerified"] is False, data
+        assert "signed_release_gate_signature_not_verified" in data["approvalRequiredReasons"], data
+        assert "signed_release_gate_external_verification_disabled" in data["approvalRequiredReasons"], data
 
     print(f"PASS: {case['name']} => {case['expectedDecision']}/{case['expectedFinalAction']}")
 

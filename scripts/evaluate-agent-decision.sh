@@ -242,6 +242,26 @@ signed_gate_requires_approval = bool(signed_gate_decision_obj.get("requiresHuman
 signed_gate_blocking_reasons = [str(x) for x in as_list(signed_gate_decision_obj.get("blockingReasons")) if str(x)]
 signed_gate_warning_reasons = [str(x) for x in as_list(signed_gate_decision_obj.get("warningReasons")) if str(x)]
 
+signed_gate_verification = as_dict(signed_release_gate.get("verification"))
+signed_gate_verification_results = as_dict(signed_gate_verification.get("results"))
+signed_gate_verification_guardrails = as_dict(signed_gate_verification.get("guardrails"))
+signed_gate_verification_summary: dict[str, Any] = {}
+
+if signed_gate_verification:
+    signed_gate_verification_summary = {
+        "schemaVersion": signed_gate_verification.get("schemaVersion"),
+        "mode": signed_gate_verification.get("mode"),
+        "tool": signed_gate_verification.get("tool"),
+        "toolBinary": signed_gate_verification.get("toolBinary"),
+        "toolAvailable": signed_gate_verification.get("toolAvailable"),
+        "signatureVerified": signed_gate_verification_results.get("signatureVerified"),
+        "sbomPresent": signed_gate_verification_results.get("sbomPresent"),
+        "provenancePresent": signed_gate_verification_results.get("provenancePresent"),
+        "slsaLevelPresent": signed_gate_verification_results.get("slsaLevelPresent"),
+        "canRunExternalVerification": signed_gate_verification_guardrails.get("canRunExternalVerification"),
+        "doesNotRunExternalCommands": signed_gate_verification_guardrails.get("doesNotRunExternalCommands"),
+    }
+
 requested_action = str(agent_action.get("type") or decision.get("recommendedAction") or "UNKNOWN")
 agent_action_allowed = bool(agent_action.get("allowed", False))
 agent_action_requires_approval = bool(agent_action.get("requiresApproval", False))
@@ -399,6 +419,7 @@ signed_gate_summary = {
     "riskScore": signed_gate_risk.get("riskScore"),
     "blockingReasons": signed_gate_blocking_reasons,
     "warningReasons": signed_gate_warning_reasons,
+    "verification": signed_gate_verification_summary,
     "source": first_non_empty(
         signed_release_gate_ref.get("file"),
         signed_release_gate_ref.get("json"),
@@ -424,6 +445,29 @@ elif signed_gate_decision == "REQUIRE_HUMAN_APPROVAL" and policy_decision != "DE
     approval_required_reasons.extend(signed_gate_warning_reasons)
     if signed_gate_warning_reasons:
         reason = "SignedReleaseGate requires human approval: " + "; ".join(signed_gate_warning_reasons)
+
+verification_approval_reasons: list[str] = []
+if signed_gate_verification_summary and policy_decision != "DENY" and signed_gate_decision != "BLOCK":
+    if signed_gate_verification_summary.get("signatureVerified") is False:
+        verification_approval_reasons.append("signed_release_gate_signature_not_verified")
+    if signed_gate_verification_summary.get("toolAvailable") is False:
+        verification_approval_reasons.append("signed_release_gate_verification_tool_unavailable")
+    if signed_gate_verification_summary.get("sbomPresent") is False:
+        verification_approval_reasons.append("signed_release_gate_sbom_missing")
+    if signed_gate_verification_summary.get("provenancePresent") is False:
+        verification_approval_reasons.append("signed_release_gate_provenance_missing")
+    if (
+        signed_gate_verification_summary.get("mode") == "external_command"
+        and signed_gate_verification_summary.get("canRunExternalVerification") is False
+    ):
+        verification_approval_reasons.append("signed_release_gate_external_verification_disabled")
+
+if verification_approval_reasons and policy_decision != "DENY":
+    if policy_decision == "ALLOW_ADVISORY_ONLY":
+        policy_decision = "REQUIRE_HUMAN_APPROVAL"
+        reason = "SignedReleaseGate verification requires human approval: " + "; ".join(verification_approval_reasons)
+    matched_rules.append("signed_release_gate_verification_requires_human_approval")
+    approval_required_reasons.extend(verification_approval_reasons)
 
 if not auto_execute:
     matched_rules.append("auto_execute_disabled")
@@ -484,6 +528,12 @@ policy_output = {
         "autoExecute": auto_execute,
         "signedReleaseGateDecision": signed_gate_decision,
         "signedReleaseGateAllowed": signed_gate_allowed_bool,
+        "signedReleaseGateVerificationMode": signed_gate_verification_summary.get("mode"),
+        "signedReleaseGateVerificationToolAvailable": signed_gate_verification_summary.get("toolAvailable"),
+        "signedReleaseGateSignatureVerified": signed_gate_verification_summary.get("signatureVerified"),
+        "signedReleaseGateSBOMPresent": signed_gate_verification_summary.get("sbomPresent"),
+        "signedReleaseGateProvenancePresent": signed_gate_verification_summary.get("provenancePresent"),
+        "signedReleaseGateCanRunExternalVerification": signed_gate_verification_summary.get("canRunExternalVerification"),
     },
     "strategyPolicy": {
         "strategyId": nullable_string(strategy_id),
