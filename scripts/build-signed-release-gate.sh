@@ -57,12 +57,16 @@ mkdir -p "$OUTPUT_DIR"
 OUTPUT_JSON="${SIGNED_RELEASE_GATE_OUTPUT_FILE:-$OUTPUT_DIR/signed-release-gate-$SUFFIX}"
 LATEST_JSON="$OUTPUT_DIR/signed-release-gate-latest.json"
 
-python3 - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERIFICATION_RUNTIME="${VERIFICATION_RUNTIME:-$SCRIPT_DIR/verification-runtime.py}"
+
+python3 - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" "$VERIFICATION_RUNTIME" <<'PY'
 from __future__ import annotations
 
 import json
 import os
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -71,6 +75,7 @@ from typing import Any
 input_path = Path(sys.argv[1])
 output_json = Path(sys.argv[2])
 latest_json = Path(sys.argv[3])
+verification_runtime = Path(sys.argv[4])
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -190,45 +195,43 @@ if verification_mode not in allowed_verification_modes:
         f"{verification_mode}; allowed={sorted(allowed_verification_modes)}"
     )
 
-cosign_bin = os.environ.get("S_SENTINEL_COSIGN_BIN", "cosign").strip() or "cosign"
-tool_available = shutil.which(cosign_bin) is not None
-verification_subject = image_ref or image_digest or "<image-reference>"
-
-verification = {
-    "schemaVersion": "signed.release.gate.verification/v1alpha1",
-    "mode": verification_mode,
-    "tool": "cosign",
-    "toolBinary": cosign_bin,
-    "toolAvailable": tool_available,
-    "command": None,
-    "commandPreview": [cosign_bin, "verify", verification_subject],
-    "exitCode": None,
-    "checkedAt": now(),
-    "subject": {
-        "image": image_ref,
-        "imageDigest": image_digest,
-    },
-    "results": {
-        "imageDigestPresent": bool(image_digest),
-        "usesDigestReference": uses_digest_reference,
-        "signatureVerified": cosign_verified,
-        "sbomPresent": bool(sbom_ref),
-        "provenancePresent": bool(provenance_ref),
-        "slsaLevelPresent": bool(slsa_level),
-        "slsaLevel": slsa_level,
-    },
-    "source": {
-        "supplyChainDecision": str(input_path),
-        "attestationsPath": "attestations",
-    },
-    "guardrails": {
-        "readOnly": True,
-        "willExecute": False,
-        "canRunExternalVerification": False,
-        "doesNotRunExternalCommands": True,
-        "doesNotVerifyExternalServices": True,
-    },
+verification_command_by_mode = {
+    "input_derived": "input-derived",
+    "external_command": "external-command-preview",
+    "admission": "admission-placeholder",
 }
+
+cosign_bin = os.environ.get("S_SENTINEL_COSIGN_BIN", "cosign").strip() or "cosign"
+
+if not verification_runtime.exists():
+    raise SystemExit(f"ERROR: verification runtime not found: {verification_runtime}")
+
+verification_output = output_json.parent / f".{output_json.stem}.verification.json"
+completed = subprocess.run(
+    [
+        sys.executable,
+        str(verification_runtime),
+        verification_command_by_mode[verification_mode],
+        "--supply-chain-decision",
+        str(input_path),
+        "--cosign-bin",
+        cosign_bin,
+        "--output",
+        str(verification_output),
+    ],
+    text=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    check=False,
+)
+
+if completed.returncode != 0:
+    raise SystemExit(
+        "ERROR: verification runtime failed\n"
+        + completed.stdout
+    )
+
+verification = load_json(verification_output)
 
 if decision.get("decision") == "BLOCK":
     add_check(checks, "source_supply_chain_decision", "FAIL", "critical", "Source supply-chain decision is BLOCK", decision)
