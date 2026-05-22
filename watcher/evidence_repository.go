@@ -11,6 +11,7 @@ type EvidenceRepository interface {
 	GetObject(r *http.Request, query EvidenceObjectQuery) (*EvidenceRepositoryResponse, error)
 	ListArtifacts(r *http.Request, query EvidenceArtifactListQuery) (*EvidenceRepositoryResponse, error)
 	SearchObjects(r *http.Request, query EvidenceSearchQuery) (*EvidenceRepositoryResponse, error)
+	GetVerificationSummary(r *http.Request, query EvidenceVerificationSummaryQuery) (*EvidenceRepositoryResponse, error)
 }
 
 type EvidenceReleaseListQuery struct {
@@ -44,6 +45,11 @@ type EvidenceSearchQuery struct {
 	ObjectType string
 	ReleaseID  string
 	IncludeRaw bool
+}
+
+type EvidenceVerificationSummaryQuery struct {
+	ReleaseID string
+	Limit     string
 }
 
 type EvidenceRepositoryResponse struct {
@@ -189,6 +195,24 @@ func (repo *CLIEvidenceRepository) SearchObjects(r *http.Request, query Evidence
 
 	if query.IncludeRaw {
 		args = append(args, "--include-raw")
+	}
+
+	return repo.query(r, args...)
+}
+
+func (repo *CLIEvidenceRepository) GetVerificationSummary(r *http.Request, query EvidenceVerificationSummaryQuery) (*EvidenceRepositoryResponse, error) {
+	limit := strings.TrimSpace(query.Limit)
+	if limit == "" {
+		limit = "50"
+	}
+
+	args := []string{
+		"verification-summary",
+		"--limit", limit,
+	}
+
+	if releaseID := strings.TrimSpace(query.ReleaseID); releaseID != "" {
+		args = append(args, "--release-id", releaseID)
 	}
 
 	return repo.query(r, args...)

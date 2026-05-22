@@ -68,6 +68,42 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		t.Fatalf("write release evidence: %v", err)
 	}
 
+	signedReleaseGate := `{
+  "schemaVersion": "signed.release.gate/v1alpha1",
+  "signedReleaseGateId": "srg-20260101-000000",
+  "release": {
+    "releaseId": "20260101-000000",
+    "service": "demo-app",
+    "namespace": "slo-rollout",
+    "env": "dev"
+  },
+  "verification": {
+    "schemaVersion": "signed.release.gate.verification/v1alpha1",
+    "mode": "input_derived",
+    "tool": "cosign",
+    "toolBinary": "cosign",
+    "toolAvailable": false,
+    "results": {
+      "signatureVerified": false,
+      "sbomPresent": true,
+      "provenancePresent": true,
+      "slsaLevelPresent": "unknown"
+    },
+    "guardrails": {
+      "canRunExternalVerification": false,
+      "doesNotRunExternalCommands": true
+    }
+  }
+}`
+
+	if err := os.WriteFile(
+		filepath.Join(reportDir, "signed-release-gate-"+releaseID+".json"),
+		[]byte(signedReleaseGate),
+		0644,
+	); err != nil {
+		t.Fatalf("write signed release gate: %v", err)
+	}
+
 	api := &portalAPI{
 		cfg: Config{
 			RepoDir: tempRepo,
@@ -150,6 +186,14 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, searchBody, "evidence.store.search/v1alpha1")
 	assertPortalNestedBool(t, searchBody, "filters", "includeRaw", false)
 
+	verificationSummaryBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceVerificationSummary,
+		"/api/evidence/verification-summary?releaseId="+releaseID,
+	)
+	assertPortalSchema(t, verificationSummaryBody, "evidence.store.verificationSummary/v1alpha1")
+	assertPortalLatestVerificationMode(t, verificationSummaryBody, "input_derived")
+
 	statusBody := callPortalEvidenceStoreHandler(
 		t,
 		api.handleEvidenceStoreStatus,
@@ -180,7 +224,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalBool(t, statusAfterRefreshBody, "ready", true)
 	assertPortalLatestReleaseID(t, statusAfterRefreshBody, releaseID)
 	assertPortalNestedNumber(t, statusAfterRefreshBody, "lastImportResult", "releaseCount", 1)
-	assertPortalNestedNumber(t, statusAfterRefreshBody, "lastImportResult", "importedObjects", 1)
+	assertPortalNestedNumber(t, statusAfterRefreshBody, "lastImportResult", "importedObjects", 2)
 }
 
 func callPortalEvidenceStoreHandler(
@@ -269,6 +313,20 @@ func assertPortalNestedNumber(t *testing.T, body map[string]interface{}, objectK
 
 	if got != expected {
 		t.Fatalf("expected %s.%s=%v, got=%v object=%v", objectKey, valueKey, expected, got, object)
+	}
+}
+
+func assertPortalLatestVerificationMode(t *testing.T, body map[string]interface{}, expected string) {
+	t.Helper()
+
+	latest, ok := body["latest"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected latest verification summary object, got body=%v", body)
+	}
+
+	got, _ := latest["verificationMode"].(string)
+	if got != expected {
+		t.Fatalf("expected latest.verificationMode=%s, got=%s body=%v", expected, got, body)
 	}
 }
 

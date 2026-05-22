@@ -104,6 +104,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/evidence/objects/", api.handleEvidenceStoreObjectDetail)
 	mux.HandleFunc("/api/evidence/artifacts", api.handleEvidenceArtifactList)
 	mux.HandleFunc("/api/evidence/search", api.handleEvidenceSearch)
+	mux.HandleFunc("/api/evidence/verification-summary", api.handleEvidenceVerificationSummary)
 
 	// Backward-compatible Stage41/42 EvidenceStore routes.
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
@@ -502,6 +503,20 @@ func (api *portalAPI) handleEvidenceSearch(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (api *portalAPI) handleEvidenceVerificationSummary(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	query := r.URL.Query()
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.GetVerificationSummary(r, EvidenceVerificationSummaryQuery{
+			ReleaseID: query.Get("releaseId"),
+			Limit:     query.Get("limit"),
+		})
+	})
+}
+
 func evidencePathSuffix(path string, prefixes ...string) string {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(path, prefix) {
@@ -678,6 +693,7 @@ func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) 
 		"/api/evidence/objects/{objectType}/{objectId}",
 		"/api/evidence/artifacts",
 		"/api/evidence/search",
+		"/api/evidence/verification-summary",
 		"/api/evidence-store/releases",
 		"/api/evidence-store/releases/{releaseId}",
 		"/api/evidence-store/objects/{objectType}/{objectId}",

@@ -1083,6 +1083,76 @@ def search_objects(
         "items": items,
     }
 
+
+def query_verification_summary(
+    conn: sqlite3.Connection,
+    release_id: str | None = None,
+    limit: int = 50,
+) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    where = []
+    params: list[Any] = []
+
+    if release_id:
+        where.append("release_id = ?")
+        params.append(release_id)
+
+    where_sql = ""
+    if where:
+        where_sql = "WHERE " + " AND ".join(where)
+
+    safe_limit = max(1, min(int(limit), 500))
+
+    rows = conn.execute(
+        f"""
+        SELECT object_type, object_id, release_id, imported_at, summary_json
+        FROM evidence_objects
+        {where_sql}
+        ORDER BY release_id DESC, imported_at DESC, object_type ASC, object_id ASC
+        LIMIT 5000
+        """,
+        tuple(params),
+    ).fetchall()
+
+    items = []
+    for row in rows:
+        summary = parse_json_field(row["summary_json"])
+        verification = as_dict(summary.get("verification"))
+        if not verification:
+            continue
+
+        items.append({
+            "releaseId": row["release_id"],
+            "objectType": row["object_type"],
+            "objectId": row["object_id"],
+            "importedAt": row["imported_at"],
+            "verification": verification,
+            "verificationMode": verification.get("mode"),
+            "verificationTool": verification.get("tool"),
+            "verificationToolAvailable": verification.get("toolAvailable"),
+            "signatureVerified": verification.get("signatureVerified"),
+            "sbomPresent": verification.get("sbomPresent"),
+            "provenancePresent": verification.get("provenancePresent"),
+            "canRunExternalVerification": verification.get("canRunExternalVerification"),
+            "doesNotRunExternalCommands": verification.get("doesNotRunExternalCommands"),
+        })
+
+        if len(items) >= safe_limit:
+            break
+
+    return {
+        "schemaVersion": "evidence.store.verificationSummary/v1alpha1",
+        "generatedAt": now_iso(),
+        "count": len(items),
+        "limit": safe_limit,
+        "filters": {
+            "releaseId": release_id,
+        },
+        "latest": items[0] if items else None,
+        "items": items,
+    }
+
 def query_release(conn: sqlite3.Connection, release_id: str, include_raw: bool) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
 
@@ -1201,6 +1271,11 @@ def main() -> int:
     search_parser.add_argument("--release-id")
     search_parser.add_argument("--include-raw", action="store_true")
 
+    verification_parser = sub.add_parser("verification-summary", help="Query compact verification summaries.")
+    verification_parser.add_argument("--db", required=True)
+    verification_parser.add_argument("--release-id")
+    verification_parser.add_argument("--limit", type=int, default=50)
+
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -1278,6 +1353,16 @@ def main() -> int:
                 object_type=args.object_type,
                 release_id=args.release_id,
                 include_raw=args.include_raw,
+            )
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "verification-summary":
+            result = query_verification_summary(
+                conn,
+                release_id=args.release_id,
+                limit=args.limit,
             )
             result["db"] = str(db_path)
             print(json.dumps(result, ensure_ascii=False, indent=2))
