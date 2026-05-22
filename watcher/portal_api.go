@@ -406,29 +406,14 @@ func (api *portalAPI) handleEvidenceStoreReleaseList(w http.ResponseWriter, r *h
 	}
 
 	query := r.URL.Query()
-	limit := strings.TrimSpace(query.Get("limit"))
-	if limit == "" {
-		limit = "50"
-	}
-
-	args := []string{
-		"list-releases",
-		"--limit", limit,
-	}
-
-	if service := strings.TrimSpace(query.Get("service")); service != "" {
-		args = append(args, "--service", service)
-	}
-
-	if env := strings.TrimSpace(query.Get("env")); env != "" {
-		args = append(args, "--env", env)
-	}
-
-	if releaseResult := strings.TrimSpace(query.Get("releaseResult")); releaseResult != "" {
-		args = append(args, "--release-result", releaseResult)
-	}
-
-	api.writeEvidenceStoreCommandResponse(w, r, args...)
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.ListReleases(r, EvidenceReleaseListQuery{
+			Limit:         query.Get("limit"),
+			Service:       query.Get("service"),
+			Env:           query.Get("env"),
+			ReleaseResult: query.Get("releaseResult"),
+		})
+	})
 }
 
 func (api *portalAPI) handleEvidenceStoreReleaseDetail(w http.ResponseWriter, r *http.Request) {
@@ -445,16 +430,12 @@ func (api *portalAPI) handleEvidenceStoreReleaseDetail(w http.ResponseWriter, r 
 		return
 	}
 
-	args := []string{
-		"query-release",
-		"--release-id", releaseID,
-	}
-
-	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true") {
-		args = append(args, "--include-raw")
-	}
-
-	api.writeEvidenceStoreCommandResponse(w, r, args...)
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.GetRelease(r, EvidenceReleaseQuery{
+			ReleaseID:  releaseID,
+			IncludeRaw: strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true"),
+		})
+	})
 }
 
 func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *http.Request) {
@@ -472,48 +453,37 @@ func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *
 		return
 	}
 
-	args := []string{
-		"get-object",
-		"--object-type", strings.TrimSpace(parts[0]),
-		"--object-id", strings.TrimSpace(parts[1]),
-	}
-
-	if releaseID := strings.TrimSpace(r.URL.Query().Get("releaseId")); releaseID != "" {
-		args = append(args, "--release-id", releaseID)
-	}
-
-	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true") {
-		args = append(args, "--include-raw")
-	}
-
-	api.writeEvidenceStoreCommandResponse(w, r, args...)
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.GetObject(r, EvidenceObjectQuery{
+			ObjectType: strings.TrimSpace(parts[0]),
+			ObjectID:   strings.TrimSpace(parts[1]),
+			ReleaseID:  r.URL.Query().Get("releaseId"),
+			IncludeRaw: strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("includeRaw")), "true"),
+		})
+	})
 }
 
-func (api *portalAPI) writeEvidenceStoreCommandResponse(w http.ResponseWriter, r *http.Request, args ...string) {
-	dbFile, err := api.ensureEvidenceStoreDBReady()
+func (api *portalAPI) writeEvidenceRepositoryResponse(
+	w http.ResponseWriter,
+	r *http.Request,
+	query func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error),
+) {
+	response, err := query(api.evidenceRepository())
 	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusConflict, "evidence store db is not ready", err)
-		return
-	}
+		if repositoryErr, ok := err.(*EvidenceRepositoryError); ok {
+			api.writeEvidenceStoreError(w, repositoryErr.StatusCode, repositoryErr.Message, repositoryErr.Err)
+			return
+		}
 
-	if len(args) == 0 {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "empty evidence store command", nil)
-		return
-	}
-
-	commandArgs := append([]string{args[0], "--db", dbFile}, args[1:]...)
-
-	output, err := api.runEvidenceStoreCommand(r, commandArgs...)
-	if err != nil {
 		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to query evidence store", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-S-Sentinel-Evidence-Store-Mode", "sqlite-adapter")
-	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", dbFile)
+	w.Header().Set("X-S-Sentinel-Evidence-Store-Mode", response.Mode)
+	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", response.DBFile)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(output)
+	_, _ = w.Write(response.Body)
 }
 
 func (api *portalAPI) ensureEvidenceStoreDBReady() (string, error) {
