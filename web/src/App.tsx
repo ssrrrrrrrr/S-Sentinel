@@ -12,6 +12,7 @@ import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObject
 import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
 import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwarePortalPanel"
 import { EvidenceStorePanel } from "@/components/release/EvidenceStorePanel"
+import { PolicyExplanationPanel } from "@/components/release/PolicyExplanationPanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
@@ -111,6 +112,12 @@ function App() {
 
             <EvidenceStorePanel
               selected={selected}
+              onTabChange={setActiveTab}
+            />
+
+            <PolicyExplanationPanel
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
               onTabChange={setActiveTab}
             />
 
