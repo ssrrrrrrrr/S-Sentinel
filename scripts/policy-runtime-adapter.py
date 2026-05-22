@@ -27,6 +27,30 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+
+
+def signed_gate_verification_summary(signed_gate: dict[str, Any]) -> dict[str, Any]:
+    verification = signed_gate.get("verification") or {}
+    if not isinstance(verification, dict) or not verification:
+        return {}
+
+    results = verification.get("results") or {}
+    guardrails = verification.get("guardrails") or {}
+
+    return {
+        "schemaVersion": verification.get("schemaVersion"),
+        "mode": verification.get("mode"),
+        "tool": verification.get("tool"),
+        "toolBinary": verification.get("toolBinary"),
+        "toolAvailable": verification.get("toolAvailable"),
+        "signatureVerified": results.get("signatureVerified"),
+        "sbomPresent": results.get("sbomPresent"),
+        "provenancePresent": results.get("provenancePresent"),
+        "slsaLevelPresent": results.get("slsaLevelPresent"),
+        "canRunExternalVerification": guardrails.get("canRunExternalVerification"),
+        "doesNotRunExternalCommands": guardrails.get("doesNotRunExternalCommands"),
+    }
+
 def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signed_release_gate: Path | None = None) -> None:
     decision = load_json(ai_decision)
 
@@ -35,6 +59,7 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signe
         "file": str(signed_release_gate) if signed_release_gate is not None else None,
         "loaded": False,
     }
+    signed_gate_verification: dict[str, Any] = {}
 
     if signed_release_gate is not None:
         if not signed_release_gate.exists():
@@ -42,6 +67,7 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signe
         signed_gate = load_json(signed_release_gate)
         gate_decision = signed_gate.get("decision") or {}
         gate_risk = signed_gate.get("risk") or {}
+        signed_gate_verification = signed_gate_verification_summary(signed_gate)
         signed_gate_ref = {
             "file": str(signed_release_gate),
             "loaded": True,
@@ -52,6 +78,7 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signe
             "requiresHumanApproval": gate_decision.get("requiresHumanApproval"),
             "riskLevel": gate_risk.get("riskLevel"),
             "riskScore": gate_risk.get("riskScore"),
+            "verification": signed_gate_verification,
         }
 
     signed_gate_decision = signed_gate.get("decision") or {}
@@ -93,9 +120,16 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signe
             "signedReleaseGateDecision": signed_gate_decision.get("decision"),
             "signedReleaseGateAllowed": signed_gate_decision.get("allowed"),
             "signedReleaseGateRequiresHumanApproval": signed_gate_decision.get("requiresHumanApproval"),
+            "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
+            "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
+            "signedReleaseGateSBOMPresent": signed_gate_verification.get("sbomPresent"),
+            "signedReleaseGateProvenancePresent": signed_gate_verification.get("provenancePresent"),
+            "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),
         },
         "signedReleaseGateRef": signed_gate_ref,
         "signedReleaseGate": signed_gate,
+        "signedReleaseGateVerification": signed_gate_verification,
         "rawInput": raw_input,
     }
 
@@ -104,6 +138,7 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signe
 
 def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path, decision_output: Path | None = None) -> None:
     policy_input = load_json(policy_input_file)
+    signed_gate_verification = policy_input.get("signedReleaseGateVerification") or {}
 
     source_decision_file = Path(str(policy_input.get("sourceDecisionFile") or ""))
     policy_ref = policy_input.get("policyRef") or {}
@@ -169,6 +204,7 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path,
         "policyInputRef": str(policy_input_file),
         "policyDecision": policy_decision,
         "signedReleaseGate": policy_decision.get("signedReleaseGate") or {},
+        "signedReleaseGateVerification": signed_gate_verification,
         "summary": {
             "policyDecision": policy_decision.get("policyDecision"),
             "finalAction": policy_decision.get("finalAction"),
@@ -176,6 +212,10 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path,
             "requiresHumanApproval": policy_decision.get("requiresHumanApproval"),
             "matchedRules": policy_decision.get("matchedRules") or [],
             "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
+            "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
+            "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
+            "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),
         },
         "safety": {
             "readOnly": True,

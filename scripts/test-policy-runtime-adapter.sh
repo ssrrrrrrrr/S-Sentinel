@@ -108,6 +108,37 @@ cat > "$SIGNED_GATE" <<'JSON'
     "usesMutableTag": false
   },
   "attestations": {},
+  "verification": {
+    "schemaVersion": "signed.release.gate.verification/v1alpha1",
+    "mode": "external_command",
+    "tool": "cosign",
+    "toolBinary": "/tmp/ssentinel-missing-cosign",
+    "toolAvailable": false,
+    "command": null,
+    "commandPreview": ["/tmp/ssentinel-missing-cosign", "verify", "registry.local/demo-app@sha256:111"],
+    "exitCode": null,
+    "checkedAt": "2026-01-01T00:00:00Z",
+    "subject": {
+      "image": "registry.local/demo-app@sha256:111",
+      "imageDigest": "sha256:111"
+    },
+    "results": {
+      "imageDigestPresent": true,
+      "usesDigestReference": true,
+      "signatureVerified": false,
+      "sbomPresent": false,
+      "provenancePresent": false,
+      "slsaLevelPresent": false,
+      "slsaLevel": null
+    },
+    "guardrails": {
+      "readOnly": true,
+      "willExecute": false,
+      "canRunExternalVerification": false,
+      "doesNotRunExternalCommands": true,
+      "doesNotVerifyExternalServices": true
+    }
+  },
   "checks": [],
   "decision": {
     "decision": "REQUIRE_HUMAN_APPROVAL",
@@ -171,7 +202,17 @@ assert policy_input["schemaVersion"] == "policy.input/v1alpha1", policy_input
 assert policy_input["inputSummary"]["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", policy_input
 assert policy_input["inputSummary"]["requestedAction"] == "STOP_PROMOTION", policy_input
 assert policy_input["inputSummary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", policy_input
+assert policy_input["inputSummary"]["signedReleaseGateVerificationMode"] == "external_command", policy_input
+assert policy_input["inputSummary"]["signedReleaseGateVerificationToolAvailable"] is False, policy_input
+assert policy_input["inputSummary"]["signedReleaseGateSignatureVerified"] is False, policy_input
+assert policy_input["inputSummary"]["signedReleaseGateSBOMPresent"] is False, policy_input
+assert policy_input["inputSummary"]["signedReleaseGateProvenancePresent"] is False, policy_input
+assert policy_input["inputSummary"]["signedReleaseGateCanRunExternalVerification"] is False, policy_input
 assert policy_input["signedReleaseGateRef"]["loaded"] is True, policy_input
+assert policy_input["signedReleaseGateRef"]["verification"]["mode"] == "external_command", policy_input
+assert policy_input["signedReleaseGateVerification"]["mode"] == "external_command", policy_input
+assert policy_input["signedReleaseGateVerification"]["signatureVerified"] is False, policy_input
+assert policy_input["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, policy_input
 assert policy_input["signedReleaseGate"]["signedReleaseGateId"] == "srg-20260101-000000", policy_input
 
 assert result["schemaVersion"] == "policy.runtime.result/v1alpha1", result
@@ -181,6 +222,14 @@ assert result["policyDecision"]["finalAction"] == "STOP_PROMOTION", result
 assert result["policyDecision"]["allowed"] is True, result
 assert result["summary"]["requiresHumanApproval"] is True, result
 assert result["summary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", result
+assert result["summary"]["signedReleaseGateVerificationMode"] == "external_command", result
+assert result["summary"]["signedReleaseGateVerificationToolAvailable"] is False, result
+assert result["summary"]["signedReleaseGateSignatureVerified"] is False, result
+assert result["summary"]["signedReleaseGateCanRunExternalVerification"] is False, result
+assert result["signedReleaseGateVerification"]["mode"] == "external_command", result
+assert result["signedReleaseGateVerification"]["signatureVerified"] is False, result
+assert result["signedReleaseGateVerification"]["canRunExternalVerification"] is False, result
+assert result["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, result
 assert result["policyDecision"]["signedReleaseGate"]["decision"] == "REQUIRE_HUMAN_APPROVAL", result
 assert "signed_release_gate_requires_human_approval" in result["policyDecision"]["matchedRules"], result
 assert result["safety"]["readOnly"] is True, result
