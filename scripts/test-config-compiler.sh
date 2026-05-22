@@ -110,6 +110,8 @@ for env, namespace in expected_namespaces.items():
     assert prom["latencyHistogram"] == "demo_http_request_duration_seconds_bucket", prom
     assert prom["errorStatusRegex"] == "5..", prom
 
+    assert binding_ids == {"demo-runtime-fault-env"}, binding_ids
+
     assert "prometheus-request-counter-demo" not in binding_ids, binding_ids
     assert "prometheus-latency-histogram-demo" not in binding_ids, binding_ids
     assert "default-service-demo-app" not in binding_ids, binding_ids
