@@ -199,7 +199,9 @@ export function EvidenceStorePanel({
   })
 
   const refreshData = asRecord(refreshMutation.data)
-  const importResult = asRecord(refreshData?.importResult)
+  const refreshImportResult = asRecord(refreshData?.importResult)
+  const statusLastImportResult = asRecord(statusData?.lastImportResult)
+  const importResult = refreshImportResult ?? statusLastImportResult
   const statusReleaseList = asRecord(statusData?.releaseList)
   const latestRelease = asRecord(refreshData?.latestRelease) ?? asRecord(statusData?.latestRelease)
 
