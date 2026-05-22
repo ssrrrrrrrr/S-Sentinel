@@ -15,6 +15,7 @@ import { EvidenceStorePanel } from "@/components/release/EvidenceStorePanel"
 import { PolicyExplanationPanel } from "@/components/release/PolicyExplanationPanel"
 import { SupplyChainGatePanel } from "@/components/release/SupplyChainGatePanel"
 import { AgentTracePanel } from "@/components/release/AgentTracePanel"
+import { ApprovalConsolePanel } from "@/components/release/ApprovalConsolePanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
@@ -130,6 +131,12 @@ function App() {
             />
 
             <AgentTracePanel
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <ApprovalConsolePanel
               selected={selected}
               evidenceQuery={environmentEvidenceQuery}
               onTabChange={setActiveTab}
