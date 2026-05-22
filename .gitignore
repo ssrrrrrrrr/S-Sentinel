@@ -33,3 +33,5 @@ watcher/config.yaml
 !docs/release-reports/TEMPLATE.md
 # generated config compiler artifacts
 build/compiled/
+__pycache__/
+*.py[cod]
