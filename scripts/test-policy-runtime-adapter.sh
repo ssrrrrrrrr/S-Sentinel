@@ -12,6 +12,7 @@ AI_DECISION="$TMP_DIR/ai-decision-20260101-000000.json"
 POLICY_INPUT="$TMP_DIR/policy-input-20260101-000000.json"
 POLICY_RESULT="$TMP_DIR/policy-runtime-result-20260101-000000.json"
 POLICY_DECISION="$TMP_DIR/policy-decision-20260101-000000.json"
+SIGNED_GATE="$TMP_DIR/signed-release-gate-20260101-000000.json"
 
 cat > "$AI_DECISION" <<'JSON'
 {
@@ -87,10 +88,59 @@ cat > "$AI_DECISION" <<'JSON'
 }
 JSON
 
+cat > "$SIGNED_GATE" <<'JSON'
+{
+  "schemaVersion": "signed.release.gate/v1alpha1",
+  "signedReleaseGateId": "srg-20260101-000000",
+  "generatedBy": "test-policy-runtime-adapter.sh",
+  "generatedAt": "2026-01-01T00:00:00Z",
+  "mode": "read_only_signed_release_gate",
+  "source": {},
+  "release": {
+    "releaseId": "20260101-000000",
+    "service": "demo-app",
+    "env": "dev"
+  },
+  "image": {
+    "image": "registry.local/demo-app@sha256:111",
+    "imageDigest": "sha256:111",
+    "usesDigestReference": true,
+    "usesMutableTag": false
+  },
+  "attestations": {},
+  "checks": [],
+  "decision": {
+    "decision": "REQUIRE_HUMAN_APPROVAL",
+    "allowed": false,
+    "requiresHumanApproval": true,
+    "blockingReasons": [],
+    "warningReasons": [
+      "Cosign signature is not verified"
+    ]
+  },
+  "risk": {
+    "riskLevel": "high",
+    "riskScore": 50
+  },
+  "guardrails": {
+    "readOnly": true,
+    "willExecute": false,
+    "doesNotSignImages": true,
+    "doesNotVerifyExternalServices": true,
+    "doesNotModifyKubernetes": true,
+    "doesNotModifyGitOps": true,
+    "doesNotBuildImages": true,
+    "doesNotPushImages": true,
+    "doesNotCommitOrPush": true
+  }
+}
+JSON
+
 echo "===== build policy input ====="
 ./scripts/policy-runtime-adapter.py build-input \
   --ai-decision "$AI_DECISION" \
   --policy-file policy/release-policy.yaml \
+  --signed-release-gate "$SIGNED_GATE" \
   --output "$POLICY_INPUT"
 
 cat "$POLICY_INPUT"
@@ -120,6 +170,9 @@ plain_decision = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
 assert policy_input["schemaVersion"] == "policy.input/v1alpha1", policy_input
 assert policy_input["inputSummary"]["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", policy_input
 assert policy_input["inputSummary"]["requestedAction"] == "STOP_PROMOTION", policy_input
+assert policy_input["inputSummary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", policy_input
+assert policy_input["signedReleaseGateRef"]["loaded"] is True, policy_input
+assert policy_input["signedReleaseGate"]["signedReleaseGateId"] == "srg-20260101-000000", policy_input
 
 assert result["schemaVersion"] == "policy.runtime.result/v1alpha1", result
 assert result["runtime"]["name"] == "local-python", result
@@ -127,6 +180,9 @@ assert result["policyDecision"]["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", r
 assert result["policyDecision"]["finalAction"] == "STOP_PROMOTION", result
 assert result["policyDecision"]["allowed"] is True, result
 assert result["summary"]["requiresHumanApproval"] is True, result
+assert result["summary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", result
+assert result["policyDecision"]["signedReleaseGate"]["decision"] == "REQUIRE_HUMAN_APPROVAL", result
+assert "signed_release_gate_requires_human_approval" in result["policyDecision"]["matchedRules"], result
 assert result["safety"]["readOnly"] is True, result
 assert result["safety"]["willExecute"] is False, result
 assert plain_decision["schemaVersion"] == "release.policy.evaluator/v1alpha1", plain_decision

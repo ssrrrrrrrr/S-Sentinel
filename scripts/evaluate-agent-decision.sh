@@ -183,6 +183,28 @@ def policy_decision_id(path: Path) -> str:
     release_id = release_id_from_ai_decision(path) or path.stem
     return f"pd-{release_id}"
 
+def load_optional_json_path(ref: Any, base_path: Path) -> dict[str, Any]:
+    if not ref:
+        return {}
+    raw = Path(str(ref))
+    candidates: list[Path] = []
+    if raw.is_absolute():
+        candidates.append(raw)
+    candidates.extend([
+        base_path.parent / raw,
+        base_path.parent / raw.name,
+        Path.cwd() / raw,
+        raw,
+    ])
+    for candidate in candidates:
+        try:
+            if candidate.exists() and candidate.is_file():
+                data = json.loads(candidate.read_text(encoding="utf-8-sig"))
+                return data if isinstance(data, dict) else {}
+        except Exception:
+            continue
+    return {}
+
 policy = load_policy(policy_path)
 
 release_result = str(decision.get("releaseResult") or "UNKNOWN")
@@ -191,6 +213,34 @@ execution_mode = str(decision.get("executionMode") or policy.get("executionMode"
 agent_action = as_dict(decision.get("agentAction"))
 guardrails = as_dict(decision.get("guardrails"))
 evidence = as_dict(decision.get("evidence"))
+
+signed_release_gate_ref = as_dict(first_non_empty(
+    decision.get("signedReleaseGateRef"),
+    evidence.get("signedReleaseGateRef"),
+))
+signed_release_gate = as_dict(first_non_empty(
+    decision.get("signedReleaseGate"),
+    evidence.get("signedReleaseGate"),
+))
+
+if not signed_release_gate:
+    signed_release_gate = load_optional_json_path(
+        first_non_empty(
+            signed_release_gate_ref.get("file"),
+            signed_release_gate_ref.get("json"),
+            signed_release_gate_ref.get("source"),
+        ),
+        input_path,
+    )
+
+signed_gate_decision_obj = as_dict(signed_release_gate.get("decision"))
+signed_gate_risk = as_dict(signed_release_gate.get("risk"))
+signed_gate_decision = nullable_string(signed_gate_decision_obj.get("decision"))
+signed_gate_allowed = signed_gate_decision_obj.get("allowed")
+signed_gate_allowed_bool = bool(signed_gate_allowed) if signed_gate_allowed is not None else None
+signed_gate_requires_approval = bool(signed_gate_decision_obj.get("requiresHumanApproval", False))
+signed_gate_blocking_reasons = [str(x) for x in as_list(signed_gate_decision_obj.get("blockingReasons")) if str(x)]
+signed_gate_warning_reasons = [str(x) for x in as_list(signed_gate_decision_obj.get("warningReasons")) if str(x)]
 
 requested_action = str(agent_action.get("type") or decision.get("recommendedAction") or "UNKNOWN")
 agent_action_allowed = bool(agent_action.get("allowed", False))
@@ -338,6 +388,43 @@ elif requested_action in {"MANUAL_REVIEW", "INVESTIGATE"}:
 else:
     set_deny(requested_action, "fallback_deny_unknown_or_unsafe_action", "No specific strategy-aware rule matched and the requested action is not safe")
 
+signed_gate_summary = {
+    "loaded": bool(signed_release_gate),
+    "schemaVersion": signed_release_gate.get("schemaVersion"),
+    "signedReleaseGateId": signed_release_gate.get("signedReleaseGateId"),
+    "decision": signed_gate_decision,
+    "allowed": signed_gate_allowed_bool,
+    "requiresHumanApproval": signed_gate_requires_approval,
+    "riskLevel": signed_gate_risk.get("riskLevel"),
+    "riskScore": signed_gate_risk.get("riskScore"),
+    "blockingReasons": signed_gate_blocking_reasons,
+    "warningReasons": signed_gate_warning_reasons,
+    "source": first_non_empty(
+        signed_release_gate_ref.get("file"),
+        signed_release_gate_ref.get("json"),
+        signed_release_gate_ref.get("source"),
+    ),
+}
+
+if signed_gate_decision == "BLOCK":
+    gate_reason = "SignedReleaseGate blocked this release"
+    if signed_gate_blocking_reasons:
+        gate_reason = "; ".join(signed_gate_blocking_reasons)
+    set_deny(
+        final_action if final_action in VALID_FINAL_ACTIONS and final_action != "UNKNOWN" else requested_action,
+        "signed_release_gate_blocked",
+        gate_reason,
+    )
+    denied_reasons.extend(signed_gate_blocking_reasons)
+
+elif signed_gate_decision == "REQUIRE_HUMAN_APPROVAL" and policy_decision != "DENY":
+    policy_decision = "REQUIRE_HUMAN_APPROVAL"
+    matched_rules.append("signed_release_gate_requires_human_approval")
+    approval_required_reasons.append("signed_release_gate_requires_human_approval")
+    approval_required_reasons.extend(signed_gate_warning_reasons)
+    if signed_gate_warning_reasons:
+        reason = "SignedReleaseGate requires human approval: " + "; ".join(signed_gate_warning_reasons)
+
 if not auto_execute:
     matched_rules.append("auto_execute_disabled")
 
@@ -357,6 +444,7 @@ matched_rules = list(dict.fromkeys(matched_rules))
 requires_human_approval = bool(
     decision.get("requiresHumanApproval", False)
     or agent_action_requires_approval
+    or signed_gate_decision == "REQUIRE_HUMAN_APPROVAL"
     or approval_required_reasons
 )
 
@@ -387,12 +475,15 @@ policy_output = {
     "deniedReasons": denied_reasons,
     "approvalRequiredReasons": approval_required_reasons,
     "matchedRules": matched_rules,
+    "signedReleaseGate": signed_gate_summary,
     "inputSummary": {
         "releaseResult": release_result,
         "agentActionType": requested_action,
         "agentActionAllowed": agent_action_allowed,
         "agentActionRequiresApproval": agent_action_requires_approval,
         "autoExecute": auto_execute,
+        "signedReleaseGateDecision": signed_gate_decision,
+        "signedReleaseGateAllowed": signed_gate_allowed_bool,
     },
     "strategyPolicy": {
         "strategyId": nullable_string(strategy_id),

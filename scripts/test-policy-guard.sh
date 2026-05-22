@@ -113,6 +113,38 @@ cases = [
         "expectedAllowed": True,
         "expectedRule": "fallback_manual_review_required",
     },
+    {
+        "name": "signed-gate-requires-approval",
+        "releaseResult": "PASS",
+        "action": "PROMOTE",
+        "actionAllowed": True,
+        "actionRequiresApproval": False,
+        "rollbackAllowed": False,
+        "autoPromotionEnabled": True,
+        "strategyRequiresHumanApproval": False,
+        "signedGateDecision": "REQUIRE_HUMAN_APPROVAL",
+        "signedGateAllowed": False,
+        "expectedDecision": "REQUIRE_HUMAN_APPROVAL",
+        "expectedFinalAction": "PROMOTE",
+        "expectedAllowed": True,
+        "expectedRule": "signed_release_gate_requires_human_approval",
+    },
+    {
+        "name": "signed-gate-block-deny",
+        "releaseResult": "PASS",
+        "action": "PROMOTE",
+        "actionAllowed": True,
+        "actionRequiresApproval": False,
+        "rollbackAllowed": False,
+        "autoPromotionEnabled": True,
+        "strategyRequiresHumanApproval": False,
+        "signedGateDecision": "BLOCK",
+        "signedGateAllowed": False,
+        "expectedDecision": "DENY",
+        "expectedFinalAction": "PROMOTE",
+        "expectedAllowed": False,
+        "expectedRule": "signed_release_gate_blocked",
+    },
 ]
 
 for case in cases:
@@ -208,6 +240,28 @@ dangerousActions:
         "analysisRun": {},
         "sources": {},
     }
+
+    if case.get("signedGateDecision"):
+        ai_decision["signedReleaseGate"] = {
+            "schemaVersion": "signed.release.gate/v1alpha1",
+            "signedReleaseGateId": f"srg-{case['name']}",
+            "mode": "read_only_signed_release_gate",
+            "decision": {
+                "decision": case["signedGateDecision"],
+                "allowed": case["signedGateAllowed"],
+                "requiresHumanApproval": case["signedGateDecision"] == "REQUIRE_HUMAN_APPROVAL",
+                "blockingReasons": ["signed gate blocked release"] if case["signedGateDecision"] == "BLOCK" else [],
+                "warningReasons": ["signed gate requires human approval"] if case["signedGateDecision"] == "REQUIRE_HUMAN_APPROVAL" else [],
+            },
+            "risk": {
+                "riskLevel": "critical" if case["signedGateDecision"] == "BLOCK" else "high",
+                "riskScore": 90 if case["signedGateDecision"] == "BLOCK" else 50,
+            },
+            "guardrails": {
+                "readOnly": True,
+                "willExecute": False,
+            },
+        }
 
     ai_path.write_text(json.dumps(ai_decision, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

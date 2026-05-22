@@ -27,8 +27,38 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def build_policy_input(ai_decision: Path, policy_file: Path, output: Path) -> None:
+def build_policy_input(ai_decision: Path, policy_file: Path, output: Path, signed_release_gate: Path | None = None) -> None:
     decision = load_json(ai_decision)
+
+    signed_gate: dict[str, Any] = {}
+    signed_gate_ref: dict[str, Any] = {
+        "file": str(signed_release_gate) if signed_release_gate is not None else None,
+        "loaded": False,
+    }
+
+    if signed_release_gate is not None:
+        if not signed_release_gate.exists():
+            raise SystemExit(f"ERROR: signed release gate does not exist: {signed_release_gate}")
+        signed_gate = load_json(signed_release_gate)
+        gate_decision = signed_gate.get("decision") or {}
+        gate_risk = signed_gate.get("risk") or {}
+        signed_gate_ref = {
+            "file": str(signed_release_gate),
+            "loaded": True,
+            "schemaVersion": signed_gate.get("schemaVersion"),
+            "signedReleaseGateId": signed_gate.get("signedReleaseGateId"),
+            "decision": gate_decision.get("decision"),
+            "allowed": gate_decision.get("allowed"),
+            "requiresHumanApproval": gate_decision.get("requiresHumanApproval"),
+            "riskLevel": gate_risk.get("riskLevel"),
+            "riskScore": gate_risk.get("riskScore"),
+        }
+
+    signed_gate_decision = signed_gate.get("decision") or {}
+    raw_input = dict(decision)
+    if signed_gate:
+        raw_input["signedReleaseGate"] = signed_gate
+        raw_input["signedReleaseGateRef"] = signed_gate_ref
 
     release_id = None
     name = ai_decision.name
@@ -60,8 +90,13 @@ def build_policy_input(ai_decision: Path, policy_file: Path, output: Path) -> No
             "env": decision.get("env"),
             "sloId": decision.get("sloId"),
             "strategyId": decision.get("strategyId"),
+            "signedReleaseGateDecision": signed_gate_decision.get("decision"),
+            "signedReleaseGateAllowed": signed_gate_decision.get("allowed"),
+            "signedReleaseGateRequiresHumanApproval": signed_gate_decision.get("requiresHumanApproval"),
         },
-        "rawInput": decision,
+        "signedReleaseGateRef": signed_gate_ref,
+        "signedReleaseGate": signed_gate,
+        "rawInput": raw_input,
     }
 
     write_json(output, policy_input)
@@ -84,7 +119,14 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path,
     with tempfile.TemporaryDirectory(prefix="ssentinel-policy-runtime-") as tmp:
         tmp_dir = Path(tmp)
         ai_copy = tmp_dir / source_decision_file.name
-        shutil.copy2(source_decision_file, ai_copy)
+        ai_decision = load_json(source_decision_file)
+
+        if policy_input.get("signedReleaseGate"):
+            ai_decision["signedReleaseGate"] = policy_input.get("signedReleaseGate")
+        if policy_input.get("signedReleaseGateRef"):
+            ai_decision["signedReleaseGateRef"] = policy_input.get("signedReleaseGateRef")
+
+        write_json(ai_copy, ai_decision)
 
         env = os.environ.copy()
         env["RELEASE_REPORT_DIR"] = str(tmp_dir)
@@ -126,12 +168,14 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path,
         },
         "policyInputRef": str(policy_input_file),
         "policyDecision": policy_decision,
+        "signedReleaseGate": policy_decision.get("signedReleaseGate") or {},
         "summary": {
             "policyDecision": policy_decision.get("policyDecision"),
             "finalAction": policy_decision.get("finalAction"),
             "allowed": policy_decision.get("allowed"),
             "requiresHumanApproval": policy_decision.get("requiresHumanApproval"),
             "matchedRules": policy_decision.get("matchedRules") or [],
+            "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
         },
         "safety": {
             "readOnly": True,
@@ -154,6 +198,7 @@ def main() -> int:
     build = sub.add_parser("build-input")
     build.add_argument("--ai-decision", required=True)
     build.add_argument("--policy-file", default="policy/release-policy.yaml")
+    build.add_argument("--signed-release-gate")
     build.add_argument("--output", required=True)
 
     evaluate = sub.add_parser("evaluate")
@@ -170,6 +215,7 @@ def main() -> int:
             Path(args.ai_decision),
             Path(args.policy_file),
             Path(args.output),
+            Path(args.signed_release_gate) if args.signed_release_gate else None,
         )
         return 0
 
