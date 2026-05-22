@@ -235,6 +235,68 @@ if completed.returncode != 0:
 
 verification = load_json(verification_output)
 
+verification_results = as_dict(verification.get("results"))
+verification_guardrails = as_dict(verification.get("guardrails"))
+external_verification_requested = bool_value(verification_results.get("externalVerificationRequested"))
+external_verification_allowed = bool_value(verification_results.get("externalVerificationAllowed"))
+external_verification_executed = bool_value(verification_results.get("externalVerificationExecuted"))
+external_verification_succeeded = verification_results.get("externalVerificationSucceeded")
+external_verification_skipped_reason = nullable_string(verification_results.get("externalVerificationSkippedReason"))
+
+if verification_mode == "external_command":
+    external_evidence = {
+        "mode": verification.get("mode"),
+        "tool": verification.get("tool"),
+        "toolBinary": verification.get("toolBinary"),
+        "toolAvailable": verification.get("toolAvailable"),
+        "commandPreview": verification.get("commandPreview"),
+        "command": verification.get("command"),
+        "exitCode": verification.get("exitCode"),
+        "externalVerificationRequested": external_verification_requested,
+        "externalVerificationAllowed": external_verification_allowed,
+        "externalVerificationExecuted": external_verification_executed,
+        "externalVerificationSucceeded": external_verification_succeeded,
+        "externalVerificationSkippedReason": external_verification_skipped_reason,
+        "guardrails": verification_guardrails,
+    }
+
+    if external_verification_executed and external_verification_succeeded is True:
+        add_check(
+            checks,
+            "external_verification_succeeded",
+            "PASS",
+            "none",
+            "External verification command succeeded",
+            external_evidence,
+        )
+    elif external_verification_executed and external_verification_succeeded is False:
+        add_check(
+            checks,
+            "external_verification_failed",
+            "FAIL",
+            "critical",
+            "External verification command failed",
+            external_evidence,
+        )
+    elif external_verification_allowed:
+        add_check(
+            checks,
+            "external_verification_unavailable",
+            "FAIL",
+            "high",
+            "External verification was allowed but did not execute",
+            external_evidence,
+        )
+    else:
+        add_check(
+            checks,
+            "external_verification_preview_only",
+            "WARN",
+            "high",
+            "External verification command is preview-only unless explicitly enabled",
+            external_evidence,
+        )
+
 if decision.get("decision") == "BLOCK":
     add_check(checks, "source_supply_chain_decision", "FAIL", "critical", "Source supply-chain decision is BLOCK", decision)
 else:
