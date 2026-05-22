@@ -63,9 +63,8 @@ export function PortalInformationArchitecture({
             将 Release Portal 整理成产品化控制台，而不是继续堆叠零散报告。
           </h3>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            当前阶段保持只读展示，优先把 Release、Evidence、Policy、Supply Chain、AI Advisor 和 AgentTrace
-            放到统一的信息架构里。后续再逐步补 Evidence Search、Policy Explanation、Supply Chain Gate View
-            和 Agent Trace View。
+            当前阶段保持只读展示，已经把 Release、Evidence、Policy、Supply Chain、AI Advisor、AgentTrace
+            和 Approval Console 放到统一的信息架构里，形成面向发布可靠性的产品化控制台。
           </p>
         </div>
 

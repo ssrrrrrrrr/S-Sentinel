@@ -7,13 +7,13 @@ export function StageBanner({ latest }: { latest?: LatestReleaseResponse }) {
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">
-            阶段 35.1 · Portal Product Consolidation
+            Stage 41 · Portal as Product
           </p>
           <h2 className="mt-2 max-w-3xl text-[1.35rem] font-semibold leading-snug tracking-tight text-[#031a41]">
             把 SLO、策略、供应链、AI Advisor、执行申请和 Evidence Record 整合成产品化发布控制台。
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            当前阶段先整理 Portal 信息架构和发布详情入口，仍保持只读展示，不暴露 Rollback、Promote、Patch 或 Delete 等高风险操作。
+            当前阶段已经完成 Portal 信息架构、Evidence Search、Policy Explanation、Supply Chain Gate、Agent Trace 和 Approval Console 的只读产品化收口，不暴露 Rollback、Promote、Patch 或 Delete 等高风险操作。
           </p>
         </div>
         <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">
