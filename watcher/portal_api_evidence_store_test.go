@@ -75,6 +75,23 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		reportDir: reportDir,
 	}
 
+	statusBeforeRefreshBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreStatus,
+		"/api/evidence-store/status",
+	)
+	assertPortalSchema(t, statusBeforeRefreshBody, "evidence.store.status/v1alpha1")
+	assertPortalBool(t, statusBeforeRefreshBody, "ready", false)
+
+	initialRefreshBody := callPortalEvidenceStoreHandlerWithMethod(
+		t,
+		api.handleEvidenceStoreRefresh,
+		http.MethodPost,
+		"/api/evidence-store/refresh",
+	)
+	assertPortalSchema(t, initialRefreshBody, "evidence.store.refresh/v1alpha1")
+	assertPortalLatestReleaseID(t, initialRefreshBody, releaseID)
+
 	listBody := callPortalEvidenceStoreHandler(
 		t,
 		api.handleEvidenceStoreReleaseList,

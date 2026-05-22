@@ -289,7 +289,7 @@ func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.R
 	} else {
 		body["dbExists"] = false
 		body["dbError"] = err.Error()
-		body["hint"] = "Call POST /api/evidence-store/refresh or any evidence-store query endpoint to initialize and import the SQLite index."
+		body["hint"] = "Call POST /api/evidence-store/refresh to initialize and import the SQLite index."
 	}
 
 	writePortalJSON(w, http.StatusOK, body)
@@ -462,9 +462,9 @@ func (api *portalAPI) handleEvidenceStoreObjectDetail(w http.ResponseWriter, r *
 }
 
 func (api *portalAPI) writeEvidenceStoreCommandResponse(w http.ResponseWriter, r *http.Request, args ...string) {
-	dbFile, err := api.prepareEvidenceStoreDB(r)
+	dbFile, err := api.ensureEvidenceStoreDBReady()
 	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to prepare evidence store", err)
+		api.writeEvidenceStoreError(w, http.StatusConflict, "evidence store db is not ready", err)
 		return
 	}
 
@@ -488,15 +488,15 @@ func (api *portalAPI) writeEvidenceStoreCommandResponse(w http.ResponseWriter, r
 	_, _ = w.Write(output)
 }
 
-func (api *portalAPI) prepareEvidenceStoreDB(r *http.Request) (string, error) {
+func (api *portalAPI) ensureEvidenceStoreDBReady() (string, error) {
 	dbFile := api.evidenceStoreDBFile()
 
-	if _, err := api.runEvidenceStoreCommand(r, "init-db", "--db", dbFile); err != nil {
-		return "", err
-	}
+	if _, err := os.Stat(dbFile); err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("evidence store db is not initialized: %s; call POST /api/evidence-store/refresh first", dbFile)
+		}
 
-	if _, err := api.runEvidenceStoreCommand(r, "import-dir", "--db", dbFile, "--report-dir", api.reportDir); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to inspect evidence store db: %s: %w", dbFile, err)
 	}
 
 	return dbFile, nil
