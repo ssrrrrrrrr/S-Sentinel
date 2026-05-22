@@ -38,11 +38,13 @@ cat > "$FIXTURE_DIR/release-evidence-$RELEASE_ID.json" <<JSON
   "artifacts": {
     "releaseContext": "release-context-$RELEASE_ID.json",
     "agentRun": "agent-run-$RELEASE_ID.json",
+    "agentTrace": "agent-trace-$RELEASE_ID.json",
     "planRun": "plan-run-$RELEASE_ID.json",
     "executionRequest": "execution-request-$RELEASE_ID.json",
     "supplyChainDecision": "supply-chain-decision-$RELEASE_ID.json"
   },
   "agentRunId": "ar-$RELEASE_ID",
+  "agentTraceId": "at-$RELEASE_ID",
   "planRunId": "pr-$RELEASE_ID",
   "executionRequestId": "er-$RELEASE_ID",
   "supplyChainDecisionId": "sc-$RELEASE_ID"
@@ -99,6 +101,59 @@ cat > "$FIXTURE_DIR/agent-run-$RELEASE_ID.json" <<JSON
     "recommendedAction": "STOP_PROMOTION",
     "priority": "critical",
     "willExecute": false
+  },
+  "guardrails": {
+    "readOnly": true,
+    "willExecute": false
+  }
+}
+JSON
+
+cat > "$FIXTURE_DIR/agent-trace-$RELEASE_ID.json" <<JSON
+{
+  "schemaVersion": "agent.trace/v1alpha1",
+  "agentTraceId": "at-$RELEASE_ID",
+  "traceId": "trace-$RELEASE_ID",
+  "releaseId": "$RELEASE_ID",
+  "generatedBy": "test-evidence-store.sh",
+  "generatedAt": "2026-01-01T00:00:03Z",
+  "release": {
+    "releaseId": "$RELEASE_ID",
+    "service": "demo-app",
+    "env": "dev",
+    "namespace": "slo-rollout",
+    "releaseResult": "FAIL_BY_MULTIPLE_SLO"
+  },
+  "correlation": {
+    "releaseId": "$RELEASE_ID",
+    "agentRunId": "ar-$RELEASE_ID",
+    "policyDecisionId": "pd-$RELEASE_ID",
+    "policyRuntimeResultId": "prr-$RELEASE_ID",
+    "signedReleaseGateId": "srg-$RELEASE_ID"
+  },
+  "agentRun": {
+    "agentRunId": "ar-$RELEASE_ID",
+    "status": "COMPLETED"
+  },
+  "policyTrace": {
+    "policyDecision": "REQUIRE_HUMAN_APPROVAL",
+    "finalAction": "STOP_PROMOTION",
+    "requiresHumanApproval": true,
+    "matchedRules": [
+      "signed_release_gate_requires_human_approval"
+    ]
+  },
+  "toolCallTraces": [
+    {
+      "name": "ai_release_advisor",
+      "tool": "ai-release-advisor.sh",
+      "status": "AVAILABLE",
+      "readOnly": true,
+      "willExecute": false
+    }
+  ],
+  "evidenceTrace": {
+    "releaseEvidence": "release-evidence-$RELEASE_ID.json"
   },
   "guardrails": {
     "readOnly": true,
@@ -232,6 +287,7 @@ expected = {
     "releaseEvidence",
     "evidenceRecord",
     "agentRun",
+    "agentTrace",
     "planRun",
     "executionRequest",
     "supplyChainDecision",
@@ -244,12 +300,13 @@ assert release["release_result"] == "FAIL_BY_MULTIPLE_SLO", release
 assert release["policy_decision"] == "REQUIRE_HUMAN_APPROVAL", release
 assert release["final_action"] == "STOP_PROMOTION", release
 assert expected.issubset(kinds), kinds
-assert data["objectCount"] == 6, data["objectCount"]
+assert data["objectCount"] == 7, data["objectCount"]
 assert data["artifactCount"] >= 1, data["artifactCount"]
 
 ids = {item["object_type"]: item["object_id"] for item in objects}
 assert ids["evidenceRecord"].startswith("ev-")
 assert ids["agentRun"].startswith("ar-")
+assert ids["agentTrace"].startswith("at-")
 assert ids["planRun"].startswith("pr-")
 assert ids["executionRequest"].startswith("er-")
 assert ids["supplyChainDecision"].startswith("sc-")
@@ -285,7 +342,7 @@ assert release_list["schemaVersion"] == "evidence.store.releaseList/v1alpha1"
 assert release_list["count"] >= 1
 item = release_list["items"][0]
 assert item["release_id"] == "20260101-000000", item
-assert item["object_count"] == 6, item
+assert item["object_count"] == 7, item
 assert "supplyChainDecision" in item["object_types"], item["object_types"]
 
 assert obj["schemaVersion"] == "evidence.store.object/v1alpha1"

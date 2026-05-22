@@ -37,6 +37,15 @@ RESOURCE_SPECS = [
         "id_prefix": "ar-",
     },
     {
+        "object_type": "agentTrace",
+        "schema_version": "agent.trace/v1alpha1",
+        "glob": "agent-trace-*.json",
+        "latest": "agent-trace-latest.json",
+        "prefix": "agent-trace-",
+        "id_key": "agentTraceId",
+        "id_prefix": "at-",
+    },
+    {
         "object_type": "planRun",
         "glob": "plan-run-*.json",
         "latest": "plan-run-latest.json",

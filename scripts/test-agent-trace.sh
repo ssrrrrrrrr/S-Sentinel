@@ -218,12 +218,49 @@ print("PASS: agent trace contract is valid")
 PY
 
 echo
+echo "===== assert agent trace EvidenceStore indexing ====="
+DB_FILE="$TMP_DIR/evidence-store.db"
+IMPORT_JSON="$TMP_DIR/evidence-store-import.json"
+OBJECT_JSON="$TMP_DIR/agent-trace-object.json"
+
+./scripts/evidence-store.py init-db --db "$DB_FILE" >/dev/null
+./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$TMP_DIR" > "$IMPORT_JSON"
+./scripts/evidence-store.py get-object \
+  --db "$DB_FILE" \
+  --object-type agentTrace \
+  --object-id at-20260101-000000 \
+  --release-id 20260101-000000 \
+  > "$OBJECT_JSON"
+
+python3 - "$IMPORT_JSON" "$OBJECT_JSON" <<'PY_ASSERT_EVIDENCE_STORE'
+import json
+import sys
+from pathlib import Path
+
+import_result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+obj = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+
+assert import_result["byType"]["agentTrace"] == 1, import_result
+assert obj["schemaVersion"] == "evidence.store.object/v1alpha1", obj
+assert obj["object"]["object_type"] == "agentTrace", obj
+assert obj["object"]["object_id"] == "at-20260101-000000", obj
+assert obj["object"]["schema_version"] == "agent.trace/v1alpha1", obj
+assert obj["object"]["summary"]["objectType"] == "agentTrace", obj
+assert obj["object"]["summary"]["schemaVersion"] == "agent.trace/v1alpha1", obj
+
+print("PASS: agent trace is imported into EvidenceStore")
+PY_ASSERT_EVIDENCE_STORE
+
+echo
 echo "===== assert ai-release-advisor agent trace integration ====="
 grep -q 'AGENT_TRACE_BUILDER' scripts/ai-release-advisor.sh
 grep -q 'build-agent-trace.sh' scripts/ai-release-advisor.sh
 grep -q 'AGENT_TRACE_OUTPUT_DIR' scripts/ai-release-advisor.sh
 grep -q 'Running agent trace builder' scripts/ai-release-advisor.sh
 grep -q 'build-agent-trace.sh failed' scripts/ai-release-advisor.sh
+grep -q '"object_type": "agentTrace"' scripts/evidence-store.py
+grep -q 'agent.trace/v1alpha1' scripts/evidence-store.py
+grep -q 'agent-trace-*.json' scripts/evidence-store.py
 echo "PASS: ai-release-advisor agent trace integration is wired"
 
 echo "PASS: agent trace test passed"
