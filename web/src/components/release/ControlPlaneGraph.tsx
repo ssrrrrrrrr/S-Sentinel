@@ -1,7 +1,6 @@
 import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
-  ArrowRight,
   Bot,
   ClipboardCheck,
   FileCheck2,
@@ -344,15 +343,10 @@ export function ControlPlaneGraph({
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-3 xl:grid-cols-[repeat(6,minmax(0,1fr))]">
-        {nodes.map((node, index) => (
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {nodes.map((node) => (
           <div key={node.id} className="min-w-0">
             <GraphNodeCard node={node} onTabChange={onTabChange} />
-            {index < nodes.length - 1 ? (
-              <div className="hidden justify-center py-3 text-slate-300 xl:flex">
-                <ArrowRight className="h-5 w-5" />
-              </div>
-            ) : null}
           </div>
         ))}
       </div>

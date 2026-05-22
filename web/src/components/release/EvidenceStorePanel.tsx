@@ -116,6 +116,14 @@ function matchesSearch(row: EvidenceStoreObjectRow, query: string) {
   ].some((value) => value.toLowerCase().includes(normalized))
 }
 
+function queryErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "unknown error"
+}
+
+function isNotFoundError(error: unknown) {
+  return queryErrorMessage(error).includes("HTTP 404")
+}
+
 export function EvidenceStorePanel({
   selected,
   onTabChange,
@@ -168,6 +176,8 @@ export function EvidenceStorePanel({
 
   const counts = useMemo(() => typeCounts(objectRows), [objectRows])
   const objectTypeCount = Object.keys(counts).length
+  const releaseIndexMissing = releaseQuery.isError && isNotFoundError(releaseQuery.error)
+  const releaseQueryErrorMessage = releaseQuery.isError ? queryErrorMessage(releaseQuery.error) : ""
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
@@ -208,9 +218,21 @@ export function EvidenceStorePanel({
           正在查询 EvidenceStore release detail...
         </div>
       ) : releaseQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          EvidenceStore 查询失败：
-          {releaseQuery.error instanceof Error ? releaseQuery.error.message : "unknown error"}
+        <div
+          className={`mt-4 rounded-xl border p-4 text-sm ${
+            releaseIndexMissing
+              ? "border-cyan-200 bg-cyan-50 text-cyan-800"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}
+        >
+          <p className="font-semibold">
+            {releaseIndexMissing ? "当前 release 尚未进入 EvidenceStore 索引" : "EvidenceStore 查询失败"}
+          </p>
+          <p className="mt-2 leading-6">
+            {releaseIndexMissing
+              ? `EvidenceStore 没有找到 releaseId=${selected.releaseId}。这通常表示历史 release 尚未导入索引，或当前 EvidenceStore 尚未刷新。`
+              : `接口返回错误：${releaseQueryErrorMessage}`}
+          </p>
         </div>
       ) : objectRows.length === 0 ? (
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -327,7 +349,7 @@ export function EvidenceStorePanel({
                 ) : detailQuery.isError ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                     Object detail 读取失败：
-                    {detailQuery.error instanceof Error ? detailQuery.error.message : "unknown error"}
+                    {queryErrorMessage(detailQuery.error)}
                   </div>
                 ) : detailQuery.data ? (
                   <RawResourceViewer
