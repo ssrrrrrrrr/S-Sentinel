@@ -127,6 +127,23 @@ assert gate["decision"]["requiresHumanApproval"] is True, gate
 assert gate["image"]["imageDigest"] == "sha256:111", gate
 assert gate["image"]["usesDigestReference"] is True, gate
 assert gate["attestations"]["cosign"]["verified"] is False, gate
+
+verification = gate["verification"]
+assert verification["schemaVersion"] == "signed.release.gate.verification/v1alpha1", verification
+assert verification["mode"] == "input_derived", verification
+assert verification["tool"] == "cosign", verification
+assert verification["command"] is None, verification
+assert verification["exitCode"] is None, verification
+assert verification["subject"]["imageDigest"] == "sha256:111", verification
+assert verification["results"]["imageDigestPresent"] is True, verification
+assert verification["results"]["usesDigestReference"] is True, verification
+assert verification["results"]["signatureVerified"] is False, verification
+assert verification["results"]["sbomPresent"] is False, verification
+assert verification["results"]["provenancePresent"] is False, verification
+assert verification["guardrails"]["readOnly"] is True, verification
+assert verification["guardrails"]["willExecute"] is False, verification
+assert verification["guardrails"]["doesNotRunExternalCommands"] is True, verification
+
 assert gate["guardrails"]["readOnly"] is True, gate
 assert gate["guardrails"]["willExecute"] is False, gate
 assert gate["guardrails"]["doesNotSignImages"] is True, gate

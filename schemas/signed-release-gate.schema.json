@@ -13,6 +13,7 @@
     "release",
     "image",
     "attestations",
+    "verification",
     "checks",
     "decision",
     "risk",
@@ -29,7 +30,9 @@
     },
     "mode": {
       "type": "string",
-      "enum": ["read_only_signed_release_gate"]
+      "enum": [
+        "read_only_signed_release_gate"
+      ]
     },
     "decision": {
       "type": "object",
@@ -43,7 +46,11 @@
       "properties": {
         "decision": {
           "type": "string",
-          "enum": ["ALLOW", "REQUIRE_HUMAN_APPROVAL", "BLOCK"]
+          "enum": [
+            "ALLOW",
+            "REQUIRE_HUMAN_APPROVAL",
+            "BLOCK"
+          ]
         },
         "allowed": {
           "type": "boolean"
@@ -79,6 +86,61 @@
         "doesNotPushImages",
         "doesNotCommitOrPush"
       ]
+    },
+    "verification": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "mode",
+        "tool",
+        "checkedAt",
+        "subject",
+        "results",
+        "guardrails"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "signed.release.gate.verification/v1alpha1"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "input_derived",
+            "external_command",
+            "admission"
+          ]
+        },
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command": {},
+        "exitCode": {},
+        "checkedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "results": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "guardrails": {
+          "type": "object",
+          "required": [
+            "readOnly",
+            "willExecute",
+            "doesNotRunExternalCommands",
+            "doesNotVerifyExternalServices"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
     }
   }
 }
