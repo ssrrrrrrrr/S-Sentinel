@@ -11,6 +11,7 @@ import { StageBanner } from "@/components/layout/StageBanner"
 import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObjectCards"
 import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
 import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwarePortalPanel"
+import { EvidenceStorePanel } from "@/components/release/EvidenceStorePanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
@@ -105,6 +106,11 @@ function App() {
             <ControlPlaneGraph
               selected={selected}
               evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <EvidenceStorePanel
+              selected={selected}
               onTabChange={setActiveTab}
             />
 
