@@ -1134,6 +1134,11 @@ def query_verification_summary(
             "signatureVerified": verification.get("signatureVerified"),
             "sbomPresent": verification.get("sbomPresent"),
             "provenancePresent": verification.get("provenancePresent"),
+            "externalVerificationRequested": verification.get("externalVerificationRequested"),
+            "externalVerificationAllowed": verification.get("externalVerificationAllowed"),
+            "externalVerificationExecuted": verification.get("externalVerificationExecuted"),
+            "externalVerificationSucceeded": verification.get("externalVerificationSucceeded"),
+            "externalVerificationSkippedReason": verification.get("externalVerificationSkippedReason"),
             "canRunExternalVerification": verification.get("canRunExternalVerification"),
             "doesNotRunExternalCommands": verification.get("doesNotRunExternalCommands"),
         })

@@ -163,6 +163,17 @@ latest = verification.get("latest") or {}
 if latest.get("verificationMode") != "input_derived":
     raise SystemExit(f"expected verificationMode=input_derived, got {verification}")
 
+expected_external_fields = {
+    "externalVerificationRequested",
+    "externalVerificationAllowed",
+    "externalVerificationExecuted",
+    "externalVerificationSucceeded",
+    "externalVerificationSkippedReason",
+}
+missing_external_fields = sorted(field for field in expected_external_fields if field not in latest)
+if missing_external_fields:
+    raise SystemExit(f"verification summary missing external fields={missing_external_fields}, got {verification}")
+
 graph = load("graph")
 if graph.get("nodeCount", 0) < 3:
     raise SystemExit(f"expected graph nodeCount >= 3, got {graph}")
