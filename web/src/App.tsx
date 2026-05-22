@@ -14,6 +14,7 @@ import { EnvironmentAwarePortalPanel } from "@/components/release/EnvironmentAwa
 import { EvidenceStorePanel } from "@/components/release/EvidenceStorePanel"
 import { PolicyExplanationPanel } from "@/components/release/PolicyExplanationPanel"
 import { SupplyChainGatePanel } from "@/components/release/SupplyChainGatePanel"
+import { AgentTracePanel } from "@/components/release/AgentTracePanel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
@@ -123,6 +124,12 @@ function App() {
             />
 
             <SupplyChainGatePanel
+              selected={selected}
+              evidenceQuery={environmentEvidenceQuery}
+              onTabChange={setActiveTab}
+            />
+
+            <AgentTracePanel
               selected={selected}
               evidenceQuery={environmentEvidenceQuery}
               onTabChange={setActiveTab}
