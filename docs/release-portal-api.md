@@ -285,7 +285,7 @@ scripts/validate-release-portal-api.sh http://127.0.0.1:18088
 
 ### 5.3 当前阶段说明
 
-阶段 21 当前只推进源码和文档。
+Stage 37 当前只推进源码和文档，暂不构建或上线新的 watcher 镜像。
 
 默认不做：
 
@@ -297,4 +297,27 @@ kubectl set image
 GitOps 同步
 ```
 
-等 Release Portal API 功能完整后，再统一构建 watcher v1.21 并做线上验收。
+等 Stage 37 Evidence API / Evidence Store 完整收口后，再统一决定是否构建 watcher 镜像并做线上验收。
+
+---
+
+## 6. Stage 37 EvidenceStore API 扩展
+
+Stage 37 新增只读 EvidenceStore 查询入口，不替换原有 /api/releases。
+
+新增接口：
+
+- GET /api/evidence-store/releases
+- GET /api/evidence-store/releases/{releaseId}
+- GET /api/evidence-store/objects/{objectType}/{objectId}?releaseId={releaseId}
+
+返回 schema：
+
+- evidence.store.releaseList/v1alpha1
+- evidence.store.release/v1alpha1
+- evidence.store.object/v1alpha1
+
+阶段级验收脚本：
+
+- scripts/test-stage37-evidence-store.sh
+
