@@ -95,6 +95,35 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		"/api/evidence-store/objects/releaseEvidence/re-"+releaseID+"?releaseId="+releaseID,
 	)
 	assertPortalSchema(t, objectBody, "evidence.store.object/v1alpha1")
+
+	statusBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreStatus,
+		"/api/evidence-store/status",
+	)
+	assertPortalSchema(t, statusBody, "evidence.store.status/v1alpha1")
+	assertPortalBool(t, statusBody, "readOnly", true)
+	assertPortalBool(t, statusBody, "willExecute", false)
+
+	refreshBody := callPortalEvidenceStoreHandlerWithMethod(
+		t,
+		api.handleEvidenceStoreRefresh,
+		http.MethodPost,
+		"/api/evidence-store/refresh",
+	)
+	assertPortalSchema(t, refreshBody, "evidence.store.refresh/v1alpha1")
+	assertPortalBool(t, refreshBody, "readOnly", true)
+	assertPortalBool(t, refreshBody, "willExecute", false)
+	assertPortalLatestReleaseID(t, refreshBody, releaseID)
+
+	statusAfterRefreshBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceStoreStatus,
+		"/api/evidence-store/status",
+	)
+	assertPortalSchema(t, statusAfterRefreshBody, "evidence.store.status/v1alpha1")
+	assertPortalBool(t, statusAfterRefreshBody, "ready", true)
+	assertPortalLatestReleaseID(t, statusAfterRefreshBody, releaseID)
 }
 
 func callPortalEvidenceStoreHandler(
@@ -104,18 +133,29 @@ func callPortalEvidenceStoreHandler(
 ) map[string]interface{} {
 	t.Helper()
 
-	req := httptest.NewRequest(http.MethodGet, target, nil)
+	return callPortalEvidenceStoreHandlerWithMethod(t, handler, http.MethodGet, target)
+}
+
+func callPortalEvidenceStoreHandlerWithMethod(
+	t *testing.T,
+	handler http.HandlerFunc,
+	method string,
+	target string,
+) map[string]interface{} {
+	t.Helper()
+
+	req := httptest.NewRequest(method, target, nil)
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("expected HTTP 200 for %s, got %d: %s", target, rec.Code, rec.Body.String())
+		t.Fatalf("expected HTTP 200 for %s %s, got %d: %s", method, target, rec.Code, rec.Body.String())
 	}
 
 	var body map[string]interface{}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-		t.Fatalf("decode response for %s: %v: %s", target, err, rec.Body.String())
+		t.Fatalf("decode response for %s %s: %v: %s", method, target, err, rec.Body.String())
 	}
 
 	return body
@@ -127,5 +167,32 @@ func assertPortalSchema(t *testing.T, body map[string]interface{}, expected stri
 	got, _ := body["schemaVersion"].(string)
 	if got != expected {
 		t.Fatalf("expected schemaVersion=%s, got=%s body=%v", expected, got, body)
+	}
+}
+
+func assertPortalBool(t *testing.T, body map[string]interface{}, key string, expected bool) {
+	t.Helper()
+
+	got, ok := body[key].(bool)
+	if !ok {
+		t.Fatalf("expected %s to be a bool, got body=%v", key, body)
+	}
+
+	if got != expected {
+		t.Fatalf("expected %s=%v, got=%v body=%v", key, expected, got, body)
+	}
+}
+
+func assertPortalLatestReleaseID(t *testing.T, body map[string]interface{}, expected string) {
+	t.Helper()
+
+	latest, ok := body["latestRelease"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected latestRelease object, got body=%v", body)
+	}
+
+	got, _ := latest["release_id"].(string)
+	if got != expected {
+		t.Fatalf("expected latestRelease.release_id=%s, got=%s body=%v", expected, got, body)
 	}
 }

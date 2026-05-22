@@ -96,6 +96,9 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/", api.handleReleaseDetail)
 	mux.HandleFunc("/api/releases/latest", api.handleLatestIndex)
 
+	mux.HandleFunc("/api/evidence-store/status", api.handleEvidenceStoreStatus)
+	mux.HandleFunc("/api/evidence-store/refresh", api.handleEvidenceStoreRefresh)
+
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
 	mux.HandleFunc("/api/evidence-store/releases/", api.handleEvidenceStoreReleaseDetail)
 	mux.HandleFunc("/api/evidence-store/objects/", api.handleEvidenceStoreObjectDetail)
@@ -230,6 +233,143 @@ func portalResourceDefs() []portalResourceDef {
 			Description: "Release event archive.",
 		},
 	}
+}
+
+func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	dbFile := api.evidenceStoreDBFile()
+	scriptFile := api.evidenceStoreScriptFile()
+
+	body := map[string]interface{}{
+		"schemaVersion": "evidence.store.status/v1alpha1",
+		"generatedAt":   time.Now().Format(time.RFC3339),
+		"mode":          "sqlite-adapter",
+		"readOnly":      true,
+		"willExecute":   false,
+		"repoDir":       api.cfg.RepoDir,
+		"reportDir":     api.reportDir,
+		"dbFile":        dbFile,
+		"scriptFile":    scriptFile,
+		"ready":         false,
+	}
+
+	if info, err := os.Stat(api.reportDir); err == nil {
+		body["reportDirExists"] = true
+		body["reportDirModifiedAt"] = info.ModTime().Format(time.RFC3339)
+	} else {
+		body["reportDirExists"] = false
+		body["reportDirError"] = err.Error()
+	}
+
+	if info, err := os.Stat(scriptFile); err == nil {
+		body["scriptExists"] = true
+		body["scriptModifiedAt"] = info.ModTime().Format(time.RFC3339)
+	} else {
+		body["scriptExists"] = false
+		body["scriptError"] = err.Error()
+	}
+
+	if info, err := os.Stat(dbFile); err == nil {
+		body["dbExists"] = true
+		body["dbSizeBytes"] = info.Size()
+		body["dbModifiedAt"] = info.ModTime().Format(time.RFC3339)
+
+		output, queryErr := api.runEvidenceStoreCommand(r, "list-releases", "--db", dbFile, "--limit", "500")
+		if queryErr != nil {
+			body["queryError"] = queryErr.Error()
+		} else {
+			listResult := decodeEvidenceStoreJSON(output)
+			body["releaseList"] = listResult
+			body["latestRelease"] = latestEvidenceStoreRelease(listResult)
+			body["ready"] = true
+		}
+	} else {
+		body["dbExists"] = false
+		body["dbError"] = err.Error()
+		body["hint"] = "Call POST /api/evidence-store/refresh or any evidence-store query endpoint to initialize and import the SQLite index."
+	}
+
+	writePortalJSON(w, http.StatusOK, body)
+}
+
+func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writePortalJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"schemaVersion": "evidence.store.refresh.error/v1alpha1",
+			"generatedAt":   time.Now().Format(time.RFC3339),
+			"error":         "method not allowed",
+			"allowedMethod": "POST",
+			"readOnly":      true,
+			"willExecute":   false,
+		})
+		return
+	}
+
+	dbFile := api.evidenceStoreDBFile()
+
+	initOutput, err := api.runEvidenceStoreCommand(r, "init-db", "--db", dbFile)
+	if err != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to initialize evidence store", err)
+		return
+	}
+
+	importOutput, err := api.runEvidenceStoreCommand(r, "import-dir", "--db", dbFile, "--report-dir", api.reportDir)
+	if err != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to import evidence store", err)
+		return
+	}
+
+	listOutput, err := api.runEvidenceStoreCommand(r, "list-releases", "--db", dbFile, "--limit", "1")
+	if err != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to list evidence store releases", err)
+		return
+	}
+
+	listResult := decodeEvidenceStoreJSON(listOutput)
+
+	writePortalJSON(w, http.StatusOK, map[string]interface{}{
+		"schemaVersion": "evidence.store.refresh/v1alpha1",
+		"generatedAt":   time.Now().Format(time.RFC3339),
+		"mode":          "sqlite-adapter",
+		"readOnly":      true,
+		"willExecute":   false,
+		"repoDir":       api.cfg.RepoDir,
+		"reportDir":     api.reportDir,
+		"dbFile":        dbFile,
+		"initResult":    decodeEvidenceStoreJSON(initOutput),
+		"importResult":  decodeEvidenceStoreJSON(importOutput),
+		"releaseList":   listResult,
+		"latestRelease": latestEvidenceStoreRelease(listResult),
+	})
+}
+
+func decodeEvidenceStoreJSON(data []byte) map[string]interface{} {
+	result := map[string]interface{}{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return map[string]interface{}{
+			"decodeError": err.Error(),
+			"raw":         strings.TrimSpace(string(data)),
+		}
+	}
+
+	return result
+}
+
+func latestEvidenceStoreRelease(listResult map[string]interface{}) map[string]interface{} {
+	items, ok := listResult["items"].([]interface{})
+	if !ok || len(items) == 0 {
+		return nil
+	}
+
+	item, ok := items[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return item
 }
 
 func (api *portalAPI) handleEvidenceStoreReleaseList(w http.ResponseWriter, r *http.Request) {
