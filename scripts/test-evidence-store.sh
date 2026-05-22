@@ -8,6 +8,8 @@ TMP_DIR="${TMP_DIR:-/tmp/ssentinel-evidence-store-test}"
 FIXTURE_DIR="$TMP_DIR/reports"
 DB_FILE="$TMP_DIR/evidence-store.db"
 QUERY_JSON="$TMP_DIR/query-release.json"
+LIST_JSON="$TMP_DIR/list-releases.json"
+OBJECT_JSON="$TMP_DIR/get-object.json"
 RELEASE_ID="20260101-000000"
 
 rm -rf "$TMP_DIR"
@@ -254,6 +256,46 @@ assert ids["supplyChainDecision"].startswith("sc-")
 
 print("PASS: EvidenceStore query result is valid")
 PY
+
+echo
+echo "===== list releases ====="
+./scripts/evidence-store.py list-releases --db "$DB_FILE" --limit 10 > "$LIST_JSON"
+cat "$LIST_JSON"
+
+echo
+echo "===== get object ====="
+./scripts/evidence-store.py get-object \
+  --db "$DB_FILE" \
+  --object-type supplyChainDecision \
+  --object-id "sc-$RELEASE_ID" \
+  --release-id "$RELEASE_ID" > "$OBJECT_JSON"
+cat "$OBJECT_JSON"
+
+echo
+echo "===== assert list and object query ====="
+python3 - "$LIST_JSON" "$OBJECT_JSON" <<'PY_ASSERT_LIST_OBJECT'
+import json
+import sys
+from pathlib import Path
+
+release_list = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+obj = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+
+assert release_list["schemaVersion"] == "evidence.store.releaseList/v1alpha1"
+assert release_list["count"] >= 1
+item = release_list["items"][0]
+assert item["release_id"] == "20260101-000000", item
+assert item["object_count"] == 6, item
+assert "supplyChainDecision" in item["object_types"], item["object_types"]
+
+assert obj["schemaVersion"] == "evidence.store.object/v1alpha1"
+assert obj["release"]["release_id"] == "20260101-000000", obj["release"]
+assert obj["object"]["object_type"] == "supplyChainDecision", obj["object"]
+assert obj["object"]["object_id"] == "sc-20260101-000000", obj["object"]
+assert obj["object"]["summary"]["decision"] == "REQUIRE_HUMAN_APPROVAL", obj["object"]["summary"]
+
+print("PASS: EvidenceStore list and object query are valid")
+PY_ASSERT_LIST_OBJECT
 
 echo
 echo "PASS: evidence store test passed"

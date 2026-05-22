@@ -588,6 +588,184 @@ def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
     return {key: row[key] for key in row.keys()}
 
 
+def parse_json_field(value: Any) -> dict[str, Any]:
+    if value in (None, ""):
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        data = json.loads(str(value))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def normalize_release_row(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    item = row_to_dict(row)
+    if item is None:
+        return None
+
+    if item.get("requires_human_approval") is not None:
+        item["requires_human_approval"] = bool(item["requires_human_approval"])
+
+    return item
+
+
+def normalize_object_row(row: sqlite3.Row | None, include_raw: bool) -> dict[str, Any] | None:
+    item = row_to_dict(row)
+    if item is None:
+        return None
+
+    item["summary"] = parse_json_field(item.pop("summary_json", None))
+    raw_json = item.pop("raw_json", None)
+
+    if include_raw:
+        item["raw"] = parse_json_field(raw_json)
+
+    return item
+
+
+def list_releases(
+    conn: sqlite3.Connection,
+    limit: int,
+    service: str | None = None,
+    env: str | None = None,
+    release_result: str | None = None,
+) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    where = []
+    params: list[Any] = []
+
+    if service:
+        where.append("r.service = ?")
+        params.append(service)
+
+    if env:
+        where.append("r.env = ?")
+        params.append(env)
+
+    if release_result:
+        where.append("r.release_result = ?")
+        params.append(release_result)
+
+    where_sql = ""
+    if where:
+        where_sql = "WHERE " + " AND ".join(where)
+
+    safe_limit = max(1, min(int(limit), 500))
+
+    rows = conn.execute(
+        f"""
+        SELECT
+          r.*,
+          COUNT(e.object_pk) AS object_count,
+          MAX(e.imported_at) AS latest_object_imported_at
+        FROM releases r
+        LEFT JOIN evidence_objects e ON e.release_id = r.release_id
+        {where_sql}
+        GROUP BY r.release_id
+        ORDER BY
+          COALESCE(r.generated_at, r.last_seen_at, r.release_id) DESC,
+          r.release_id DESC
+        LIMIT ?
+        """,
+        (*params, safe_limit),
+    ).fetchall()
+
+    items = []
+    for row in rows:
+        item = normalize_release_row(row) or {}
+
+        object_rows = conn.execute(
+            """
+            SELECT object_type, object_id
+            FROM evidence_objects
+            WHERE release_id = ?
+            ORDER BY object_type, object_id
+            """,
+            (item.get("release_id"),),
+        ).fetchall()
+
+        item["object_types"] = sorted({object_row["object_type"] for object_row in object_rows})
+        item["objects"] = [
+            {
+                "objectType": object_row["object_type"],
+                "objectId": object_row["object_id"],
+            }
+            for object_row in object_rows
+        ]
+        items.append(item)
+
+    return {
+        "schemaVersion": "evidence.store.releaseList/v1alpha1",
+        "generatedAt": now_iso(),
+        "count": len(items),
+        "limit": safe_limit,
+        "filters": {
+            "service": service,
+            "env": env,
+            "releaseResult": release_result,
+        },
+        "items": items,
+    }
+
+
+def get_object(
+    conn: sqlite3.Connection,
+    object_type: str,
+    object_id: str,
+    release_id: str | None,
+    include_raw: bool,
+) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    where = [
+        "object_type = ?",
+        "object_id = ?",
+    ]
+    params: list[Any] = [object_type, object_id]
+
+    if release_id:
+        where.append("release_id = ?")
+        params.append(release_id)
+
+    row = conn.execute(
+        f"""
+        SELECT object_type, object_id, release_id, schema_version,
+               source_path, source_mtime, content_sha256, generated_at,
+               imported_at, summary_json, raw_json
+        FROM evidence_objects
+        WHERE {" AND ".join(where)}
+        ORDER BY imported_at DESC, source_mtime DESC
+        LIMIT 1
+        """,
+        tuple(params),
+    ).fetchone()
+
+    obj = normalize_object_row(row, include_raw)
+    if obj is None:
+        raise SystemExit(
+            "ERROR: object not found: "
+            f"objectType={object_type} objectId={object_id}"
+            + (f" releaseId={release_id}" if release_id else "")
+        )
+
+    release = normalize_release_row(
+        conn.execute(
+            "SELECT * FROM releases WHERE release_id = ?",
+            (obj["release_id"],),
+        ).fetchone()
+    )
+
+    return {
+        "schemaVersion": "evidence.store.object/v1alpha1",
+        "generatedAt": now_iso(),
+        "release": normalize_release_row(release),
+        "object": obj,
+    }
+
+
 def query_release(conn: sqlite3.Connection, release_id: str, include_raw: bool) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
 
@@ -615,12 +793,9 @@ def query_release(conn: sqlite3.Connection, release_id: str, include_raw: bool) 
 
     objects = []
     for row in object_rows:
-        item = row_to_dict(row) or {}
-        item["summary"] = json.loads(item.pop("summary_json") or "{}")
-        raw_json = item.pop("raw_json", None)
-        if include_raw:
-            item["raw"] = json.loads(raw_json or "{}")
-        objects.append(item)
+        item = normalize_object_row(row, include_raw)
+        if item is not None:
+            objects.append(item)
 
     artifact_rows = conn.execute(
         """
@@ -673,10 +848,24 @@ def main() -> int:
     import_parser.add_argument("--db", required=True)
     import_parser.add_argument("--report-dir", required=True)
 
+    list_parser = sub.add_parser("list-releases", help="List releases from SQLite.")
+    list_parser.add_argument("--db", required=True)
+    list_parser.add_argument("--limit", type=int, default=50)
+    list_parser.add_argument("--service")
+    list_parser.add_argument("--env")
+    list_parser.add_argument("--release-result")
+
     query_parser = sub.add_parser("query-release", help="Query one release from SQLite.")
     query_parser.add_argument("--db", required=True)
     query_parser.add_argument("--release-id", required=True)
     query_parser.add_argument("--include-raw", action="store_true")
+
+    object_parser = sub.add_parser("get-object", help="Get one evidence object from SQLite.")
+    object_parser.add_argument("--db", required=True)
+    object_parser.add_argument("--object-type", required=True)
+    object_parser.add_argument("--object-id", required=True)
+    object_parser.add_argument("--release-id")
+    object_parser.add_argument("--include-raw", action="store_true")
 
     args = parser.parse_args()
 
@@ -698,8 +887,32 @@ def main() -> int:
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
 
+        if args.command == "list-releases":
+            result = list_releases(
+                conn,
+                args.limit,
+                service=args.service,
+                env=args.env,
+                release_result=args.release_result,
+            )
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
         if args.command == "query-release":
             result = query_release(conn, args.release_id, args.include_raw)
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "get-object":
+            result = get_object(
+                conn,
+                args.object_type,
+                args.object_id,
+                args.release_id,
+                args.include_raw,
+            )
             result["db"] = str(db_path)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
