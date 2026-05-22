@@ -1153,6 +1153,179 @@ def query_verification_summary(
         "items": items,
     }
 
+
+def evidence_object_node_id(object_type: str, object_id: str) -> str:
+    return f"object:{object_type}:{object_id}"
+
+
+def evidence_artifact_node_id(release_id: str, artifact_kind: str, path: str) -> str:
+    return f"artifact:{release_id}:{artifact_kind}:{sha256_text(path)[:16]}"
+
+
+def evidence_source_object_node_id(object_pk: str | None) -> str | None:
+    if not object_pk:
+        return None
+
+    parts = str(object_pk).split(":", 2)
+    if len(parts) != 3:
+        return None
+
+    object_type, _, object_id = parts
+    return evidence_object_node_id(object_type, object_id)
+
+
+def query_evidence_graph(conn: sqlite3.Connection, release_id: str) -> dict[str, Any]:
+    conn.row_factory = sqlite3.Row
+
+    release = normalize_release_row(
+        conn.execute(
+            "SELECT * FROM releases WHERE release_id = ?",
+            (release_id,),
+        ).fetchone()
+    )
+
+    if release is None:
+        raise SystemExit(f"ERROR: release not found: {release_id}")
+
+    object_rows = conn.execute(
+        """
+        SELECT object_type, object_id, release_id, schema_version,
+               source_path, source_mtime, content_sha256, generated_at,
+               imported_at, summary_json, raw_json
+        FROM evidence_objects
+        WHERE release_id = ?
+        ORDER BY object_type, object_id
+        """,
+        (release_id,),
+    ).fetchall()
+
+    artifact_rows = conn.execute(
+        """
+        SELECT release_id, artifact_kind, path, exists_flag, content_type,
+               size_bytes, modified_at, source_object_pk
+        FROM release_artifacts
+        WHERE release_id = ?
+        ORDER BY artifact_kind, path
+        """,
+        (release_id,),
+    ).fetchall()
+
+    verification_summary = query_verification_summary(conn, release_id=release_id, limit=50)
+
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+
+    release_node_id = f"release:{release_id}"
+    nodes.append({
+        "id": release_node_id,
+        "type": "release",
+        "label": release_id,
+        "releaseId": release_id,
+        "data": release,
+    })
+
+    object_nodes_by_key: dict[tuple[str, str], str] = {}
+
+    for row in object_rows:
+        item = normalize_object_row(row, include_raw=False)
+        if item is None:
+            continue
+
+        object_type = str(item.get("object_type") or "")
+        object_id = str(item.get("object_id") or "")
+        node_id = evidence_object_node_id(object_type, object_id)
+        object_nodes_by_key[(object_type, object_id)] = node_id
+
+        nodes.append({
+            "id": node_id,
+            "type": "evidenceObject",
+            "label": object_type,
+            "releaseId": release_id,
+            "objectType": object_type,
+            "objectId": object_id,
+            "schemaVersion": item.get("schema_version"),
+            "data": item,
+        })
+        edges.append({
+            "from": release_node_id,
+            "to": node_id,
+            "type": "containsEvidenceObject",
+        })
+
+    for row in artifact_rows:
+        item = row_to_dict(row) or {}
+        if item.get("exists_flag") is not None:
+            item["exists"] = bool(item.pop("exists_flag"))
+        else:
+            item.pop("exists_flag", None)
+
+        artifact_kind = str(item.get("artifact_kind") or "")
+        artifact_path = str(item.get("path") or "")
+        node_id = evidence_artifact_node_id(release_id, artifact_kind, artifact_path)
+
+        nodes.append({
+            "id": node_id,
+            "type": "artifact",
+            "label": artifact_kind,
+            "releaseId": release_id,
+            "artifactKind": artifact_kind,
+            "path": artifact_path,
+            "data": item,
+        })
+        edges.append({
+            "from": release_node_id,
+            "to": node_id,
+            "type": "hasArtifact",
+        })
+
+        source_node_id = evidence_source_object_node_id(item.get("source_object_pk"))
+        if source_node_id:
+            edges.append({
+                "from": source_node_id,
+                "to": node_id,
+                "type": "emitsArtifact",
+            })
+
+    for item in verification_summary.get("items", []):
+        object_type = str(item.get("objectType") or "")
+        object_id = str(item.get("objectId") or "")
+        source_node_id = object_nodes_by_key.get((object_type, object_id), evidence_object_node_id(object_type, object_id))
+        node_id = f"verification:{release_id}:{object_type}:{object_id}"
+
+        nodes.append({
+            "id": node_id,
+            "type": "verificationSummary",
+            "label": item.get("verificationMode") or "verification",
+            "releaseId": release_id,
+            "objectType": object_type,
+            "objectId": object_id,
+            "data": item,
+        })
+        edges.append({
+            "from": source_node_id,
+            "to": node_id,
+            "type": "hasVerificationSummary",
+        })
+        edges.append({
+            "from": release_node_id,
+            "to": node_id,
+            "type": "hasVerificationSummary",
+        })
+
+    return {
+        "schemaVersion": "evidence.store.graph/v1alpha1",
+        "generatedAt": now_iso(),
+        "releaseId": release_id,
+        "release": release,
+        "objectCount": len(object_rows),
+        "artifactCount": len(artifact_rows),
+        "verificationSummary": verification_summary,
+        "nodeCount": len(nodes),
+        "edgeCount": len(edges),
+        "nodes": nodes,
+        "edges": edges,
+    }
+
 def query_release(conn: sqlite3.Connection, release_id: str, include_raw: bool) -> dict[str, Any]:
     conn.row_factory = sqlite3.Row
 
@@ -1276,6 +1449,10 @@ def main() -> int:
     verification_parser.add_argument("--release-id")
     verification_parser.add_argument("--limit", type=int, default=50)
 
+    graph_parser = sub.add_parser("graph", help="Query release evidence graph.")
+    graph_parser.add_argument("--db", required=True)
+    graph_parser.add_argument("--release-id", required=True)
+
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -1364,6 +1541,12 @@ def main() -> int:
                 release_id=args.release_id,
                 limit=args.limit,
             )
+            result["db"] = str(db_path)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+
+        if args.command == "graph":
+            result = query_evidence_graph(conn, args.release_id)
             result["db"] = str(db_path)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0

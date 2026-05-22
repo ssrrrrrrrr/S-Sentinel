@@ -105,6 +105,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/evidence/artifacts", api.handleEvidenceArtifactList)
 	mux.HandleFunc("/api/evidence/search", api.handleEvidenceSearch)
 	mux.HandleFunc("/api/evidence/verification-summary", api.handleEvidenceVerificationSummary)
+	mux.HandleFunc("/api/evidence/graph", api.handleEvidenceGraph)
 
 	// Backward-compatible Stage41/42 EvidenceStore routes.
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
@@ -517,6 +518,30 @@ func (api *portalAPI) handleEvidenceVerificationSummary(w http.ResponseWriter, r
 	})
 }
 
+func (api *portalAPI) handleEvidenceGraph(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	releaseID := strings.TrimSpace(r.URL.Query().Get("releaseId"))
+	if releaseID == "" {
+		writePortalJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"schemaVersion": "evidence.store.graph.error/v1alpha1",
+			"generatedAt":   time.Now().Format(time.RFC3339),
+			"error":         "releaseId is required",
+			"readOnly":      true,
+			"willExecute":   false,
+		})
+		return
+	}
+
+	api.writeEvidenceRepositoryResponse(w, r, func(repository EvidenceRepository) (*EvidenceRepositoryResponse, error) {
+		return repository.GetGraph(r, EvidenceGraphQuery{
+			ReleaseID: releaseID,
+		})
+	})
+}
+
 func evidencePathSuffix(path string, prefixes ...string) string {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(path, prefix) {
@@ -694,6 +719,7 @@ func (api *portalAPI) handleLatestIndex(w http.ResponseWriter, r *http.Request) 
 		"/api/evidence/artifacts",
 		"/api/evidence/search",
 		"/api/evidence/verification-summary",
+		"/api/evidence/graph",
 		"/api/evidence-store/releases",
 		"/api/evidence-store/releases/{releaseId}",
 		"/api/evidence-store/objects/{objectType}/{objectId}",

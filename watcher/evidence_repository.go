@@ -12,6 +12,7 @@ type EvidenceRepository interface {
 	ListArtifacts(r *http.Request, query EvidenceArtifactListQuery) (*EvidenceRepositoryResponse, error)
 	SearchObjects(r *http.Request, query EvidenceSearchQuery) (*EvidenceRepositoryResponse, error)
 	GetVerificationSummary(r *http.Request, query EvidenceVerificationSummaryQuery) (*EvidenceRepositoryResponse, error)
+	GetGraph(r *http.Request, query EvidenceGraphQuery) (*EvidenceRepositoryResponse, error)
 }
 
 type EvidenceReleaseListQuery struct {
@@ -50,6 +51,10 @@ type EvidenceSearchQuery struct {
 type EvidenceVerificationSummaryQuery struct {
 	ReleaseID string
 	Limit     string
+}
+
+type EvidenceGraphQuery struct {
+	ReleaseID string
 }
 
 type EvidenceRepositoryResponse struct {
@@ -213,6 +218,15 @@ func (repo *CLIEvidenceRepository) GetVerificationSummary(r *http.Request, query
 
 	if releaseID := strings.TrimSpace(query.ReleaseID); releaseID != "" {
 		args = append(args, "--release-id", releaseID)
+	}
+
+	return repo.query(r, args...)
+}
+
+func (repo *CLIEvidenceRepository) GetGraph(r *http.Request, query EvidenceGraphQuery) (*EvidenceRepositoryResponse, error) {
+	args := []string{
+		"graph",
+		"--release-id", strings.TrimSpace(query.ReleaseID),
 	}
 
 	return repo.query(r, args...)

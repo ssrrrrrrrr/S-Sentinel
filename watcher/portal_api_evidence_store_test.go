@@ -194,6 +194,15 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, verificationSummaryBody, "evidence.store.verificationSummary/v1alpha1")
 	assertPortalLatestVerificationMode(t, verificationSummaryBody, "input_derived")
 
+	graphBody := callPortalEvidenceStoreHandler(
+		t,
+		api.handleEvidenceGraph,
+		"/api/evidence/graph?releaseId="+releaseID,
+	)
+	assertPortalSchema(t, graphBody, "evidence.store.graph/v1alpha1")
+	assertPortalNumberAtLeast(t, graphBody, "nodeCount", 3)
+	assertPortalNumberAtLeast(t, graphBody, "edgeCount", 2)
+
 	statusBody := callPortalEvidenceStoreHandler(
 		t,
 		api.handleEvidenceStoreStatus,
@@ -313,6 +322,19 @@ func assertPortalNestedNumber(t *testing.T, body map[string]interface{}, objectK
 
 	if got != expected {
 		t.Fatalf("expected %s.%s=%v, got=%v object=%v", objectKey, valueKey, expected, got, object)
+	}
+}
+
+func assertPortalNumberAtLeast(t *testing.T, body map[string]interface{}, key string, minimum float64) {
+	t.Helper()
+
+	got, ok := body[key].(float64)
+	if !ok {
+		t.Fatalf("expected %s to be a number, got body=%v", key, body)
+	}
+
+	if got < minimum {
+		t.Fatalf("expected %s >= %v, got=%v body=%v", key, minimum, got, body)
 	}
 }
 
