@@ -53,6 +53,22 @@ RESOURCE_SPECS = [
         "id_prefix": "er-",
     },
     {
+        "object_type": "policyInput",
+        "schema_version": "policy.input/v1alpha1",
+        "prefix": "policy-input-",
+        "latest": "policy-input-latest.json",
+        "glob": "policy-input-*.json",
+        "id_prefix": "pi-",
+    },
+    {
+        "object_type": "policyRuntimeResult",
+        "schema_version": "policy.runtime.result/v1alpha1",
+        "prefix": "policy-runtime-result-",
+        "latest": "policy-runtime-result-latest.json",
+        "glob": "policy-runtime-result-*.json",
+        "id_prefix": "prr-",
+    },
+    {
         "object_type": "supplyChainDecision",
         "glob": "supply-chain-decision-*.json",
         "latest": "supply-chain-decision-latest.json",

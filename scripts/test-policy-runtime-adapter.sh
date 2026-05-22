@@ -9,8 +9,8 @@ rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
 AI_DECISION="$TMP_DIR/ai-decision-20260101-000000.json"
-POLICY_INPUT="$TMP_DIR/policy-input.json"
-POLICY_RESULT="$TMP_DIR/policy-runtime-result.json"
+POLICY_INPUT="$TMP_DIR/policy-input-20260101-000000.json"
+POLICY_RESULT="$TMP_DIR/policy-runtime-result-20260101-000000.json"
 POLICY_DECISION="$TMP_DIR/policy-decision-20260101-000000.json"
 
 cat > "$AI_DECISION" <<'JSON'
@@ -136,4 +136,32 @@ print("PASS: PolicyRuntimeAdapter local-python contract is valid")
 PY
 
 echo
+echo
+echo "===== import policy runtime objects into EvidenceStore ====="
+DB_FILE="$TMP_DIR/evidence-store.db"
+./scripts/evidence-store.py init-db --db "$DB_FILE" >/dev/null
+./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$TMP_DIR" > "$TMP_DIR/evidence-store-import.json"
+./scripts/evidence-store.py get-object \
+  --db "$DB_FILE" \
+  --object-type policyRuntimeResult \
+  --object-id prr-20260101-000000 \
+  --release-id 20260101-000000 \
+  > "$TMP_DIR/policy-runtime-object.json"
+
+python3 - "$TMP_DIR/evidence-store-import.json" "$TMP_DIR/policy-runtime-object.json" <<'PY_ASSERT_STORE'
+import json
+import sys
+from pathlib import Path
+
+import_result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+obj = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+
+assert import_result["byType"]["policyInput"] == 1, import_result
+assert import_result["byType"]["policyRuntimeResult"] == 1, import_result
+assert obj["schemaVersion"] == "evidence.store.object/v1alpha1", obj
+assert obj["object"]["object_type"] == "policyRuntimeResult", obj
+assert obj["object"]["object_id"] == "prr-20260101-000000", obj
+print("PASS: PolicyRuntime objects are imported into EvidenceStore")
+PY_ASSERT_STORE
+
 echo "PASS: policy runtime adapter test passed"
