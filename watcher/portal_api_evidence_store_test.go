@@ -141,6 +141,8 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, statusAfterRefreshBody, "evidence.store.status/v1alpha1")
 	assertPortalBool(t, statusAfterRefreshBody, "ready", true)
 	assertPortalLatestReleaseID(t, statusAfterRefreshBody, releaseID)
+	assertPortalNestedNumber(t, statusAfterRefreshBody, "lastImportResult", "releaseCount", 1)
+	assertPortalNestedNumber(t, statusAfterRefreshBody, "lastImportResult", "importedObjects", 1)
 }
 
 func callPortalEvidenceStoreHandler(
@@ -211,5 +213,23 @@ func assertPortalLatestReleaseID(t *testing.T, body map[string]interface{}, expe
 	got, _ := latest["release_id"].(string)
 	if got != expected {
 		t.Fatalf("expected latestRelease.release_id=%s, got=%s body=%v", expected, got, body)
+	}
+}
+
+func assertPortalNestedNumber(t *testing.T, body map[string]interface{}, objectKey string, valueKey string, expected float64) {
+	t.Helper()
+
+	object, ok := body[objectKey].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected %s object, got body=%v", objectKey, body)
+	}
+
+	got, ok := object[valueKey].(float64)
+	if !ok {
+		t.Fatalf("expected %s.%s to be a number, got object=%v", objectKey, valueKey, object)
+	}
+
+	if got != expected {
+		t.Fatalf("expected %s.%s=%v, got=%v object=%v", objectKey, valueKey, expected, got, object)
 	}
 }

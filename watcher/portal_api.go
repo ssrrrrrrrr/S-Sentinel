@@ -242,18 +242,34 @@ func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.R
 
 	dbFile := api.evidenceStoreDBFile()
 	scriptFile := api.evidenceStoreScriptFile()
+	refreshStateFile := api.evidenceStoreRefreshStateFile()
 
 	body := map[string]interface{}{
-		"schemaVersion": "evidence.store.status/v1alpha1",
-		"generatedAt":   time.Now().Format(time.RFC3339),
-		"mode":          "sqlite-adapter",
-		"readOnly":      true,
-		"willExecute":   false,
-		"repoDir":       api.cfg.RepoDir,
-		"reportDir":     api.reportDir,
-		"dbFile":        dbFile,
-		"scriptFile":    scriptFile,
-		"ready":         false,
+		"schemaVersion":    "evidence.store.status/v1alpha1",
+		"generatedAt":      time.Now().Format(time.RFC3339),
+		"mode":             "sqlite-adapter",
+		"readOnly":         true,
+		"willExecute":      false,
+		"repoDir":          api.cfg.RepoDir,
+		"reportDir":        api.reportDir,
+		"dbFile":           dbFile,
+		"scriptFile":       scriptFile,
+		"refreshStateFile": refreshStateFile,
+		"ready":            false,
+	}
+
+	if refreshState, ok, err := api.readEvidenceStoreRefreshState(); err != nil {
+		body["refreshStateError"] = err.Error()
+	} else if ok {
+		body["lastRefresh"] = refreshState
+
+		if importResult, ok := refreshState["importResult"].(map[string]interface{}); ok {
+			body["lastImportResult"] = importResult
+		}
+
+		if generatedAt, ok := refreshState["generatedAt"].(string); ok {
+			body["lastRefreshAt"] = generatedAt
+		}
 	}
 
 	if info, err := os.Stat(api.reportDir); err == nil {
@@ -328,22 +344,33 @@ func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.
 		return
 	}
 
+	generatedAt := time.Now().Format(time.RFC3339)
+	initResult := decodeEvidenceStoreJSON(initOutput)
+	importResult := decodeEvidenceStoreJSON(importOutput)
 	listResult := decodeEvidenceStoreJSON(listOutput)
+	latestRelease := latestEvidenceStoreRelease(listResult)
 
-	writePortalJSON(w, http.StatusOK, map[string]interface{}{
-		"schemaVersion": "evidence.store.refresh/v1alpha1",
-		"generatedAt":   time.Now().Format(time.RFC3339),
-		"mode":          "sqlite-adapter",
-		"readOnly":      true,
-		"willExecute":   false,
-		"repoDir":       api.cfg.RepoDir,
-		"reportDir":     api.reportDir,
-		"dbFile":        dbFile,
-		"initResult":    decodeEvidenceStoreJSON(initOutput),
-		"importResult":  decodeEvidenceStoreJSON(importOutput),
-		"releaseList":   listResult,
-		"latestRelease": latestEvidenceStoreRelease(listResult),
-	})
+	refreshResult := map[string]interface{}{
+		"schemaVersion":    "evidence.store.refresh/v1alpha1",
+		"generatedAt":      generatedAt,
+		"mode":             "sqlite-adapter",
+		"readOnly":         true,
+		"willExecute":      false,
+		"repoDir":          api.cfg.RepoDir,
+		"reportDir":        api.reportDir,
+		"dbFile":           dbFile,
+		"refreshStateFile": api.evidenceStoreRefreshStateFile(),
+		"initResult":       initResult,
+		"importResult":     importResult,
+		"releaseList":      listResult,
+		"latestRelease":    latestRelease,
+	}
+
+	if err := api.writeEvidenceStoreRefreshState(refreshResult); err != nil {
+		refreshResult["refreshStateError"] = err.Error()
+	}
+
+	writePortalJSON(w, http.StatusOK, refreshResult)
 }
 
 func decodeEvidenceStoreJSON(data []byte) map[string]interface{} {
@@ -538,6 +565,51 @@ func (api *portalAPI) evidenceStoreDBFile() string {
 	}
 
 	return filepath.Join(os.TempDir(), "s-sentinel-evidence-store", "portal-evidence-store.db")
+}
+
+func (api *portalAPI) evidenceStoreRefreshStateFile() string {
+	dbFile := api.evidenceStoreDBFile()
+	ext := filepath.Ext(dbFile)
+	if ext == "" {
+		return dbFile + "-refresh.json"
+	}
+
+	return strings.TrimSuffix(dbFile, ext) + "-refresh.json"
+}
+
+func (api *portalAPI) writeEvidenceStoreRefreshState(state map[string]interface{}) error {
+	stateFile := api.evidenceStoreRefreshStateFile()
+
+	if err := os.MkdirAll(filepath.Dir(stateFile), 0755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(stateFile, data, 0644)
+}
+
+func (api *portalAPI) readEvidenceStoreRefreshState() (map[string]interface{}, bool, error) {
+	stateFile := api.evidenceStoreRefreshStateFile()
+
+	data, err := os.ReadFile(stateFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		}
+
+		return nil, false, err
+	}
+
+	state := map[string]interface{}{}
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, false, err
+	}
+
+	return state, true, nil
 }
 
 func (api *portalAPI) writeEvidenceStoreError(w http.ResponseWriter, statusCode int, message string, err error) {
