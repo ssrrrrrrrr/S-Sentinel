@@ -1,0 +1,47 @@
+apiVersion: compiler.ssentinel.io/v1alpha1
+kind: CompilerProfile
+metadata:
+  name: demo-app-compiler-profile
+  service: demo-app
+  namespace: slo-rollout
+  env: "*"
+  labels:
+    app.kubernetes.io/name: demo-app
+    ssentinel.io/component: compiler-profile
+spec:
+  description: "Compiler profile contract for demo-app release rendering."
+  serviceConfig:
+    serviceName: demo-app
+    containerName: demo-app
+    servicePortName: http
+    containerPort: 8080
+    health:
+      readinessPath: /healthz
+      livenessPath: /healthz
+  runtimeProfile:
+    runtimeType: container
+    replicas: 3
+    revisionHistoryLimit: 3
+    imagePullPolicy: IfNotPresent
+    demoRuntimeKnobs:
+      - VERSION
+      - RELEASE_TAG
+      - FAULT_RATE
+      - LATENCY_MS
+  metricBinding:
+    provider: prometheus
+    bindingSource: SLOConfig.spec.observability.prometheus
+    supportedObjectiveTypes:
+      - request_count
+      - error_rate
+      - latency
+  rendererRefs:
+    rolloutTemplate: argo-rollouts-canary-v1
+    analysisTemplateRenderer: prometheus-analysis-template-v1
+    prometheusRuleRenderer: prometheus-rule-v1
+    environmentOverlayRenderer: kustomize-overlay-v1
+  guardrails:
+    readOnly: true
+    willExecute: false
+    profileModelOnly: true
+    doesNotChangeRenderedManifests: true

@@ -26,6 +26,10 @@ spec:
     profile: staging
     reportDir: docs/release-reports
     evidenceRetention: local
+  compiler:
+    defaultProfile: demo-app-compiler-profile
+    profileRefs:
+      - configs/compiler-profiles/demo-app.profile.yaml
   slo:
     defaultProfile: demo-app-canary-slo
     configRefs:

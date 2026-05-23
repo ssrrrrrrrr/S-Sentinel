@@ -10,6 +10,7 @@ APP_VERSION="v36"
 FAULT_RATE="0"
 LATENCY_MS="0"
 OUTPUT_DIR="build/compiled"
+COMPILER_PROFILE=""
 
 REGISTRY="${REGISTRY:-192.168.30.11:30500}"
 IMAGE_NAME="${IMAGE_NAME:-}"
@@ -42,6 +43,7 @@ Options:
   --fault-rate VALUE        Demo fault rate. Default: 0
   --latency-ms VALUE        Demo latency ms. Default: 0
   --output-dir DIR          Output root directory. Default: build/compiled
+  --compiler-profile PATH   Optional CompilerProfile override. Default: EnvironmentConfig spec.compiler.defaultProfile
   -h, --help                Show help
 
 Environment:
@@ -90,6 +92,10 @@ while [ $# -gt 0 ]; do
       OUTPUT_DIR="${2:?missing value for --output-dir}"
       shift 2
       ;;
+    --compiler-profile)
+      COMPILER_PROFILE="${2:?missing value for --compiler-profile}"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -102,7 +108,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-"$PYTHON_BIN" - "$ROOT_DIR" "$ENV_NAME" "$SERVICE" "$IMAGE_TAG" "$APP_VERSION" "$FAULT_RATE" "$LATENCY_MS" "$OUTPUT_DIR" "$REGISTRY" "$IMAGE_NAME" "$PROMETHEUS_ADDR" "$PROMETHEUS_RULE_NAMESPACE" <<'PY'
+"$PYTHON_BIN" - "$ROOT_DIR" "$ENV_NAME" "$SERVICE" "$IMAGE_TAG" "$APP_VERSION" "$FAULT_RATE" "$LATENCY_MS" "$OUTPUT_DIR" "$REGISTRY" "$IMAGE_NAME" "$PROMETHEUS_ADDR" "$PROMETHEUS_RULE_NAMESPACE" "$COMPILER_PROFILE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -129,6 +135,7 @@ registry = sys.argv[9]
 image_name = sys.argv[10]
 prometheus_addr = sys.argv[11]
 prometheus_rule_namespace = sys.argv[12]
+compiler_profile_arg = sys.argv[13]
 
 if not output_root.is_absolute():
     output_root = root / output_root
@@ -405,6 +412,37 @@ if not service:
 strategy_service = config_service(strategy_doc)
 if strategy_service and strategy_service != service:
     raise SystemExit(f"ERROR: strategy service mismatch: expected {service}, got {strategy_service}")
+
+compiler_profile_refs = env_spec.get("compiler", {}).get("profileRefs") or []
+compiler_default_profile = env_spec.get("compiler", {}).get("defaultProfile")
+if compiler_profile_arg:
+    compiler_profile_refs = [compiler_profile_arg]
+    compiler_default_profile = None
+
+compiler_profile_ref: str | None = None
+compiler_profile_doc: dict[str, Any] = {}
+compiler_profile_spec: dict[str, Any] = {}
+
+if compiler_profile_refs:
+    compiler_profile_ref, compiler_profile_doc = select_config(
+        compiler_profile_refs,
+        compiler_default_profile,
+        "CompilerProfile",
+    )
+    compiler_profile_service = config_service(compiler_profile_doc)
+    if compiler_profile_service and compiler_profile_service != service:
+        raise SystemExit(
+            f"ERROR: compiler profile service mismatch: expected {service}, got {compiler_profile_service}"
+        )
+    compiler_profile_spec = compiler_profile_doc.get("spec") or {}
+
+compiler_profile_guardrails = dict(compiler_profile_spec.get("guardrails") or {})
+compiler_profile_guardrails.update({
+    "profileModelOnly": True,
+    "doesNotChangeRenderedManifests": True,
+    "doesNotApplyKubernetes": True,
+    "doesNotCommitOrPush": True,
+})
 
 slo_spec = slo_doc.get("spec") or {}
 runtime_spec = slo_spec.get("runtime") or {}
@@ -686,6 +724,14 @@ source_config_refs = {
     },
 }
 
+if compiler_profile_ref:
+    source_config_refs["compilerProfile"] = {
+        "path": compiler_profile_ref,
+        "kind": compiler_profile_doc.get("kind"),
+        "name": config_name(compiler_profile_doc),
+        "service": config_service(compiler_profile_doc),
+    }
+
 hardcode_inventory = {
     "schemaVersion": "ssentinel.hardcode-inventory/v1alpha1",
     "status": "known_demo_bindings_present",
@@ -732,9 +778,22 @@ rendered_release_plan = {
         "environmentConfigRef": env_ref,
         "sloConfigRef": slo_ref,
         "strategyConfigRef": strategy_ref,
+        "compilerProfileRef": compiler_profile_ref,
         "overlayPath": overlay_path,
     },
     "sourceConfigRefs": source_config_refs,
+    "compilerProfile": {
+        "enabled": bool(compiler_profile_doc),
+        "profileId": config_name(compiler_profile_doc) if compiler_profile_doc else None,
+        "profileRef": compiler_profile_ref,
+        "apiVersion": compiler_profile_doc.get("apiVersion"),
+        "kind": compiler_profile_doc.get("kind"),
+        "serviceConfig": compiler_profile_spec.get("serviceConfig") or {},
+        "runtimeProfile": compiler_profile_spec.get("runtimeProfile") or {},
+        "metricBinding": compiler_profile_spec.get("metricBinding") or {},
+        "rendererRefs": compiler_profile_spec.get("rendererRefs") or {},
+        "guardrails": compiler_profile_guardrails,
+    },
     "hardcodeInventory": hardcode_inventory,
     "slo": {
         "sloId": config_name(slo_doc),
