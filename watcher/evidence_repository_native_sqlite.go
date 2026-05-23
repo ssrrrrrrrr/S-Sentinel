@@ -650,6 +650,11 @@ func (repo *NativeSQLiteEvidenceRepository) openReadOnlyDB() (string, *sql.DB, e
 		return "", nil, repo.queryError("open sqlite database", err)
 	}
 
+	if err := repo.verifySchemaCompatible(db); err != nil {
+		db.Close()
+		return "", nil, err
+	}
+
 	return dbFile, db, nil
 }
 

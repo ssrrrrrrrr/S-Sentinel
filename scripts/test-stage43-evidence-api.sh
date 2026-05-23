@@ -148,6 +148,14 @@ grep -q "mutatesLocalEvidenceIndex" watcher/evidence_service.go
 grep -q "nativeSQLiteRepository" watcher/evidence_service.go
 grep -q "repositoryDescriptor.SupportsNativeSQLite" watcher/evidence_service.go
 grep -q "repositoryDescriptor.SupportsRemoteAPI" watcher/evidence_service.go
+grep -q "schemaContract" watcher/evidence_service.go
+grep -q "schemaHealth" watcher/evidence_service.go
+grep -q "expectedEvidenceStoreSchemaID" watcher/evidence_schema_guard.go
+grep -q "evidence.store.schemaHealth/v1alpha1" watcher/evidence_schema_guard.go
+grep -q "evidence.store.schemaContract/v1alpha1" watcher/evidence_schema_guard.go
+grep -q "verifySchemaCompatible" watcher/evidence_schema_guard.go
+grep -q "PRAGMA user_version" watcher/evidence_schema_guard.go
+grep -q "evidence_schema_migrations" watcher/evidence_schema_guard.go
 grep -q "writeEvidenceStoreErrorWithOperation" watcher/portal_api.go
 
 grep -q "controlPlane" docs/release-portal-api.md

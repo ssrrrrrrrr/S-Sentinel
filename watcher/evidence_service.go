@@ -192,6 +192,7 @@ func (svc *EvidenceService) ControlPlaneMetadataForOperation(
 		"doesNotModifyGitOps":       true,
 		"doesNotTriggerRollout":     true,
 		"mutatesLocalEvidenceIndex": mutatesLocalEvidenceIndex,
+		"schemaContract":            svc.schemaContract(),
 		"mutationSemantics": map[string]interface{}{
 			"doesNotModifyCluster":      true,
 			"doesNotModifyGitOps":       true,
@@ -232,7 +233,13 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 		"pythonRuntime":             svc.runtime.PythonBin(),
 		"refreshStateFile":          refreshStateFile,
 		"ready":                     false,
+		"schemaContract":            svc.schemaContract(),
 	}
+
+	schemaHealth := svc.schemaHealth(ctx)
+	body["schemaHealth"] = schemaHealth
+	body["schemaCompatible"] = schemaHealth["compatible"]
+	body["schemaReady"] = schemaHealth["ready"]
 
 	if refreshState, ok, err := svc.readRefreshState(); err != nil {
 		body["refreshStateError"] = err.Error()

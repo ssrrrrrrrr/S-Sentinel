@@ -305,6 +305,32 @@ CREATE TABLE release_artifacts (
 		t.Fatalf("create sqlite schema: %v", err)
 	}
 
+	// seed sqlite schema migration state required by native read guard
+	_, err = db.Exec(`
+PRAGMA user_version = 1;
+
+CREATE TABLE IF NOT EXISTS evidence_schema_migrations (
+  migration_id TEXT PRIMARY KEY,
+  schema_version TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  description TEXT,
+  applied_at TEXT NOT NULL
+);
+
+INSERT OR REPLACE INTO evidence_schema_migrations (
+  migration_id, schema_version, version, description, applied_at
+) VALUES (
+  '001_initial_evidence_store',
+  'evidence.store.sqlite/v1alpha1',
+  1,
+  'Create initial EvidenceStore release, object, artifact, and schema metadata tables.',
+  '2026-01-01T00:00:00Z'
+);
+`)
+	if err != nil {
+		t.Fatalf("seed sqlite schema migration state: %v", err)
+	}
+
 	_, err = db.Exec(
 		`
 INSERT INTO releases (
