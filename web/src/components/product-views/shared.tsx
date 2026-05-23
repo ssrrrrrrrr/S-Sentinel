@@ -23,20 +23,20 @@ export function RuleChipsPanel({ rules }: { rules?: string[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
         当前 Evidence 没有命中的策略规则。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <h4 className="text-sm font-semibold text-slate-900">命中的策略规则</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+      <h4 className="text-sm font-semibold text-slate-100">命中的策略规则</h4>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.map((rule) => (
           <span
             key={rule}
-            className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-mono text-xs font-semibold text-cyan-800"
+            className="rounded-full border border-[#35517a] bg-[#101a29] px-3 py-1 font-mono text-xs font-semibold text-sky-200"
           >
             {rule}
           </span>
@@ -51,22 +51,22 @@ export function FailedMetricsPanel({ metrics }: { metrics?: unknown[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+      <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-200">
         没有失败的 SLO 指标，当前发布通过门禁。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-rose-200 bg-rose-50">
-      <div className="border-b border-rose-200 px-4 py-3">
-        <h4 className="text-sm font-semibold text-rose-900">失败的 SLO 指标</h4>
+    <div className="rounded-xl border border-rose-900/45 bg-rose-950/20">
+      <div className="border-b border-rose-900/45 px-4 py-3">
+        <h4 className="text-sm font-semibold text-rose-200">失败的 SLO 指标</h4>
       </div>
-      <div className="divide-y divide-rose-200">
+      <div className="divide-y divide-rose-900/45">
         {items.map((metric, index) => (
           <pre
             key={index}
-            className="overflow-auto whitespace-pre-wrap px-4 py-3 text-xs leading-6 text-rose-900"
+            className="overflow-auto whitespace-pre-wrap px-4 py-3 text-xs leading-6 text-rose-200"
           >
             {stringifyValue(metric)}
           </pre>
@@ -262,5 +262,3 @@ export function markdownContainsAny(body: string, keywords: string[]) {
   const lower = body.toLowerCase()
   return keywords.some((keyword) => lower.includes(keyword.toLowerCase()))
 }
-
-
