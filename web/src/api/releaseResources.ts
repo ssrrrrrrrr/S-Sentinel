@@ -1,4 +1,6 @@
-﻿export type ReleaseResourceKind =
+﻿import { getReleaseResourceKindByTab } from "@/config/releaseTabs"
+
+export type ReleaseResourceKind =
   | "summary"
   | "evidence"
   | "action-plan"
@@ -18,21 +20,8 @@ export type ReleaseResourceContent = {
   body: string
 }
 
-const resourcePathByTab: Record<string, ReleaseResourceKind> = {
-  "概览": "summary",
-  Timeline: "timeline",
-  Evidence: "evidence",
-  "Action Plan": "action-plan",
-  Intelligence: "intelligence",
-  Runbook: "runbook",
-  RCA: "rca",
-  "Advisor Trace": "advice",
-  "AI Advice": "advice",
-  Context: "context",
-}
-
 export function getResourceKindByTab(tab: string): ReleaseResourceKind {
-  return resourcePathByTab[tab] ?? "summary"
+  return getReleaseResourceKindByTab(tab)
 }
 
 export function isMarkdownContent(contentType: string) {
@@ -75,5 +64,3 @@ export async function fetchReleaseResource(
     body,
   }
 }
-
-

@@ -1,5 +1,6 @@
 ﻿import type { UseQueryResult } from "@tanstack/react-query"
 import type { ReleaseResourceContent } from "@/api/releaseResources"
+import { getPortalRouteByReleaseTab } from "@/config/releaseTabs"
 import { PortalInformationArchitecture } from "@/components/layout/PortalInformationArchitecture"
 import { RoutePageHeader, type RouteHeaderBadgeTone } from "@/components/layout/RoutePageHeader"
 import { StageBanner } from "@/components/layout/StageBanner"
@@ -101,32 +102,10 @@ export function PortalRouteRenderer({
   evidenceQuery: UseQueryResult<ReleaseResourceContent, Error>
   releaseCount: number
 }) {
-  function routeForTab(tab: string): PortalRoute | null {
-    switch (tab) {
-      case "Evidence":
-        return "Evidence"
-      case "Context":
-        return "Environment"
-      case "Advisor Trace":
-      case "AI Advice":
-      case "Intelligence":
-        return "Agent Trace"
-      case "Action Plan":
-        return "Approval"
-      case "Runbook":
-      case "RCA":
-      case "Timeline":
-      case "概览":
-        return "Releases"
-      default:
-        return null
-    }
-  }
-
   function handleRouteAwareTabChange(tab: string) {
     onTabChange(tab)
 
-    const nextRoute = routeForTab(tab)
+    const nextRoute = getPortalRouteByReleaseTab(tab)
     if (nextRoute) {
       onRouteChange(nextRoute)
     }
@@ -273,6 +252,7 @@ export function PortalRouteRenderer({
       return null
   }
 }
+
 
 
 
