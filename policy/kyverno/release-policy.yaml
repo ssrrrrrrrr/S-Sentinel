@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: ssentinel-release-policy-preview
+  annotations:
+    ssentinel.io/runtime: kyverno-cli
+    ssentinel.io/stage: "45.3"
+    ssentinel.io/input-contract: policy.input/v1alpha1
+    ssentinel.io/output-contract: release.policy.evaluator/v1alpha1
+    ssentinel.io/status: preview-only
+spec:
+  validationFailureAction: Audit
+  background: false
+  rules:
+    - name: preview-policy-runtime-contract
+      match:
+        any:
+          - resources:
+              kinds:
+                - ConfigMap
+      validate:
+        message: "S Sentinel Kyverno runtime is registered as preview-only in Stage45.3."
+        pattern:
+          metadata:
+            annotations:
+              ssentinel.io/policy-runtime: "?*"

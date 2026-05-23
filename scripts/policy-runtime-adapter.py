@@ -78,6 +78,19 @@ POLICY_RUNTIME_REGISTRY: dict[str, dict[str, Any]] = {
         "previewOnly": True,
         "externalDependency": True,
         "requiredBinary": "kyverno",
+        "policyBundleRef": "policy/kyverno",
+        "policyFile": "policy/kyverno/release-policy.yaml",
+        "entrypoint": "ClusterPolicy/ssentinel-release-policy-preview",
+        "inputContract": "policy.input/v1alpha1",
+        "outputContract": "release.policy.evaluator/v1alpha1",
+        "commandPreviewTemplate": [
+            "kyverno",
+            "apply",
+            "policy/kyverno",
+            "--resource",
+            "${POLICY_INPUT}",
+            "--policy-report"
+        ],
         "description": "Preview-only Kyverno CLI policy runtime placeholder.",
     },
     "validating-admission-policy-sim": {
