@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 )
 
-func TestEvidenceRepositoryFactoryDefaultAndNativeSQLitePlaceholder(t *testing.T) {
+func TestEvidenceRepositoryFactoryDefaultAndNativeSQLite(t *testing.T) {
 	t.Setenv("S_SENTINEL_EVIDENCE_REPOSITORY_MODE", "")
 
 	runtime := NewCLIEvidenceRuntime(t.TempDir())
@@ -22,26 +25,200 @@ func TestEvidenceRepositoryFactoryDefaultAndNativeSQLitePlaceholder(t *testing.T
 	nativeRepo := NewEvidenceRepositoryForRuntime(runtime)
 	nativeDescriptor := nativeRepo.Descriptor()
 
-	if nativeDescriptor.RepositoryType != "native-sqlite-disabled" {
-		t.Fatalf("expected native repositoryType=native-sqlite-disabled, got %s", nativeDescriptor.RepositoryType)
+	if nativeDescriptor.RepositoryType != "native-sqlite" {
+		t.Fatalf("expected native repositoryType=native-sqlite, got %s", nativeDescriptor.RepositoryType)
 	}
 
-	if nativeDescriptor.Mode != "native-sqlite-repository-disabled" {
-		t.Fatalf("expected native mode=native-sqlite-repository-disabled, got %s", nativeDescriptor.Mode)
+	if nativeDescriptor.Mode != "native-sqlite-repository" {
+		t.Fatalf("expected native mode=native-sqlite-repository, got %s", nativeDescriptor.Mode)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/evidence/releases?limit=1", nil)
-	_, err := nativeRepo.ListReleases(req, EvidenceReleaseListQuery{Limit: "1"})
-	if err == nil {
-		t.Fatal("expected native sqlite placeholder to reject query")
+	if !nativeDescriptor.SupportsNativeSQLite {
+		t.Fatal("expected native repository to advertise SupportsNativeSQLite=true")
+	}
+}
+
+func TestNativeSQLiteEvidenceRepositoryListReleasesAndGetObject(t *testing.T) {
+	dbFile := createNativeSQLiteTestDB(t)
+
+	t.Setenv("S_SENTINEL_EVIDENCE_STORE_DB", dbFile)
+	t.Setenv("S_SENTINEL_EVIDENCE_REPOSITORY_MODE", "native-sqlite")
+
+	runtime := NewCLIEvidenceRuntime(t.TempDir())
+	repo := NewEvidenceRepositoryForRuntime(runtime)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/evidence/releases?limit=10", nil)
+
+	listResponse, err := repo.ListReleases(req, EvidenceReleaseListQuery{Limit: "10"})
+	if err != nil {
+		t.Fatalf("native list releases failed: %v", err)
 	}
 
-	repositoryErr, ok := err.(*EvidenceRepositoryError)
+	if listResponse.Repository.RepositoryType != "native-sqlite" {
+		t.Fatalf("expected native repository response, got %s", listResponse.Repository.RepositoryType)
+	}
+
+	listBody := map[string]interface{}{}
+	if err := json.Unmarshal(listResponse.Body, &listBody); err != nil {
+		t.Fatalf("decode native list response: %v", err)
+	}
+
+	assertPortalSchema(t, listBody, "evidence.store.releaseList/v1alpha1")
+	assertPortalNumberAtLeast(t, listBody, "count", 1)
+
+	items, ok := listBody["items"].([]interface{})
+	if !ok || len(items) != 1 {
+		t.Fatalf("expected one release item, got %#v", listBody["items"])
+	}
+
+	objectResponse, err := repo.GetObject(req, EvidenceObjectQuery{
+		ObjectType: "releaseEvidence",
+		ObjectID:   "re-20260101-000000",
+		ReleaseID:  "20260101-000000",
+		IncludeRaw: true,
+	})
+	if err != nil {
+		t.Fatalf("native get object failed: %v", err)
+	}
+
+	objectBody := map[string]interface{}{}
+	if err := json.Unmarshal(objectResponse.Body, &objectBody); err != nil {
+		t.Fatalf("decode native object response: %v", err)
+	}
+
+	assertPortalSchema(t, objectBody, "evidence.store.object/v1alpha1")
+
+	object, ok := objectBody["object"].(map[string]interface{})
 	if !ok {
-		t.Fatalf("expected EvidenceRepositoryError, got %T", err)
+		t.Fatalf("expected object body, got %#v", objectBody["object"])
 	}
 
-	if repositoryErr.StatusCode != http.StatusNotImplemented {
-		t.Fatalf("expected HTTP 501, got %d", repositoryErr.StatusCode)
+	summary, ok := object["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected object.summary, got %#v", object["summary"])
 	}
+
+	if summary["releaseResult"] != "PASS" {
+		t.Fatalf("expected summary.releaseResult=PASS, got %#v", summary["releaseResult"])
+	}
+
+	raw, ok := object["raw"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected object.raw, got %#v", object["raw"])
+	}
+
+	if raw["schemaVersion"] != "release.evidence.bundle/v1alpha1" {
+		t.Fatalf("expected raw schemaVersion, got %#v", raw["schemaVersion"])
+	}
+}
+
+func createNativeSQLiteTestDB(t *testing.T) string {
+	t.Helper()
+
+	dbFile := filepath.Join(t.TempDir(), "evidence-store.db")
+
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite test db: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`
+CREATE TABLE releases (
+  release_id TEXT PRIMARY KEY,
+  service TEXT,
+  namespace TEXT,
+  env TEXT,
+  version TEXT,
+  commit_sha TEXT,
+  image TEXT,
+  image_digest TEXT,
+  release_result TEXT,
+  policy_decision TEXT,
+  final_action TEXT,
+  risk_level TEXT,
+  risk_score REAL,
+  requires_human_approval INTEGER,
+  generated_at TEXT,
+  first_seen_at TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL
+);
+
+CREATE TABLE evidence_objects (
+  object_pk TEXT PRIMARY KEY,
+  object_type TEXT NOT NULL,
+  object_id TEXT NOT NULL,
+  release_id TEXT NOT NULL,
+  schema_version TEXT,
+  source_path TEXT NOT NULL,
+  source_mtime TEXT,
+  content_sha256 TEXT NOT NULL,
+  generated_at TEXT,
+  imported_at TEXT NOT NULL,
+  summary_json TEXT NOT NULL,
+  raw_json TEXT NOT NULL
+);
+`)
+	if err != nil {
+		t.Fatalf("create sqlite schema: %v", err)
+	}
+
+	_, err = db.Exec(
+		`
+INSERT INTO releases (
+  release_id, service, namespace, env, version, commit_sha, image, image_digest,
+  release_result, policy_decision, final_action, risk_level, risk_score,
+  requires_human_approval, generated_at, first_seen_at, last_seen_at
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`,
+		"20260101-000000",
+		"demo-app",
+		"slo-rollout",
+		"dev",
+		nil,
+		nil,
+		nil,
+		nil,
+		"PASS",
+		"ALLOW",
+		"NOOP",
+		"low",
+		0,
+		0,
+		"2026-01-01T00:00:00Z",
+		"2026-01-01T00:00:00Z",
+		"2026-01-01T00:00:00Z",
+	)
+	if err != nil {
+		t.Fatalf("insert release: %v", err)
+	}
+
+	_, err = db.Exec(
+		`
+INSERT INTO evidence_objects (
+  object_pk, object_type, object_id, release_id, schema_version,
+  source_path, source_mtime, content_sha256, generated_at,
+  imported_at, summary_json, raw_json
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`,
+		"releaseEvidence:20260101-000000:re-20260101-000000",
+		"releaseEvidence",
+		"re-20260101-000000",
+		"20260101-000000",
+		"release.evidence.bundle/v1alpha1",
+		"/tmp/release-evidence-20260101-000000.json",
+		"2026-01-01T00:00:00Z",
+		"sha256-test",
+		"2026-01-01T00:00:00Z",
+		"2026-01-01T00:00:00Z",
+		`{"releaseResult":"PASS","riskLevel":"low"}`,
+		`{"schemaVersion":"release.evidence.bundle/v1alpha1","releaseResult":"PASS"}`,
+	)
+	if err != nil {
+		t.Fatalf("insert evidence object: %v", err)
+	}
+
+	return dbFile
 }
