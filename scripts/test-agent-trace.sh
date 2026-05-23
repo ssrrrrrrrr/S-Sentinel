@@ -260,7 +260,7 @@ grep -q 'Running agent trace builder' scripts/ai-release-advisor.sh
 grep -q 'build-agent-trace.sh failed' scripts/ai-release-advisor.sh
 grep -q '"object_type": "agentTrace"' scripts/evidence-store.py
 grep -q 'agent.trace/v1alpha1' scripts/evidence-store.py
-grep -q 'agent-trace-*.json' scripts/evidence-store.py
+grep -Fq 'agent-trace-*.json' scripts/evidence-store.py
 echo "PASS: ai-release-advisor agent trace integration is wired"
 
 echo "PASS: agent trace test passed"

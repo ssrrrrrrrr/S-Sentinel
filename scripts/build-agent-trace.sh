@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 REPORT_DIR="${RELEASE_REPORT_DIR:-docs/release-reports}"
 OUTPUT_DIR="${AGENT_TRACE_OUTPUT_DIR:-$REPORT_DIR}"
 OUTPUT_FILE="${AGENT_TRACE_OUTPUT_FILE:-}"
@@ -14,11 +16,16 @@ Environment:
   RELEASE_REPORT_DIR          Optional report directory.
   AGENT_TRACE_OUTPUT_DIR      Optional output directory.
   AGENT_TRACE_OUTPUT_FILE     Optional exact output file.
+  AGENT_OTEL_AUTO_BUILD       Optional toggle. Defaults to true. Set false to skip local OTel span bundle generation.
+  AGENT_OTEL_OUTPUT_DIR       Optional OTel span bundle output directory. Defaults to AGENT_TRACE_OUTPUT_DIR.
+  AGENT_OTEL_OUTPUT_FILE      Optional exact OTel span bundle output file.
 
 Behavior:
   - Reads ai-decision-*.json as the trace anchor.
   - Optionally links policy-decision, policy-runtime-result, signed-release-gate, and release-evidence files with the same release suffix.
   - Generates agent-trace-*.json and agent-trace-latest.json.
+  - Best-effort local OTel span bundle generation via build-agent-otel-spans.sh.
+  - OTel generation is local-file-only and does not call external collectors.
   - Read-only only: does not modify Kubernetes, GitOps, images, commits, or pushes.
 USAGE
 }
@@ -323,3 +330,26 @@ print(json.dumps({
     "signedReleaseGateDecision": trace["signedReleaseGateTrace"]["decision"],
 }, ensure_ascii=False, indent=2))
 PY
+
+if [ "${AGENT_OTEL_AUTO_BUILD:-true}" != "false" ]; then
+  AGENT_OTEL_BUILDER="${SCRIPT_DIR}/build-agent-otel-spans.sh"
+
+  if [ -x "$AGENT_OTEL_BUILDER" ]; then
+    OTEL_BUILD_LOG="/tmp/ssentinel-agent-otel-build-output.$$"
+
+    AGENT_OTEL_OUTPUT_DIR="${AGENT_OTEL_OUTPUT_DIR:-$OUTPUT_DIR}" \
+    RELEASE_REPORT_DIR="$OUTPUT_DIR" \
+    "$AGENT_OTEL_BUILDER" latest >"$OTEL_BUILD_LOG" 2>&1 || {
+      echo "WARN: build-agent-otel-spans.sh failed, continue agent trace pipeline" >&2
+      cat "$OTEL_BUILD_LOG" >&2 || true
+      rm -f "$OTEL_BUILD_LOG"
+      exit 0
+    }
+
+    cat "$OTEL_BUILD_LOG" >&2 || true
+    rm -f "$OTEL_BUILD_LOG"
+  else
+    echo "WARN: agent OTel span bundle builder not found, skip OTel span bundle generation: $AGENT_OTEL_BUILDER" >&2
+  fi
+fi
+
