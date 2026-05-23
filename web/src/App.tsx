@@ -7,6 +7,7 @@ import {
 } from "@/api/releaseResources"
 import { DashboardHeader } from "@/components/layout/DashboardHeader"
 import { PortalInformationArchitecture } from "@/components/layout/PortalInformationArchitecture"
+import { PortalState } from "@/components/layout/PortalState"
 import { StageBanner } from "@/components/layout/StageBanner"
 import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObjectCards"
 import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
@@ -87,17 +88,11 @@ function App() {
         />
 
         {isLoading ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600 shadow-sm">
-            正在加载 Release Portal API 数据...
-          </section>
+          <PortalState kind="loading" />
         ) : hasError ? (
-          <section className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-sm text-rose-700 shadow-sm">
-            Release Portal API 读取失败。请确认虚拟机 port-forward 仍在运行，并且 Vite proxy 指向 http://192.168.30.11:18090。
-          </section>
+          <PortalState kind="error" />
         ) : !selected || !selectedSummary ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600 shadow-sm">
-            当前没有可展示的发布记录。
-          </section>
+          <PortalState kind="empty" />
         ) : (
           <>
             <ReleaseMetricGrid selected={selected} />
