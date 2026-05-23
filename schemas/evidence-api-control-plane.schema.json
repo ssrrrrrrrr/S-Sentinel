@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/evidence-api-control-plane.schema.json",
+  "title": "S Sentinel Evidence API Control Plane Metadata",
+  "description": "Control-plane metadata injected into Evidence API success and error responses.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "apiVersion",
+    "contractVersion",
+    "generatedAt",
+    "generatedBy",
+    "operation",
+    "service",
+    "runtime",
+    "repository",
+    "paths",
+    "capabilities",
+    "runtimeMode",
+    "repositoryType",
+    "repositoryMode",
+    "repositoryContract",
+    "readOnly",
+    "willExecute",
+    "doesNotModifyCluster",
+    "doesNotModifyGitOps",
+    "doesNotTriggerRollout",
+    "mutatesLocalEvidenceIndex",
+    "mutationSemantics"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "evidence.api.controlPlane/v1alpha1"
+    },
+    "apiVersion": {
+      "type": "string",
+      "const": "s-sentinel.io/evidence-api/v1alpha1"
+    },
+    "contractVersion": {
+      "type": "string",
+      "const": "evidence.api.response/v1alpha1"
+    },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "generatedBy": {
+      "type": "string",
+      "const": "s-sentinel-evidence-api"
+    },
+    "operation": {
+      "type": "string",
+      "enum": ["query", "status", "refresh", "query-error"]
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name",
+        "schemaVersion",
+        "contractVersion",
+        "role",
+        "readOnly",
+        "willExecute",
+        "doesNotModifyCluster",
+        "doesNotModifyGitOps",
+        "doesNotTriggerRollout"
+      ]
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "dbFile": { "type": "string" },
+    "runtimeMode": { "type": "string", "minLength": 1 },
+    "repositoryType": { "type": "string", "minLength": 1 },
+    "repositoryMode": { "type": "string", "minLength": 1 },
+    "repositoryContract": {
+      "type": "string",
+      "const": "evidence.repository/v1alpha1"
+    },
+    "readOnly": { "type": "boolean" },
+    "willExecute": { "type": "boolean" },
+    "doesNotModifyCluster": { "type": "boolean" },
+    "doesNotModifyGitOps": { "type": "boolean" },
+    "doesNotTriggerRollout": { "type": "boolean" },
+    "mutatesLocalEvidenceIndex": { "type": "boolean" },
+    "mutationSemantics": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "doesNotModifyCluster",
+        "doesNotModifyGitOps",
+        "doesNotTriggerRollout",
+        "mutatesLocalEvidenceIndex"
+      ],
+      "properties": {
+        "doesNotModifyCluster": { "type": "boolean" },
+        "doesNotModifyGitOps": { "type": "boolean" },
+        "doesNotTriggerRollout": { "type": "boolean" },
+        "mutatesLocalEvidenceIndex": { "type": "boolean" }
+      }
+    }
+  }
+}

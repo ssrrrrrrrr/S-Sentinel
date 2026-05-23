@@ -135,6 +135,142 @@ grep -q "evidence.api.response/v1alpha1" scripts/validate-release-portal-api.sh
 grep -q "cli-sqlite-runtime" scripts/validate-release-portal-api.sh
 grep -q "evidence.repository/v1alpha1" scripts/validate-release-portal-api.sh
 
+grep -q "evidence.api.controlPlane/v1alpha1" schemas/evidence-api-control-plane.schema.json
+grep -q "evidence.runtime/v1alpha1" schemas/evidence-runtime.schema.json
+grep -q "evidence.repository/v1alpha1" schemas/evidence-repository.schema.json
+
+echo "===== evidence api schema contracts ====="
+"$PYTHON_BIN" - <<'PY_SCHEMA_CONTRACT'
+import json
+from pathlib import Path
+
+schema_files = {
+    "controlPlane": Path("schemas/evidence-api-control-plane.schema.json"),
+    "runtime": Path("schemas/evidence-runtime.schema.json"),
+    "repository": Path("schemas/evidence-repository.schema.json"),
+}
+
+schemas = {}
+for name, path in schema_files.items():
+    schemas[name] = json.loads(path.read_text(encoding="utf-8"))
+    if schemas[name].get("type") != "object":
+        raise SystemExit(f"{path}: expected object schema")
+    if not schemas[name].get("required"):
+        raise SystemExit(f"{path}: expected required fields")
+
+runtime = {
+    "runtimeId": "cli-sqlite",
+    "runtimeType": "cli-backed-sqlite",
+    "mode": "cli-sqlite-runtime",
+    "legacyMode": "sqlite-adapter",
+    "backend": "sqlite",
+    "adapter": "python-cli",
+    "storage": "local-file",
+    "queryModel": "read-through-cli",
+    "contractVersion": "evidence.runtime/v1alpha1",
+    "readOnly": True,
+    "willExecute": False,
+    "supportsRefresh": True,
+    "supportsSearch": True,
+    "supportsGraph": True,
+    "supportsVerificationSummary": True,
+    "supportsNativeSQLite": False,
+    "supportsRemoteApi": False,
+}
+
+repository = {
+    "repositoryId": "cli-evidence-repository",
+    "repositoryType": "cli-backed",
+    "mode": "cli-repository",
+    "runtimeMode": "cli-sqlite-runtime",
+    "backend": "sqlite",
+    "adapter": "python-cli",
+    "storage": "local-file",
+    "queryModel": "repository-through-runtime",
+    "contractVersion": "evidence.repository/v1alpha1",
+    "readOnly": True,
+    "willExecute": False,
+    "supportsListReleases": True,
+    "supportsGetRelease": True,
+    "supportsGetObject": True,
+    "supportsListArtifacts": True,
+    "supportsSearch": True,
+    "supportsVerificationSummary": True,
+    "supportsGraph": True,
+    "supportsNativeSQLite": False,
+    "supportsRemoteApi": False,
+}
+
+control_plane = {
+    "schemaVersion": "evidence.api.controlPlane/v1alpha1",
+    "apiVersion": "s-sentinel.io/evidence-api/v1alpha1",
+    "contractVersion": "evidence.api.response/v1alpha1",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "generatedBy": "s-sentinel-evidence-api",
+    "operation": "refresh",
+    "service": {
+        "name": "s-sentinel-evidence-api",
+        "schemaVersion": "evidence.service/v1alpha1",
+        "contractVersion": "evidence.api.service/v1alpha1",
+        "role": "release-evidence-control-plane",
+        "readOnly": True,
+        "willExecute": False,
+        "doesNotModifyCluster": True,
+        "doesNotModifyGitOps": True,
+        "doesNotTriggerRollout": True,
+    },
+    "runtime": runtime,
+    "repository": repository,
+    "paths": {},
+    "capabilities": {},
+    "dbFile": "/tmp/evidence-store.db",
+    "runtimeMode": "cli-sqlite-runtime",
+    "repositoryType": "cli-backed",
+    "repositoryMode": "cli-repository",
+    "repositoryContract": "evidence.repository/v1alpha1",
+    "readOnly": True,
+    "willExecute": False,
+    "doesNotModifyCluster": True,
+    "doesNotModifyGitOps": True,
+    "doesNotTriggerRollout": True,
+    "mutatesLocalEvidenceIndex": True,
+    "mutationSemantics": {
+        "doesNotModifyCluster": True,
+        "doesNotModifyGitOps": True,
+        "doesNotTriggerRollout": True,
+        "mutatesLocalEvidenceIndex": True,
+    },
+}
+
+def check_required(name, schema, instance):
+    for key in schema.get("required", []):
+        if key not in instance:
+            raise SystemExit(f"{name}: missing required field {key}")
+
+def check_consts(name, schema, instance):
+    for key, prop in schema.get("properties", {}).items():
+        if key in instance and "const" in prop and instance[key] != prop["const"]:
+            raise SystemExit(f"{name}: expected {key}={prop['const']}, got {instance[key]}")
+
+check_required("runtime", schemas["runtime"], runtime)
+check_consts("runtime", schemas["runtime"], runtime)
+
+check_required("repository", schemas["repository"], repository)
+check_consts("repository", schemas["repository"], repository)
+
+check_required("controlPlane", schemas["controlPlane"], control_plane)
+check_consts("controlPlane", schemas["controlPlane"], control_plane)
+
+if control_plane["runtime"]["contractVersion"] != "evidence.runtime/v1alpha1":
+    raise SystemExit("controlPlane.runtime contractVersion mismatch")
+if control_plane["repository"]["contractVersion"] != "evidence.repository/v1alpha1":
+    raise SystemExit("controlPlane.repository contractVersion mismatch")
+if control_plane["mutationSemantics"]["mutatesLocalEvidenceIndex"] is not True:
+    raise SystemExit("controlPlane mutation semantics mismatch")
+
+print("stage43 evidence api schema contract assertions passed")
+PY_SCHEMA_CONTRACT
+
 if grep -q "runEvidenceStoreCommand" watcher/portal_api.go; then
   echo "portal_api.go still owns EvidenceStore CLI runtime"
   exit 1

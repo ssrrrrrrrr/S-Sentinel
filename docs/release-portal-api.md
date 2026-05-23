@@ -288,6 +288,12 @@ Stage43 的 API surface hardening 增加了统一的 `controlPlane` 元数据。
     controlPlane.readOnly
     controlPlane.willExecute
 
+Stage43.5 起，Evidence API 控制面契约由以下 JSON Schema 固化：
+
+    schemas/evidence-api-control-plane.schema.json
+    schemas/evidence-runtime.schema.json
+    schemas/evidence-repository.schema.json
+
 常见查询参数：
 
     limit

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/evidence-runtime.schema.json",
+  "title": "S Sentinel Evidence Runtime",
+  "description": "Runtime descriptor for the Evidence API control plane.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "runtimeId",
+    "runtimeType",
+    "mode",
+    "backend",
+    "adapter",
+    "storage",
+    "queryModel",
+    "contractVersion",
+    "readOnly",
+    "willExecute",
+    "supportsRefresh",
+    "supportsSearch",
+    "supportsGraph",
+    "supportsVerificationSummary",
+    "supportsNativeSQLite",
+    "supportsRemoteApi"
+  ],
+  "properties": {
+    "runtimeId": { "type": "string", "minLength": 1 },
+    "runtimeType": { "type": "string", "minLength": 1 },
+    "mode": { "type": "string", "minLength": 1 },
+    "legacyMode": { "type": "string" },
+    "backend": { "type": "string", "minLength": 1 },
+    "adapter": { "type": "string", "minLength": 1 },
+    "storage": { "type": "string", "minLength": 1 },
+    "queryModel": { "type": "string", "minLength": 1 },
+    "contractVersion": {
+      "type": "string",
+      "const": "evidence.runtime/v1alpha1"
+    },
+    "readOnly": { "type": "boolean" },
+    "willExecute": { "type": "boolean" },
+    "supportsRefresh": { "type": "boolean" },
+    "supportsSearch": { "type": "boolean" },
+    "supportsGraph": { "type": "boolean" },
+    "supportsVerificationSummary": { "type": "boolean" },
+    "supportsNativeSQLite": { "type": "boolean" },
+    "supportsRemoteApi": { "type": "boolean" },
+    "description": { "type": "string" }
+  }
+}
