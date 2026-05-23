@@ -119,6 +119,7 @@ export function PortalRouteRenderer({
   tabs,
   activeTab,
   onTabChange,
+  onRouteChange,
   latest,
   resourceKind,
   resourceQuery,
@@ -134,12 +135,43 @@ export function PortalRouteRenderer({
   tabs: string[]
   activeTab: string
   onTabChange: (tab: string) => void
+  onRouteChange: (route: PortalRoute) => void
   latest?: LatestReleaseResponse
   resourceKind: string
   resourceQuery: UseQueryResult<ReleaseResourceContent, Error>
   evidenceQuery: UseQueryResult<ReleaseResourceContent, Error>
   releaseCount: number
 }) {
+  function routeForTab(tab: string): PortalRoute | null {
+    switch (tab) {
+      case "Evidence":
+        return "Evidence"
+      case "Context":
+        return "Environment"
+      case "AI Advice":
+      case "Intelligence":
+        return "Agent Trace"
+      case "Action Plan":
+        return "Approval"
+      case "Runbook":
+      case "RCA":
+      case "Timeline":
+      case "概览":
+        return "Releases"
+      default:
+        return null
+    }
+  }
+
+  function handleRouteAwareTabChange(tab: string) {
+    onTabChange(tab)
+
+    const nextRoute = routeForTab(tab)
+    if (nextRoute) {
+      onRouteChange(nextRoute)
+    }
+  }
+
   const pageHeader = (
     <RouteHeader
       activeRoute={activeRoute}
@@ -160,7 +192,7 @@ export function PortalRouteRenderer({
             latest={latest}
             releaseCount={releaseCount}
             activeTab={activeTab}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
 
           <ReleaseMetricGrid selected={selected} />
@@ -196,18 +228,18 @@ export function PortalRouteRenderer({
           <ControlPlaneObjectCards
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
 
           <ControlPlaneGraph
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
 
           <EvidenceStorePanel
             selected={selected}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -220,7 +252,7 @@ export function PortalRouteRenderer({
           <PolicyExplanationPanel
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -233,7 +265,7 @@ export function PortalRouteRenderer({
           <SupplyChainGatePanel
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -246,7 +278,7 @@ export function PortalRouteRenderer({
           <AgentTracePanel
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -259,7 +291,7 @@ export function PortalRouteRenderer({
           <ApprovalConsolePanel
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -272,7 +304,7 @@ export function PortalRouteRenderer({
           <EnvironmentAwarePortalPanel
             selected={selected}
             evidenceQuery={evidenceQuery}
-            onTabChange={onTabChange}
+            onTabChange={handleRouteAwareTabChange}
           />
         </>
       )
@@ -281,3 +313,4 @@ export function PortalRouteRenderer({
       return null
   }
 }
+

@@ -114,6 +114,7 @@ function App() {
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onRouteChange={setActiveRoute}
           latest={latestQuery.data}
           resourceKind={resourceKind}
           resourceQuery={resourceQuery}
@@ -126,3 +127,4 @@ function App() {
 }
 
 export default App
+
