@@ -103,6 +103,20 @@ POLICY_RUNTIME_REGISTRY: dict[str, dict[str, Any]] = {
         "previewOnly": True,
         "externalDependency": False,
         "requiredBinary": None,
+        "policyBundleRef": "policy/validating-admission-policy",
+        "policyFile": "policy/validating-admission-policy/release-policy.yaml",
+        "entrypoint": "ValidatingAdmissionPolicy/ssentinel-release-policy-preview",
+        "inputContract": "policy.input/v1alpha1",
+        "outputContract": "release.policy.evaluator/v1alpha1",
+        "commandPreviewTemplate": [
+            "validating-admission-policy-sim",
+            "--policy",
+            "policy/validating-admission-policy/release-policy.yaml",
+            "--input",
+            "${POLICY_INPUT}",
+            "--entrypoint",
+            "ValidatingAdmissionPolicy/ssentinel-release-policy-preview"
+        ],
         "description": "Preview-only ValidatingAdmissionPolicy simulation placeholder.",
     },
 }

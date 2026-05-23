@@ -1,0 +1,32 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: ssentinel-release-policy-preview
+  annotations:
+    ssentinel.io/runtime: validating-admission-policy-sim
+    ssentinel.io/stage: "45.4"
+    ssentinel.io/input-contract: policy.input/v1alpha1
+    ssentinel.io/output-contract: release.policy.evaluator/v1alpha1
+    ssentinel.io/status: preview-only
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["configmaps"]
+  validations:
+    - expression: "has(object.metadata.annotations) && has(object.metadata.annotations['ssentinel.io/policy-runtime'])"
+      message: "S Sentinel ValidatingAdmissionPolicy simulator preview requires ssentinel.io/policy-runtime annotation."
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: ssentinel-release-policy-preview-binding
+  annotations:
+    ssentinel.io/runtime: validating-admission-policy-sim
+    ssentinel.io/status: preview-only
+spec:
+  policyName: ssentinel-release-policy-preview
+  validationActions: [Audit]
