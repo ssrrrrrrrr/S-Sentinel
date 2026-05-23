@@ -17,10 +17,8 @@ import {
 } from "@/components/layout/portalWorkspaceConfig"
 import { PortalWorkspaceRenderer } from "@/components/layout/PortalWorkspaceRenderer"
 import { PortalWorkspaceTabs } from "@/components/layout/PortalWorkspaceTabs"
-import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
-import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
-import { ReleaseResourcePanel } from "@/components/release/ReleaseResourcePanel"
+import { ReleaseDetailWorkspace } from "@/components/release/ReleaseDetailWorkspace"
 
 const tabs = ["概览", "Evidence", "Intelligence", "Action Plan", "AI Advice", "Timeline", "Runbook", "RCA", "Context"]
 
@@ -121,34 +119,19 @@ function App() {
               onTabChange={setActiveTab}
             />
 
-            <section className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-              <ReleaseList
-                releases={releases}
-                selected={selected}
-                totalCount={releasesQuery.data?.count ?? releases.length}
-                onSelect={setSelectedId}
-                onRefresh={refreshAll}
-              />
-
-              <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-                <ReleaseDetailHeader
-                  selected={selected}
-                  tabs={tabs}
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                />
-
-                <div className="p-6">
-                  <ReleaseResourcePanel
-                    activeTab={activeTab}
-                    selected={selected}
-                    latest={latestQuery.data}
-                    resourceKind={resourceKind}
-                    resourceQuery={resourceQuery}
-                  />
-                </div>
-              </section>
-            </section>
+            <ReleaseDetailWorkspace
+              releases={releases}
+              selected={selected}
+              totalCount={releasesQuery.data?.count ?? releases.length}
+              onSelect={setSelectedId}
+              onRefresh={refreshAll}
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              latest={latestQuery.data}
+              resourceKind={resourceKind}
+              resourceQuery={resourceQuery}
+            />
           </>
         )}
       </section>
