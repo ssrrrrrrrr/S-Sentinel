@@ -15,9 +15,9 @@ export function SafetyPanel({ latest }: { latest?: LatestReleaseResponse }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {rows.map(([key, value]) => (
-        <div key={key} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div key={key} className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <p className="font-mono text-xs text-slate-500">{key}</p>
-          <p className="mt-2 font-mono text-sm font-semibold text-[#031a41]">{value}</p>
+          <p className="mt-2 font-mono text-sm font-semibold text-slate-100">{value}</p>
         </div>
       ))}
     </div>

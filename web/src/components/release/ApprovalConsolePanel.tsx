@@ -137,7 +137,7 @@ function statusClass(status: string) {
     normalized.includes("pending") ||
     normalized.includes("false")
   ) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
+    return "border-rose-900/45 bg-rose-950/20 text-rose-200"
   }
 
   if (
@@ -148,25 +148,25 @@ function statusClass(status: string) {
     normalized.includes("true") ||
     normalized.includes("read-only")
   ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    return "border-emerald-900/45 bg-emerald-950/20 text-emerald-200"
   }
 
-  return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  return "border-[#35517a] bg-[#101a29] text-[#5d8fd8]"
 }
 
 function ConsoleMetricCard({ metric }: { metric: ConsoleMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#243044] bg-[#101a29] text-[#5d8fd8]">
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-slate-500">{metric.label}</p>
-            <p className="mt-1 break-all font-semibold text-[#031a41]">{metric.value}</p>
+            <p className="mt-1 break-all font-semibold text-slate-100">{metric.value}</p>
           </div>
         </div>
 
@@ -184,21 +184,21 @@ function ApprovalStepCard({ step, index }: { step: ApprovalStep; index: number }
   const Icon = step.icon
 
   return (
-    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#031a41] text-sm font-semibold text-white">
+    <div className="flex gap-3 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#14233a] text-sm font-semibold text-slate-50">
         {index + 1}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 items-center gap-2">
-            <Icon className="h-4 w-4 shrink-0 text-cyan-700" />
-            <h4 className="font-semibold text-[#031a41]">{step.title}</h4>
+            <Icon className="h-4 w-4 shrink-0 text-[#5d8fd8]" />
+            <h4 className="font-semibold text-slate-100">{step.title}</h4>
           </div>
           <span className={`w-fit rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClass(step.status)}`}>
             {step.status}
           </span>
         </div>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{step.description}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-400">{step.description}</p>
       </div>
     </div>
   )
@@ -254,17 +254,17 @@ function ApprovalBoundaryPanel({
             key={gate.key}
             className={`rounded-xl border p-4 ${
               isSafe
-                ? "border-emerald-200 bg-emerald-50"
-                : "border-amber-200 bg-amber-50"
+                ? "border-emerald-900/45 bg-emerald-950/20"
+                : "border-amber-900/45 bg-amber-950/20"
             }`}
           >
-            <p className={`text-sm font-semibold ${isSafe ? "text-emerald-900" : "text-amber-900"}`}>
+            <p className={`text-sm font-semibold ${isSafe ? "text-emerald-200" : "text-amber-200"}`}>
               {gate.label}
             </p>
-            <p className={`mt-2 font-mono text-lg font-bold ${isSafe ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`mt-2 font-mono text-lg font-bold ${isSafe ? "text-emerald-200" : "text-amber-200"}`}>
               {String(gate.value)}
             </p>
-            <p className={`mt-2 text-xs leading-5 ${isSafe ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`mt-2 text-xs leading-5 ${isSafe ? "text-emerald-200" : "text-amber-200"}`}>
               {gate.description}
             </p>
           </div>
@@ -429,25 +429,25 @@ export function ApprovalConsolePanel({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Approval Console
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <UserCheck className="h-5 w-5 text-cyan-700" />
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <UserCheck className="h-5 w-5 text-[#5d8fd8]" />
             人工审批与执行申请只读控制台
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             聚合 Execution Request、Policy Decision、Action Plan 和人工审批状态。
             当前阶段只展示审批边界，不提供 approve、reject 或 execute 操作。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Console Source</p>
-          <p className="mt-1 font-semibold text-[#031a41]">
+          <p className="mt-1 font-semibold text-slate-100">
             {evidenceQuery.isLoading ? "loading" : evidence ? "release evidence" : "release summary fallback"}
           </p>
           <p className="mt-1 font-mono text-xs text-slate-500">releaseId={selected.releaseId}</p>
@@ -455,7 +455,7 @@ export function ApprovalConsolePanel({
       </div>
 
       {evidenceQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           Approval Console 无法读取 release evidence，已回退到 Release summary。
         </div>
       ) : null}
@@ -482,9 +482,9 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-              <FileCheck2 className="h-4 w-4 text-cyan-700" />
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+              <FileCheck2 className="h-4 w-4 text-[#5d8fd8]" />
               Request Detail
             </div>
             <KeyValueRows
@@ -502,9 +502,9 @@ export function ApprovalConsolePanel({
             />
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-              <ShieldCheck className="h-4 w-4 text-cyan-700" />
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+              <ShieldCheck className="h-4 w-4 text-[#5d8fd8]" />
               Policy / Gate Context
             </div>
             <KeyValueRows
@@ -523,31 +523,31 @@ export function ApprovalConsolePanel({
       </section>
 
       <section className="mt-5 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <h4 className="text-sm font-semibold text-slate-900">Matched Policy Rules</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <h4 className="text-sm font-semibold text-slate-900">Blocking Reasons</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">Blocking Reasons</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={blockingReasons.length > 0 ? blockingReasons : ["none"]} />
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <h4 className="text-sm font-semibold text-slate-900">Warning Reasons</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">Warning Reasons</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={warningReasons.length > 0 ? warningReasons : ["none"]} />
           </div>
         </div>
       </section>
 
-      <div className="mt-5 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-slate-700">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-          <LockKeyhole className="h-4 w-4 text-cyan-700" />
+      <div className="mt-5 rounded-xl border border-[#35517a] bg-[#101a29] p-4 text-sm text-slate-300">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
+          <LockKeyhole className="h-4 w-4 text-[#5d8fd8]" />
           Approval Console 边界
         </div>
         <p className="mt-2 leading-6">
@@ -560,21 +560,21 @@ export function ApprovalConsolePanel({
         <button
           type="button"
           onClick={() => onTabChange("Action Plan")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Action Plan
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Evidence
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Runbook")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Runbook
         </button>
@@ -582,4 +582,6 @@ export function ApprovalConsolePanel({
     </section>
   )
 }
+
+
 

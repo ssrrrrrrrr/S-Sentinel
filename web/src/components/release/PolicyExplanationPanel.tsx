@@ -1,4 +1,4 @@
-import type { ComponentType } from "react"
+﻿import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -128,7 +128,7 @@ function statusClass(status: string) {
     normalized.includes("fail") ||
     normalized.includes("required")
   ) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
+    return "border-rose-900/45 bg-rose-950/20 text-rose-200"
   }
 
   if (
@@ -137,25 +137,25 @@ function statusClass(status: string) {
     normalized.includes("true") ||
     normalized.includes("approved")
   ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    return "border-emerald-900/45 bg-emerald-950/20 text-emerald-200"
   }
 
-  return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  return "border-[#35517a] bg-[#101a29] text-[#5d8fd8]"
 }
 
 function DecisionMetricCard({ metric }: { metric: DecisionMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#243044] bg-[#101a29] text-[#5d8fd8]">
             <Icon className="h-4 w-4" />
           </div>
           <div>
             <p className="text-xs text-slate-500">{metric.label}</p>
-            <p className="mt-1 font-semibold text-[#031a41]">{metric.value}</p>
+            <p className="mt-1 font-semibold text-slate-100">{metric.value}</p>
           </div>
         </div>
         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClass(metric.status)}`}>
@@ -182,61 +182,61 @@ function ReasonPanel({
   const hasWarning = warningReasons.length > 0
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">Policy Explanation</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#0b121d] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">Policy Explanation</h4>
         <p className="mt-1 text-xs text-slate-500">
-          聚合策略原因、AI action reason、供应链阻断原因和 warning reason。
+          聚合策略原因、Advisor action reason、供应链阻断原因和 warning reason。
         </p>
       </div>
 
       <div className="grid gap-4 p-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Policy reason</p>
-          <p className="mt-3 text-sm leading-6 text-slate-700">{policyReason}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">{policyReason}</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">AI action reason</p>
-          <p className="mt-3 text-sm leading-6 text-slate-700">{agentReason}</p>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Advisor action reason</p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">{agentReason}</p>
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-slate-200 p-4 lg:grid-cols-2">
+      <div className="grid gap-4 border-t border-[#1f2b3d] p-4 lg:grid-cols-2">
         <div className={`rounded-xl border p-4 ${
-          hasBlocking ? "border-rose-200 bg-rose-50" : "border-emerald-200 bg-emerald-50"
+          hasBlocking ? "border-rose-900/45 bg-rose-950/20" : "border-emerald-900/45 bg-emerald-950/20"
         }`}>
-          <p className={`text-sm font-semibold ${hasBlocking ? "text-rose-900" : "text-emerald-900"}`}>
+          <p className={`text-sm font-semibold ${hasBlocking ? "text-rose-200" : "text-emerald-200"}`}>
             Blocking reasons
           </p>
           <div className="mt-3 space-y-2">
             {hasBlocking ? (
               blockingReasons.map((reason) => (
-                <div key={reason} className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm text-rose-800">
+                <div key={reason} className="rounded-lg border border-rose-900/45 bg-[#0b121d] px-3 py-2 text-sm text-rose-200">
                   {reason}
                 </div>
               ))
             ) : (
-              <p className="text-sm text-emerald-700">当前没有供应链或策略阻断原因。</p>
+              <p className="text-sm text-emerald-200">当前没有供应链或策略阻断原因。</p>
             )}
           </div>
         </div>
 
         <div className={`rounded-xl border p-4 ${
-          hasWarning ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"
+          hasWarning ? "border-amber-900/45 bg-amber-950/20" : "border-emerald-900/45 bg-emerald-950/20"
         }`}>
-          <p className={`text-sm font-semibold ${hasWarning ? "text-amber-900" : "text-emerald-900"}`}>
+          <p className={`text-sm font-semibold ${hasWarning ? "text-amber-200" : "text-emerald-200"}`}>
             Warning reasons
           </p>
           <div className="mt-3 space-y-2">
             {hasWarning ? (
               warningReasons.map((reason) => (
-                <div key={reason} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-amber-800">
+                <div key={reason} className="rounded-lg border border-amber-900/45 bg-[#0b121d] px-3 py-2 text-sm text-amber-200">
                   {reason}
                 </div>
               ))
             ) : (
-              <p className="text-sm text-emerald-700">当前没有 warning reason。</p>
+              <p className="text-sm text-emerald-200">当前没有 warning reason。</p>
             )}
           </div>
         </div>
@@ -285,7 +285,7 @@ export function PolicyExplanationPanel({
     evidence?.matchedPolicyRules ??
     []
   const policyReason = policyDecisionRef?.reason ?? "当前 evidence 中没有提供明确的 policy reason。"
-  const agentReason = aiDecision?.agentAction?.reason ?? "当前 evidence 中没有提供 AI action reason。"
+  const agentReason = aiDecision?.agentAction?.reason ?? "当前 evidence 中没有提供 Advisor action reason。"
   const blockingReasons = supplyChainDecision?.blockingReasons ?? []
   const warningReasons = supplyChainDecision?.warningReasons ?? []
   const failedMetricCount = evidence?.summary?.failedMetrics?.length ?? 0
@@ -336,25 +336,25 @@ export function PolicyExplanationPanel({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Policy Explanation View
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <ShieldCheck className="h-5 w-5 text-cyan-700" />
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <ShieldCheck className="h-5 w-5 text-[#5d8fd8]" />
             策略裁决解释与安全边界
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             直接从 release evidence 聚合 Policy Guard、AI action、Supply Chain 和 Execution Request 字段，
             解释本次发布为什么允许、阻断、需要人工审批或保持只读。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Policy Source</p>
-          <p className="mt-1 font-semibold text-[#031a41]">
+          <p className="mt-1 font-semibold text-slate-100">
             {evidenceQuery.isLoading ? "loading" : evidence ? "release evidence" : "release summary fallback"}
           </p>
           <p className="mt-1 font-mono text-xs text-slate-500">releaseId={selected.releaseId}</p>
@@ -362,7 +362,7 @@ export function PolicyExplanationPanel({
       </div>
 
       {evidenceQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           Policy Explanation 无法读取 release evidence，已回退到 Release summary。
         </div>
       ) : null}
@@ -375,9 +375,9 @@ export function PolicyExplanationPanel({
 
       <section className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-              <Scale className="h-4 w-4 text-cyan-700" />
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+              <Scale className="h-4 w-4 text-[#5d8fd8]" />
               Decision Inputs
             </div>
             <KeyValueRows
@@ -395,9 +395,9 @@ export function PolicyExplanationPanel({
             />
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-              <ShieldCheck className="h-4 w-4 text-cyan-700" />
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+              <ShieldCheck className="h-4 w-4 text-[#5d8fd8]" />
               Matched Policy Rules
             </div>
             <RuleChipsPanel rules={matchedRules} />
@@ -416,21 +416,21 @@ export function PolicyExplanationPanel({
         <button
           type="button"
           onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Evidence
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Action Plan")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Action Plan
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Runbook")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Runbook
         </button>
@@ -438,3 +438,5 @@ export function PolicyExplanationPanel({
     </section>
   )
 }
+
+

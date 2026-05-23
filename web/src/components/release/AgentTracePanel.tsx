@@ -125,7 +125,7 @@ function statusClass(status: string) {
     normalized.includes("required") ||
     normalized.includes("false")
   ) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
+    return "border-rose-900/45 bg-rose-950/20 text-rose-200"
   }
 
   if (
@@ -135,10 +135,10 @@ function statusClass(status: string) {
     normalized.includes("true") ||
     normalized.includes("read-only")
   ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    return "border-emerald-900/45 bg-emerald-950/20 text-emerald-200"
   }
 
-  return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  return "border-[#35517a] bg-[#101a29] text-[#5d8fd8]"
 }
 
 function parseRecordCandidate(value: unknown) {
@@ -247,15 +247,15 @@ function TraceMetricCard({ metric }: { metric: TraceMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#243044] bg-[#101a29] text-[#5d8fd8]">
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-slate-500">{metric.label}</p>
-            <p className="mt-1 break-all font-semibold text-[#031a41]">{shortValue(metric.value)}</p>
+            <p className="mt-1 break-all font-semibold text-slate-100">{shortValue(metric.value)}</p>
           </div>
         </div>
 
@@ -284,27 +284,27 @@ function ToolCallTracePanel({ toolCalls }: { toolCalls: unknown[] }) {
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+      <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-200">
         当前 AgentTrace 没有 toolCallTraces，或对象详情暂不可用。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">Tool Call Traces</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#0b121d] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">Tool Call Traces</h4>
         <p className="mt-1 text-xs text-slate-500">
           这里只展示工具调用轨迹，不提供任何执行入口。
         </p>
       </div>
 
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[#1f2b3d]">
         {rows.map((row) => (
           <div key={row.key} className="p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="font-mono text-sm font-semibold text-[#031a41]">{row.name}</p>
+                <p className="font-mono text-sm font-semibold text-slate-100">{row.name}</p>
                 <p className="mt-1 text-xs text-slate-500">{row.type}</p>
               </div>
               <span className={`w-fit rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusClass(row.status)}`}>
@@ -313,17 +313,17 @@ function ToolCallTracePanel({ toolCalls }: { toolCalls: unknown[] }) {
             </div>
 
             <div className="mt-3 grid gap-2 text-xs md:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="rounded-lg border border-[#1f2b3d] bg-[#0b121d] p-3">
                 <p className="text-slate-500">readOnly</p>
-                <p className="mt-1 font-mono font-semibold text-[#031a41]">{row.readOnly}</p>
+                <p className="mt-1 font-mono font-semibold text-slate-100">{row.readOnly}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="rounded-lg border border-[#1f2b3d] bg-[#0b121d] p-3">
                 <p className="text-slate-500">willExecute</p>
-                <p className="mt-1 font-mono font-semibold text-[#031a41]">{row.willExecute}</p>
+                <p className="mt-1 font-mono font-semibold text-slate-100">{row.willExecute}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="rounded-lg border border-[#1f2b3d] bg-[#0b121d] p-3">
                 <p className="text-slate-500">source</p>
-                <p className="mt-1 break-all font-mono font-semibold text-[#031a41]">{shortValue(row.source)}</p>
+                <p className="mt-1 break-all font-mono font-semibold text-slate-100">{shortValue(row.source)}</p>
               </div>
             </div>
           </div>
@@ -345,21 +345,21 @@ function ObjectEntriesPanel({
   const entries = Object.entries(record ?? {})
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#0b121d] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">{title}</h4>
         <p className="mt-1 text-xs text-slate-500">{description}</p>
       </div>
 
       <div className="p-4">
         {entries.length === 0 ? (
-          <div className="text-sm text-slate-600">暂无字段。</div>
+          <div className="text-sm text-slate-400">暂无字段。</div>
         ) : (
           <div className="flex flex-wrap gap-2">
             {entries.map(([key, value]) => (
               <span
                 key={key}
-                className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-mono text-xs font-semibold text-cyan-800"
+                className="rounded-full border border-[#35517a] bg-[#101a29] px-3 py-1 font-mono text-xs font-semibold text-sky-200"
               >
                 {key}={shortValue(valueOrDash(value), 90)}
               </span>
@@ -488,25 +488,25 @@ export function AgentTracePanel({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Agent Trace View
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <Braces className="h-5 w-5 text-cyan-700" />
-            AI Advisor 可观测链路
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <Braces className="h-5 w-5 text-[#5d8fd8]" />
+            Advisor 可观测链路
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             通过 EvidenceStore 查询 agentTrace 对象，展示 AgentRun、PolicyTrace、SignedReleaseGateTrace、
             ToolCallTraces、EvidenceTrace 和 Guardrails。若对象详情暂不可用，则回退到 release evidence 中的 trace 摘要。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Trace Source</p>
-          <p className="mt-1 font-semibold text-[#031a41]">{traceSource}</p>
+          <p className="mt-1 font-semibold text-slate-100">{traceSource}</p>
           <p className="mt-1 font-mono text-xs text-slate-500">
             /api/evidence-store/objects/agentTrace/{fallbackAgentTraceId}
           </p>
@@ -514,7 +514,7 @@ export function AgentTracePanel({
       </div>
 
       {traceQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           AgentTrace 对象详情读取失败，当前使用 release evidence fallback：
           {traceQuery.error instanceof Error ? traceQuery.error.message : "unknown error"}
         </div>
@@ -527,9 +527,9 @@ export function AgentTracePanel({
       </div>
 
       <section className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <Route className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <Route className="h-4 w-4 text-[#5d8fd8]" />
             Correlation
           </div>
           <KeyValueRows
@@ -545,9 +545,9 @@ export function AgentTracePanel({
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <Bot className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <Bot className="h-4 w-4 text-[#5d8fd8]" />
             Agent Run Snapshot
           </div>
           <KeyValueRows
@@ -564,9 +564,9 @@ export function AgentTracePanel({
       </section>
 
       <section className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <ShieldCheck className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <ShieldCheck className="h-4 w-4 text-[#5d8fd8]" />
             Policy Trace
           </div>
           <KeyValueRows
@@ -580,9 +580,9 @@ export function AgentTracePanel({
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <GitBranch className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <GitBranch className="h-4 w-4 text-[#5d8fd8]" />
             Signed Release Gate Trace
           </div>
           <KeyValueRows
@@ -616,12 +616,12 @@ export function AgentTracePanel({
         />
       </section>
 
-      <section className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-          <FileSearch className="h-4 w-4 text-cyan-700" />
+      <section className="mt-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+        <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+          <FileSearch className="h-4 w-4 text-[#5d8fd8]" />
           Raw Agent Trace
         </div>
-        <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-xl bg-[#031a41] p-4 text-xs leading-6 text-cyan-50">
+        <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-xl bg-[#14233a] p-4 text-xs leading-6 text-slate-200">
           {JSON.stringify(realTrace ?? traceQuery.data ?? trace, null, 2)}
         </pre>
       </section>
@@ -629,22 +629,22 @@ export function AgentTracePanel({
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => onTabChange("AI Advice")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          onClick={() => onTabChange("Advisor Trace")}
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
-          查看 AI Advice
+          查看 Advisor Trace
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Evidence
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Intelligence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Intelligence
         </button>
@@ -652,4 +652,6 @@ export function AgentTracePanel({
     </section>
   )
 }
+
+
 

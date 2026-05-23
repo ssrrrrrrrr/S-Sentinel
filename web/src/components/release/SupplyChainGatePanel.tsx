@@ -1,4 +1,4 @@
-import type { ComponentType } from "react"
+﻿import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -117,7 +117,7 @@ function statusClass(status: string) {
     normalized.includes("required") ||
     normalized.includes("missing")
   ) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
+    return "border-rose-900/45 bg-rose-950/20 text-rose-200"
   }
 
   if (
@@ -126,29 +126,29 @@ function statusClass(status: string) {
     normalized.includes("true") ||
     normalized.includes("linked")
   ) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    return "border-emerald-900/45 bg-emerald-950/20 text-emerald-200"
   }
 
   if (normalized.includes("warn") || normalized.includes("medium")) {
-    return "border-amber-200 bg-amber-50 text-amber-700"
+    return "border-amber-900/45 bg-amber-950/20 text-amber-200"
   }
 
-  return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  return "border-[#35517a] bg-[#101a29] text-[#5d8fd8]"
 }
 
 function GateMetricCard({ metric }: { metric: GateMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#243044] bg-[#101a29] text-[#5d8fd8]">
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-slate-500">{metric.label}</p>
-            <p className="mt-1 break-all font-semibold text-[#031a41]">{shortValue(metric.value)}</p>
+            <p className="mt-1 break-all font-semibold text-slate-100">{shortValue(metric.value)}</p>
           </div>
         </div>
 
@@ -180,16 +180,16 @@ function ReasonListPanel({
     <div className={`rounded-xl border p-4 ${
       hasItems
         ? danger
-          ? "border-rose-200 bg-rose-50"
-          : "border-amber-200 bg-amber-50"
-        : "border-emerald-200 bg-emerald-50"
+          ? "border-rose-900/45 bg-rose-950/20"
+          : "border-amber-900/45 bg-amber-950/20"
+        : "border-emerald-900/45 bg-emerald-950/20"
     }`}>
       <h4 className={`text-sm font-semibold ${
         hasItems
           ? danger
-            ? "text-rose-900"
-            : "text-amber-900"
-          : "text-emerald-900"
+            ? "text-rose-200"
+            : "text-amber-200"
+          : "text-emerald-200"
       }`}>
         {title}
       </h4>
@@ -199,17 +199,17 @@ function ReasonListPanel({
           items.map((item) => (
             <div
               key={item}
-              className={`rounded-lg border bg-white px-3 py-2 text-sm ${
+              className={`rounded-lg border bg-[#0b121d] px-3 py-2 text-sm ${
                 danger
-                  ? "border-rose-200 text-rose-800"
-                  : "border-amber-200 text-amber-800"
+                  ? "border-rose-900/45 text-rose-200"
+                  : "border-amber-900/45 text-amber-200"
               }`}
             >
               {item}
             </div>
           ))
         ) : (
-          <p className="text-sm text-emerald-700">{empty}</p>
+          <p className="text-sm text-emerald-200">{empty}</p>
         )}
       </div>
     </div>
@@ -315,25 +315,25 @@ export function SupplyChainGatePanel({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Supply Chain Gate View
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <PackageCheck className="h-5 w-5 text-cyan-700" />
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <PackageCheck className="h-5 w-5 text-[#5d8fd8]" />
             镜像可信度与签名发布门禁
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             从 release evidence 聚合 SupplyChainDecision 和 SignedReleaseGate，
             展示镜像摘要、GitOps 发布标签、风险评分、阻断原因和只读安全边界。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Gate Source</p>
-          <p className="mt-1 font-semibold text-[#031a41]">
+          <p className="mt-1 font-semibold text-slate-100">
             {evidenceQuery.isLoading ? "loading" : evidence ? "release evidence" : "release summary fallback"}
           </p>
           <p className="mt-1 font-mono text-xs text-slate-500">releaseId={selected.releaseId}</p>
@@ -341,7 +341,7 @@ export function SupplyChainGatePanel({
       </div>
 
       {evidenceQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           Supply Chain Gate 无法读取 release evidence，已回退到 Release summary。
         </div>
       ) : null}
@@ -353,9 +353,9 @@ export function SupplyChainGatePanel({
       </div>
 
       <section className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <Image className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <Image className="h-4 w-4 text-[#5d8fd8]" />
             Image Trust
           </div>
           <KeyValueRows
@@ -370,9 +370,9 @@ export function SupplyChainGatePanel({
           />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <GitBranch className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <GitBranch className="h-4 w-4 text-[#5d8fd8]" />
             GitOps Trust
           </div>
           <KeyValueRows
@@ -405,9 +405,9 @@ export function SupplyChainGatePanel({
       </section>
 
       <section className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold text-[#031a41]">
-            <Tags className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+            <Tags className="h-4 w-4 text-[#5d8fd8]" />
             Gate Decision Inputs
           </div>
           <KeyValueRows
@@ -423,12 +423,12 @@ export function SupplyChainGatePanel({
           />
         </div>
 
-        <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4">
-          <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-            <ShieldCheck className="h-4 w-4 text-cyan-700" />
+        <div className="rounded-xl border border-[#35517a] bg-[#101a29] p-4">
+          <div className="flex items-center gap-2 font-semibold text-slate-100">
+            <ShieldCheck className="h-4 w-4 text-[#5d8fd8]" />
             Safety Boundary
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-700">
+          <p className="mt-3 text-sm leading-6 text-slate-300">
             当前视图只解释供应链门禁，不提供任何执行按钮。即使后续出现 promote、rollback、patch、
             delete 或重新签名动作，也必须先进入 Policy-bound Execution Request，再经过人工审批和审计记录。
           </p>
@@ -439,21 +439,21 @@ export function SupplyChainGatePanel({
         <button
           type="button"
           onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Evidence
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Action Plan")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Action Plan
         </button>
         <button
           type="button"
           onClick={() => onTabChange("Runbook")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
         >
           查看 Runbook
         </button>
@@ -461,3 +461,5 @@ export function SupplyChainGatePanel({
     </section>
   )
 }
+
+
