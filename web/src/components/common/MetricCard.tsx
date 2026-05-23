@@ -17,12 +17,12 @@ export function MetricCard({
   return (
     <Panel
       padding="sm"
-      className="group relative overflow-hidden transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      className="group relative overflow-hidden transition hover:border-slate-300"
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#031a41] via-cyan-500 to-sky-300" />
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-[#031a41]" />
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-        <Icon className="h-4 w-4 text-cyan-500" />
+        <Icon className="h-4 w-4 text-slate-500" />
       </div>
       <div className="mt-4">
         <p className="break-words text-[clamp(1.35rem,2vw,1.75rem)] font-bold tracking-tight text-[#031a41]">
