@@ -1,19 +1,19 @@
-import { Panel, type PanelTone } from "@/components/common/Panel"
+﻿import { Panel, type PanelTone } from "@/components/common/Panel"
 
 type PortalStateKind = "loading" | "error" | "empty"
 
 const portalStateCopy: Record<PortalStateKind, { tone: PanelTone; message: string }> = {
   loading: {
     tone: "muted",
-    message: "???? Release Portal API ??...",
+    message: "正在加载 Release Portal API...",
   },
   error: {
     tone: "danger",
-    message: "Release Portal API ??????????? port-forward ??????? Vite proxy ?? http://192.168.30.11:18090?",
+    message: "Release Portal API 暂不可用。请检查 port-forward、后端服务状态，或 Vite proxy 是否指向 http://192.168.30.11:18090。",
   },
   empty: {
     tone: "muted",
-    message: "?????????????",
+    message: "当前没有可展示的发布记录。",
   },
 }
 

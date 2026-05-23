@@ -68,7 +68,7 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen text-slate-900">
+    <main className="min-h-screen bg-[#070b12] text-slate-100">
       <DashboardHeader
         hasError={hasError}
         latest={latestQuery.data}

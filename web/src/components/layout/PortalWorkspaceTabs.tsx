@@ -1,4 +1,4 @@
-import { Panel } from "@/components/common/Panel"
+﻿import { Panel } from "@/components/common/Panel"
 import {
   portalWorkspaces,
   type PortalWorkspace,
@@ -13,22 +13,22 @@ export function PortalWorkspaceTabs({
 }) {
   return (
     <Panel padding="md">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1a2535] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
-            Portal Workspace
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Control Plane Workspace
           </p>
-          <h3 className="mt-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            选择一个产品工作台查看详情
+          <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-100">
+            选择一个发布控制台视图
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            发布总览保持在上方，长内容面板收进工作台，避免所有控制台视图堆在一个超长页面里。
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+            发布总览保持在上方，Evidence、Policy、Supply Chain、Trace 与 Approval 作为可审计工作区逐步展开。
           </p>
         </div>
 
-        <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-800">
-          <p className="text-xs text-cyan-700">Active Workspace</p>
-          <p className="mt-1 font-semibold">{activeWorkspace}</p>
+        <div className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-3 text-sm text-slate-300">
+          <p className="text-xs text-slate-500">Active Workspace</p>
+          <p className="mt-1 font-semibold text-slate-100">{activeWorkspace}</p>
         </div>
       </div>
 
@@ -43,12 +43,12 @@ export function PortalWorkspaceTabs({
               onClick={() => onWorkspaceChange(workspace.id)}
               className={`rounded-xl border p-3 text-left transition ${
                 active
-                  ? "border-[#031a41] bg-[#031a41] text-white shadow-sm"
-                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50"
+                  ? "border-[#35517a] bg-[#14233a] text-slate-50 shadow-sm"
+                  : "border-[#1f2b3d] bg-[#0b121d] text-slate-300 hover:border-[#35517a] hover:bg-[#101a29]"
               }`}
             >
               <p className="text-sm font-semibold">{workspace.title}</p>
-              <p className={`mt-1 text-xs leading-5 ${active ? "text-cyan-50" : "text-slate-500"}`}>
+              <p className={`mt-1 text-xs leading-5 ${active ? "text-slate-300" : "text-slate-500"}`}>
                 {workspace.description}
               </p>
             </button>

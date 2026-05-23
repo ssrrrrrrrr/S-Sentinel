@@ -17,7 +17,7 @@
   {
     id: "Agent Trace",
     title: "Agent Trace",
-    description: "AI Advisor 可观测链路",
+    description: "Advisor 可观测链路",
   },
   {
     id: "Approval",
