@@ -103,7 +103,11 @@ echo "===== watcher evidence service boundary ====="
 
 grep -q "type EvidenceService" watcher/evidence_service.go
 grep -q "type EvidenceRuntime" watcher/evidence_service.go
+grep -q "type EvidenceRuntimeDescriptor" watcher/evidence_service.go
+grep -q "cli-sqlite-runtime" watcher/evidence_service.go
+grep -q "evidence.api.service/v1alpha1" watcher/evidence_service.go
 grep -q "NewCLIEvidenceRepository" watcher/evidence_repository.go
+grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
 
 if grep -q "runEvidenceStoreCommand" watcher/portal_api.go; then
   echo "portal_api.go still owns EvidenceStore CLI runtime"

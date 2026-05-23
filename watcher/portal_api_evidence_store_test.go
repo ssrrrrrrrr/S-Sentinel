@@ -119,6 +119,10 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, statusBeforeRefreshBody, "evidence.store.status/v1alpha1")
 	assertPortalBool(t, statusBeforeRefreshBody, "ready", false)
 	assertPortalStringNotEmpty(t, statusBeforeRefreshBody, "pythonRuntime")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "mode", "cli-sqlite-runtime")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "contractVersion", "evidence.runtime/v1alpha1")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "service", "contractVersion", "evidence.api.service/v1alpha1")
+	assertPortalNestedBool(t, statusBeforeRefreshBody, "capabilities", "search", true)
 
 	initialRefreshBody := callPortalEvidenceStoreHandlerWithMethod(
 		t,
@@ -391,5 +395,29 @@ func assertPortalStringNotEmpty(t *testing.T, body map[string]interface{}, key s
 
 	if got == "" {
 		t.Fatalf("expected %s to be non-empty, got body=%v", key, body)
+	}
+}
+
+func assertPortalNestedString(
+	t *testing.T,
+	body map[string]interface{},
+	parent string,
+	child string,
+	expected string,
+) {
+	t.Helper()
+
+	nested, ok := body[parent].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected %s to be an object, got %#v", parent, body[parent])
+	}
+
+	got, ok := nested[child].(string)
+	if !ok {
+		t.Fatalf("expected %s.%s to be a string, got %#v", parent, child, nested[child])
+	}
+
+	if got != expected {
+		t.Fatalf("expected %s.%s=%s, got %s", parent, child, expected, got)
 	}
 }

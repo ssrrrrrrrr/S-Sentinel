@@ -23,6 +23,7 @@ type EvidenceService struct {
 }
 
 type EvidenceRuntime interface {
+	Descriptor() EvidenceRuntimeDescriptor
 	Mode() string
 	DBFile() string
 	ScriptFile() string
@@ -30,6 +31,27 @@ type EvidenceRuntime interface {
 	RefreshStateFile() string
 	EnsureDBReady() (string, error)
 	Run(ctx context.Context, args ...string) ([]byte, error)
+}
+
+type EvidenceRuntimeDescriptor struct {
+	RuntimeID                   string `json:"runtimeId"`
+	RuntimeType                 string `json:"runtimeType"`
+	Mode                        string `json:"mode"`
+	LegacyMode                  string `json:"legacyMode,omitempty"`
+	Backend                     string `json:"backend"`
+	Adapter                     string `json:"adapter"`
+	Storage                     string `json:"storage"`
+	QueryModel                  string `json:"queryModel"`
+	ContractVersion             string `json:"contractVersion"`
+	ReadOnly                    bool   `json:"readOnly"`
+	WillExecute                 bool   `json:"willExecute"`
+	SupportsRefresh             bool   `json:"supportsRefresh"`
+	SupportsSearch              bool   `json:"supportsSearch"`
+	SupportsGraph               bool   `json:"supportsGraph"`
+	SupportsVerificationSummary bool   `json:"supportsVerificationSummary"`
+	SupportsNativeSQLite        bool   `json:"supportsNativeSQLite"`
+	SupportsRemoteAPI           bool   `json:"supportsRemoteApi"`
+	Description                 string `json:"description"`
 }
 
 func NewEvidenceService(cfg Config, reportDir string) *EvidenceService {
@@ -70,15 +92,63 @@ func (svc *EvidenceService) RefreshStateFile() string {
 	return svc.runtime.RefreshStateFile()
 }
 
+func (svc *EvidenceService) serviceContract() map[string]interface{} {
+	return map[string]interface{}{
+		"name":            "s-sentinel-evidence-api",
+		"schemaVersion":   "evidence.service/v1alpha1",
+		"contractVersion": "evidence.api.service/v1alpha1",
+		"role":            "release-evidence-control-plane",
+		"readOnly":        true,
+		"willExecute":     false,
+	}
+}
+
+func (svc *EvidenceService) runtimePaths() map[string]interface{} {
+	return map[string]interface{}{
+		"repoDir":          svc.cfg.RepoDir,
+		"reportDir":        svc.cfg.ReportDir,
+		"dbFile":           svc.runtime.DBFile(),
+		"scriptFile":       svc.runtime.ScriptFile(),
+		"refreshStateFile": svc.runtime.RefreshStateFile(),
+	}
+}
+
+func (svc *EvidenceService) capabilities() map[string]interface{} {
+	return map[string]interface{}{
+		"readOnly":                true,
+		"willExecute":             false,
+		"refresh":                 true,
+		"listReleases":            true,
+		"getRelease":              true,
+		"getObject":               true,
+		"listArtifacts":           true,
+		"search":                  true,
+		"verificationSummary":     true,
+		"graph":                   true,
+		"nativeSQLiteRepository":  false,
+		"remoteEvidenceAPI":       false,
+		"backgroundRefreshWorker": false,
+		"policyRuntimeConsumer":   true,
+		"signedGateConsumer":      true,
+		"agentTraceConsumer":      true,
+	}
+}
+
 func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 	dbFile := svc.runtime.DBFile()
 	scriptFile := svc.runtime.ScriptFile()
 	refreshStateFile := svc.runtime.RefreshStateFile()
+	descriptor := svc.runtime.Descriptor()
 
 	body := map[string]interface{}{
 		"schemaVersion":    "evidence.store.status/v1alpha1",
 		"generatedAt":      time.Now().Format(time.RFC3339),
-		"mode":             svc.runtime.Mode(),
+		"mode":             descriptor.Mode,
+		"legacyMode":       descriptor.LegacyMode,
+		"service":          svc.serviceContract(),
+		"runtime":          descriptor,
+		"paths":            svc.runtimePaths(),
+		"capabilities":     svc.capabilities(),
 		"readOnly":         true,
 		"willExecute":      false,
 		"repoDir":          svc.cfg.RepoDir,
@@ -145,6 +215,7 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 
 func (svc *EvidenceService) Refresh(ctx context.Context) (map[string]interface{}, error) {
 	dbFile := svc.runtime.DBFile()
+	descriptor := svc.runtime.Descriptor()
 
 	initOutput, err := svc.runtime.Run(ctx, "init-db", "--db", dbFile)
 	if err != nil {
@@ -164,7 +235,12 @@ func (svc *EvidenceService) Refresh(ctx context.Context) (map[string]interface{}
 	refreshResult := map[string]interface{}{
 		"schemaVersion":    "evidence.store.refresh/v1alpha1",
 		"generatedAt":      time.Now().Format(time.RFC3339),
-		"mode":             svc.runtime.Mode(),
+		"mode":             descriptor.Mode,
+		"legacyMode":       descriptor.LegacyMode,
+		"service":          svc.serviceContract(),
+		"runtime":          descriptor,
+		"paths":            svc.runtimePaths(),
+		"capabilities":     svc.capabilities(),
 		"readOnly":         true,
 		"willExecute":      false,
 		"repoDir":          svc.cfg.RepoDir,
@@ -230,8 +306,31 @@ func NewCLIEvidenceRuntime(repoDir string) *CLIEvidenceRuntime {
 	}
 }
 
+func (runtime *CLIEvidenceRuntime) Descriptor() EvidenceRuntimeDescriptor {
+	return EvidenceRuntimeDescriptor{
+		RuntimeID:                   "cli-sqlite",
+		RuntimeType:                 "cli-backed-sqlite",
+		Mode:                        "cli-sqlite-runtime",
+		LegacyMode:                  "sqlite-adapter",
+		Backend:                     "sqlite",
+		Adapter:                     "python-cli",
+		Storage:                     "local-file",
+		QueryModel:                  "read-through-cli",
+		ContractVersion:             "evidence.runtime/v1alpha1",
+		ReadOnly:                    true,
+		WillExecute:                 false,
+		SupportsRefresh:             true,
+		SupportsSearch:              true,
+		SupportsGraph:               true,
+		SupportsVerificationSummary: true,
+		SupportsNativeSQLite:        false,
+		SupportsRemoteAPI:           false,
+		Description:                 "Compatibility runtime that serves Evidence API queries through scripts/evidence-store.py and a local SQLite index.",
+	}
+}
+
 func (runtime *CLIEvidenceRuntime) Mode() string {
-	return "sqlite-adapter"
+	return runtime.Descriptor().Mode
 }
 
 func (runtime *CLIEvidenceRuntime) DBFile() string {
