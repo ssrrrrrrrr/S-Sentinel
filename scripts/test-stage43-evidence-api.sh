@@ -135,6 +135,12 @@ grep -q "TestPortalEvidenceAPINativeSQLiteRepositoryIntegration" watcher/evidenc
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/evidence_repository_native_sqlite_test.go
 grep -q "repositoryType\", \"native-sqlite" watcher/evidence_repository_native_sqlite_test.go
 grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
+grep -q "TestPortalEvidenceAPIResponseControlPlaneContractNativeSQLite" watcher/evidence_api_contract_test.go
+grep -q "TestPortalEvidenceAPIErrorControlPlaneContractForNativeSchemaMismatch" watcher/evidence_api_contract_test.go
+grep -q "requireEvidenceAPIControlPlaneContract" watcher/evidence_api_contract_test.go
+grep -q "X-S-Sentinel-Evidence-Repository-Contract" watcher/evidence_api_contract_test.go
+grep -q "evidence.store.schemaContract/v1alpha1" watcher/evidence_api_contract_test.go
+grep -q "reject-native-read-query" watcher/evidence_api_contract_test.go
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/portal_api.go
 grep -q "ControlPlaneMetadata" watcher/evidence_service.go
 grep -q "s-sentinel.io/evidence-api/v1alpha1" watcher/evidence_service.go
