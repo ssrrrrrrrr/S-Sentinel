@@ -1,4 +1,5 @@
-﻿import { useMemo } from "react"
+﻿import { ActionButton } from "@/components/common/ActionButton"
+import { useMemo } from "react"
 import type { ComponentType } from "react"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 import {
@@ -627,31 +628,17 @@ export function AgentTracePanel({
       </section>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => onTabChange("Advisor Trace")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Advisor Trace
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Evidence
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("Intelligence")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Intelligence
-        </button>
+        <ActionButton onClick={() => onTabChange("Advisor Trace")}>查看 Advisor Trace</ActionButton>
+        <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
+        <ActionButton onClick={() => onTabChange("Intelligence")}>查看 Intelligence</ActionButton>
       </div>
     </section>
   )
 }
+
+
+
+
 
 
 

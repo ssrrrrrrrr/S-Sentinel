@@ -1,4 +1,5 @@
-﻿import type { ComponentType } from "react"
+﻿import { ActionButton } from "@/components/common/ActionButton"
+import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -557,31 +558,17 @@ export function ApprovalConsolePanel({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => onTabChange("Action Plan")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Action Plan
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Evidence
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("Runbook")}
-          className="rounded-xl border border-[#243044] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
-        >
-          查看 Runbook
-        </button>
+        <ActionButton onClick={() => onTabChange("Action Plan")}>查看 Action Plan</ActionButton>
+        <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
+        <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
     </section>
   )
 }
+
+
+
+
 
 
 

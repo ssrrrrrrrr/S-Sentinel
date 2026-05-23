@@ -1,4 +1,5 @@
-﻿import { useMemo, useState } from "react"
+﻿import { ActionButton } from "@/components/common/ActionButton"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   Database,
@@ -513,16 +514,12 @@ export function EvidenceStorePanel({
         >
           查看 Release Evidence
         </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("Advisor Trace")}
-          className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8]"
-        >
-          查看 Advisor Trace
-        </button>
+        <ActionButton onClick={() => onTabChange("Advisor Trace")}>查看 Advisor Trace</ActionButton>
       </div>
     </section>
   )
 }
+
+
 
 
