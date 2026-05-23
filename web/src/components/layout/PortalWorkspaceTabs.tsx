@@ -1,3 +1,4 @@
+import { Panel } from "@/components/common/Panel"
 ﻿import {
   portalWorkspaces,
   type PortalWorkspace,
@@ -11,7 +12,7 @@ export function PortalWorkspaceTabs({
   onWorkspaceChange: (workspace: PortalWorkspace) => void
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
+    <Panel padding="md">
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
@@ -54,6 +55,6 @@ export function PortalWorkspaceTabs({
           )
         })}
       </div>
-    </section>
+    </Panel>
   )
 }

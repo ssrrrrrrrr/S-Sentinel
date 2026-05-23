@@ -1,4 +1,5 @@
 ﻿import type { ComponentProps } from "react"
+import { Panel } from "@/components/common/Panel"
 import { ReleaseDetailHeader } from "@/components/release/ReleaseDetailHeader"
 import { ReleaseList } from "@/components/release/ReleaseList"
 import { ReleaseResourcePanel } from "@/components/release/ReleaseResourcePanel"
@@ -42,7 +43,7 @@ export function ReleaseDetailWorkspace({
         onRefresh={onRefresh}
       />
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
+      <Panel padding="none">
         <ReleaseDetailHeader
           selected={selected}
           tabs={tabs}
@@ -59,7 +60,7 @@ export function ReleaseDetailWorkspace({
             resourceQuery={resourceQuery}
           />
         </div>
-      </section>
+      </Panel>
     </section>
   )
 }
