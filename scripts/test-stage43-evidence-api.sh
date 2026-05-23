@@ -110,6 +110,9 @@ grep -q "type EvidenceRepositoryDescriptor" watcher/evidence_repository.go
 grep -q "evidence.repository/v1alpha1" watcher/evidence_repository.go
 grep -q "NewEvidenceRepositoryForRuntime" watcher/evidence_repository.go
 grep -q "NewCLIEvidenceRepository" watcher/evidence_repository.go
+grep -q "NewNativeSQLiteEvidenceRepository" watcher/evidence_repository_native_sqlite.go
+grep -q "native-sqlite-repository-disabled" watcher/evidence_repository_native_sqlite.go
+grep -q "S_SENTINEL_EVIDENCE_REPOSITORY_MODE" watcher/evidence_repository.go
 grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/portal_api.go
 grep -q "ControlPlaneMetadata" watcher/evidence_service.go

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -117,7 +118,16 @@ func (err *EvidenceRepositoryError) Unwrap() error {
 }
 
 func NewEvidenceRepositoryForRuntime(runtime EvidenceRuntime) EvidenceRepository {
-	return NewCLIEvidenceRepository(runtime)
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_REPOSITORY_MODE")))
+
+	switch mode {
+	case "", "cli", "cli-backed", "cli-repository":
+		return NewCLIEvidenceRepository(runtime)
+	case "native-sqlite", "sqlite-native", "native":
+		return NewNativeSQLiteEvidenceRepository(runtime)
+	default:
+		return NewCLIEvidenceRepository(runtime)
+	}
 }
 
 type CLIEvidenceRepository struct {
