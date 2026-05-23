@@ -46,6 +46,15 @@ RESOURCE_SPECS = [
         "id_prefix": "at-",
     },
     {
+        "object_type": "otelSpanBundle",
+        "schema_version": "otel.span.bundle/v1alpha1",
+        "glob": "otel-span-bundle-*.json",
+        "latest": "otel-span-bundle-latest.json",
+        "prefix": "otel-span-bundle-",
+        "id_key": "traceId",
+        "id_prefix": "trace-",
+    },
+    {
         "object_type": "planRun",
         "glob": "plan-run-*.json",
         "latest": "plan-run-latest.json",
@@ -327,6 +336,7 @@ def derive_object_id(
 
 def extract_release_fields(data: dict[str, Any], release_id: str) -> dict[str, Any]:
     release = as_dict(data.get("release"))
+    resource = as_dict(data.get("resource"))
     summary = as_dict(data.get("summary"))
     observation = as_dict(data.get("observation"))
     policy = as_dict(data.get("policy"))
@@ -336,16 +346,17 @@ def extract_release_fields(data: dict[str, Any], release_id: str) -> dict[str, A
 
     return {
         "release_id": release_id,
-        "service": first_scalar(data.get("service"), release.get("service")),
-        "namespace": first_scalar(data.get("namespace"), release.get("namespace")),
-        "env": first_scalar(data.get("env"), release.get("env")),
-        "version": first_scalar(data.get("version"), release.get("version")),
-        "commit_sha": first_scalar(data.get("commit"), release.get("commit")),
+        "service": first_scalar(data.get("service"), release.get("service"), resource.get("service")),
+        "namespace": first_scalar(data.get("namespace"), release.get("namespace"), resource.get("namespace")),
+        "env": first_scalar(data.get("env"), release.get("env"), resource.get("env")),
+        "version": first_scalar(data.get("version"), release.get("version"), resource.get("version")),
+        "commit_sha": first_scalar(data.get("commit"), release.get("commit"), resource.get("commit")),
         "image": first_scalar(image.get("image"), data.get("image")),
         "image_digest": first_scalar(
             data.get("imageDigest"),
             release.get("imageDigest"),
             image.get("imageDigest"),
+            resource.get("imageDigest"),
         ),
         "release_result": first_scalar(
             data.get("releaseResult"),
@@ -465,6 +476,18 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["sbomPresent"] = verification_summary.get("sbomPresent")
         result["provenancePresent"] = verification_summary.get("provenancePresent")
         result["canRunExternalVerification"] = verification_summary.get("canRunExternalVerification")
+
+    if object_type == "otelSpanBundle":
+        guardrails = as_dict(data.get("guardrails"))
+        result["traceId"] = data.get("traceId")
+        result["rootSpanId"] = data.get("rootSpanId")
+        result["spanCount"] = summary.get("spanCount")
+        result["hasRootSpan"] = summary.get("hasRootSpan")
+        result["sourceAgentTraceId"] = summary.get("sourceAgentTraceId")
+        result["spanNames"] = summary.get("spanNames") or []
+        result["localFileOnly"] = guardrails.get("localFileOnly")
+        result["doesNotSendExternalTelemetry"] = guardrails.get("doesNotSendExternalTelemetry")
+        result["doesNotCallExternalCollector"] = guardrails.get("doesNotCallExternalCollector")
 
     return result
 
