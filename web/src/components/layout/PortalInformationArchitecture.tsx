@@ -1,4 +1,5 @@
 import { Panel } from "@/components/common/Panel"
+import { Pill } from "@/components/common/Pill"
 import type { LatestReleaseResponse } from "@/types/release"
 
 type PortalLane = {
@@ -92,9 +93,9 @@ export function PortalInformationArchitecture({
                 <h4 className="font-semibold text-[#031a41]">{lane.title}</h4>
                 <p className="mt-1 text-xs font-medium text-cyan-700">{lane.signal}</p>
               </div>
-              <span className="rounded-full border border-cyan-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-cyan-700">
+              <Pill tone="info" className="text-[11px]">
                 Stage 41
-              </span>
+              </Pill>
             </div>
 
             <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
@@ -107,12 +108,13 @@ export function PortalInformationArchitecture({
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {lane.objects.map((objectName) => (
-                  <span
+                  <Pill
                     key={`${lane.title}-${objectName}`}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-slate-600"
+                    tone="muted"
+                    className="font-mono text-[11px]"
                   >
                     {objectName}
-                  </span>
+                  </Pill>
                 ))}
               </div>
             </div>

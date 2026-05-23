@@ -1,5 +1,5 @@
 import { Panel } from "@/components/common/Panel"
-﻿import {
+import {
   portalWorkspaces,
   type PortalWorkspace,
 } from "@/components/layout/portalWorkspaceConfig"
