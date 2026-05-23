@@ -1,7 +1,7 @@
-import type { ComponentType } from "react"
+﻿import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
-  Bot,
+  Activity,
   ClipboardCheck,
   FileCheck2,
   GitBranch,
@@ -120,18 +120,18 @@ function statusClass(status: string) {
   const normalized = status.toLowerCase()
 
   if (normalized.includes("fail") || normalized.includes("deny") || normalized.includes("block")) {
-    return "border-rose-200 bg-rose-50 text-rose-700"
+    return "border-rose-900/45 bg-rose-950/25 text-rose-200"
   }
 
   if (normalized.includes("missing") || normalized === "-") {
-    return "border-amber-200 bg-amber-50 text-amber-700"
+    return "border-amber-900/45 bg-amber-950/25 text-amber-200"
   }
 
   if (normalized.includes("pass") || normalized.includes("allow") || normalized.includes("linked")) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    return "border-emerald-900/45 bg-emerald-950/25 text-emerald-200"
   }
 
-  return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  return "border-[#243044] bg-[#0b121d] text-slate-300"
 }
 
 function GraphNodeCard({
@@ -144,14 +144,14 @@ function GraphNodeCard({
   const Icon = node.icon
 
   return (
-    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <div className="min-w-0 rounded-2xl border border-[#1f2b3d] bg-[#0f1724] p-4 shadow-sm shadow-black/20">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#243044] bg-[#0b121d] text-[#5d8fd8]">
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h4 className="truncate font-semibold text-[#031a41]">{node.title}</h4>
+            <h4 className="truncate font-semibold text-slate-100">{node.title}</h4>
             <p className="mt-1 text-xs text-slate-500">{node.subtitle}</p>
           </div>
         </div>
@@ -161,9 +161,9 @@ function GraphNodeCard({
         </span>
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
         <p className="text-xs text-slate-500">Primary Object</p>
-        <p className="mt-1 break-all font-mono text-sm font-semibold text-[#031a41]" title={node.value}>
+        <p className="mt-1 break-all font-mono text-sm font-semibold text-slate-100" title={node.value}>
           {shortValue(node.value)}
         </p>
       </div>
@@ -172,7 +172,7 @@ function GraphNodeCard({
         {node.fields.map(([key, value]) => (
           <div key={`${node.id}-${key}`} className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 text-xs">
             <span className="text-slate-500">{key}</span>
-            <span className="min-w-0 break-all text-right font-mono font-semibold text-slate-700">
+            <span className="min-w-0 break-all text-right font-mono font-semibold text-slate-300">
               {shortValue(value)}
             </span>
           </div>
@@ -182,7 +182,7 @@ function GraphNodeCard({
       <button
         type="button"
         onClick={() => onTabChange(node.tab)}
-        className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+        className="mt-4 w-full rounded-xl border border-[#243044] bg-[#0b121d] px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
       >
         查看 {node.tab}
       </button>
@@ -283,12 +283,12 @@ export function ControlPlaneGraph({
     },
     {
       id: "agent",
-      title: "AI Advisor",
-      subtitle: "AgentRun / PlanRun / Trace",
+      title: "Advisor Trace",
+      subtitle: "AdvisorRun / PlanRun / Trace",
       value: agentTraceId !== "-" ? agentTraceId : agentRunId,
       status: refs.agentRun?.priority ?? selected.summary.riskLevel,
       tab: "AI Advice",
-      icon: Bot,
+      icon: Activity,
       fields: [
         ["agentRunId", agentRunId],
         ["planRunId", planRunId],
@@ -312,25 +312,25 @@ export function ControlPlaneGraph({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0f1724] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-3 border-b border-[#1a2535] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Release / Evidence Graph
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <Network className="h-5 w-5 text-cyan-700" />
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <Network className="h-5 w-5 text-[#5d8fd8]" />
             一次发布的控制平面对象链路
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             基于当前 release evidence 构建只读图谱，把 Release、SLO Evidence、Policy Guard、Supply Chain Gate、
-            AI Advisor 和 Execution Request 串成可观察、可审计的发布链路。
+            Advisor 和 Execution Request 串成可观察、可审计的发布链路。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Graph Source</p>
-          <p className="mt-1 font-semibold text-[#031a41]">
+          <p className="mt-1 font-semibold text-slate-100">
             {evidenceQuery.isLoading ? "loading" : evidence ? "release evidence" : "release index fallback"}
           </p>
           <p className="mt-1 font-mono text-xs text-slate-500">releaseId={selected.releaseId}</p>
@@ -338,7 +338,7 @@ export function ControlPlaneGraph({
       </div>
 
       {evidenceQuery.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           Evidence Graph 无法读取 release evidence，已回退到 Release index 摘要。
         </div>
       ) : null}
@@ -351,7 +351,7 @@ export function ControlPlaneGraph({
         ))}
       </div>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mt-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
           Observability Contract
         </p>
@@ -372,7 +372,7 @@ export function ControlPlaneGraph({
           ].map((field) => (
             <span
               key={field}
-              className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-slate-600"
+              className="rounded-full border border-[#1f2b3d] bg-[#070b12] px-2.5 py-1 font-mono text-[11px] font-semibold text-slate-400"
             >
               {field}
             </span>
@@ -382,3 +382,5 @@ export function ControlPlaneGraph({
     </section>
   )
 }
+
+

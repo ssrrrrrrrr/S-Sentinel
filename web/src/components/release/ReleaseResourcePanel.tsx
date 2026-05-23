@@ -1,5 +1,5 @@
 ﻿import type { UseQueryResult } from "@tanstack/react-query"
-import { Activity, Bot, Sparkles } from "lucide-react"
+import { Activity, LockKeyhole } from "lucide-react"
 import type { ReleaseResourceContent } from "@/api/releaseResources"
 import { isMarkdownContent } from "@/api/releaseResources"
 import { RawResourceViewer } from "@/components/common/RawResourceViewer"
@@ -33,12 +33,12 @@ export function ReleaseResourcePanel({
   return (
     <div className="space-y-5">
       {activeTab === "Action Plan" ? (
-        <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
-          <div className="flex items-center gap-2 font-semibold text-cyan-900">
-            <Sparkles className="h-4 w-4" />
-            Action Plan 安全建议
+        <div className="rounded-xl border border-[#35517a] bg-[#101a29] p-4">
+          <div className="flex items-center gap-2 font-semibold text-slate-100">
+            <LockKeyhole className="h-4 w-4 text-amber-300" />
+            Action Plan 安全边界
           </div>
-          <p className="mt-2 text-sm leading-6 text-cyan-800">
+          <p className="mt-2 text-sm leading-6 text-slate-400">
             当前系统处于只读观察模式。Release Portal 返回的 Action Plan 仅用于辅助判断，不会修改 Kubernetes 资源。
           </p>
         </div>
@@ -46,38 +46,38 @@ export function ReleaseResourcePanel({
 
       {activeTab === "Action Plan" ? <SafetyPanel latest={latest} /> : null}
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+        <div className="flex flex-col gap-3 border-b border-[#1a2535] pb-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-              {activeTab === "AI Advice" ? <Bot className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
-              {activeTab}
+            <div className="flex items-center gap-2 font-semibold text-slate-100">
+              <Activity className="h-4 w-4 text-[#5d8fd8]" />
+              {activeTab === "AI Advice" ? "Advisor Trace" : activeTab}
             </div>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              正在读取 <span className="font-mono text-[#031a41]">/api/releases/{selected.releaseId}/{resourceKind}</span>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              正在读取 <span className="font-mono text-slate-200">/api/releases/{selected.releaseId}/{resourceKind}</span>
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-[#1f2b3d] bg-[#070b12] px-3 py-1 text-xs font-semibold text-slate-400">
               {resourceQuery.data?.contentType ?? "loading"}
             </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-[#1f2b3d] bg-[#070b12] px-3 py-1 text-xs font-semibold text-slate-400">
               {resourceKind}
             </span>
           </div>
         </div>
 
         {resourceQuery.isLoading ? (
-          <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="mt-4 rounded-lg border border-[#1f2b3d] bg-[#0f1724] p-4 text-sm text-slate-400">
             正在加载资源内容...
           </div>
         ) : resourceQuery.isError && activeTab !== "Timeline" ? (
-          <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div className="mt-4 rounded-lg border border-rose-900/45 bg-rose-950/20 p-4 text-sm text-rose-200">
             资源读取失败：{resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
           </div>
         ) : resourceQuery.isError && activeTab === "Timeline" ? (
           <div className="mt-4 space-y-5">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="rounded-lg border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
               Timeline 资源读取失败，已回退到 Release Portal metadata：
               {resourceQuery.error instanceof Error ? resourceQuery.error.message : "unknown error"}
             </div>
@@ -127,8 +127,8 @@ export function ReleaseResourcePanel({
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-slate-900">原始资源内容</h4>
-                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
+                <h4 className="text-sm font-semibold text-slate-100">原始资源内容</h4>
+                <span className="rounded-full border border-[#1f2b3d] bg-[#070b12] px-2.5 py-1 text-xs font-semibold text-slate-500">
                   Audit View
                 </span>
               </div>
@@ -139,7 +139,7 @@ export function ReleaseResourcePanel({
             </div>
           </div>
         ) : (
-          <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="mt-4 rounded-lg border border-[#1f2b3d] bg-[#0f1724] p-4 text-sm text-slate-400">
             暂无资源内容。
           </div>
         )}

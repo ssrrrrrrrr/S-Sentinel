@@ -1,6 +1,6 @@
 ﻿import type { UseQueryResult } from "@tanstack/react-query"
 import {
-  Bot,
+  Activity,
   Boxes,
   ClipboardCheck,
   FileCheck2,
@@ -178,8 +178,8 @@ function MetaRow({
       <span
         className={
           truncate
-            ? "min-w-0 truncate text-right font-mono font-semibold text-slate-700"
-            : "min-w-0 break-all text-right font-mono font-semibold text-slate-700"
+            ? "min-w-0 truncate text-right font-mono font-semibold text-slate-300"
+            : "min-w-0 break-all text-right font-mono font-semibold text-slate-300"
         }
         title={value}
       >
@@ -200,14 +200,14 @@ function ControlPlaneObjectCard({
   const linked = Boolean(card.objectId || card.artifactRef || resourceExists(card.resource))
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <div className="rounded-2xl border border-[#1f2b3d] bg-[#0f1724] p-4 shadow-sm shadow-black/20">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-100 bg-cyan-50 text-cyan-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#243044] bg-[#0b121d] text-[#5d8fd8]">
             <Icon className="h-5 w-5" />
           </div>
           <div>
-            <h4 className="font-semibold text-[#031a41]">{card.title}</h4>
+            <h4 className="font-semibold text-slate-100">{card.title}</h4>
             <p className="mt-1 text-xs text-slate-500">{card.subtitle}</p>
           </div>
         </div>
@@ -218,9 +218,9 @@ function ControlPlaneObjectCard({
         />
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
         <p className="text-xs text-slate-500">Control-plane signal</p>
-        <p className="mt-1 font-semibold text-[#031a41]">{card.value}</p>
+        <p className="mt-1 font-semibold text-slate-100">{card.value}</p>
         {card.rawValue ? (
           <p className="mt-1 break-all font-mono text-xs text-slate-500">{card.rawValue}</p>
         ) : null}
@@ -237,7 +237,7 @@ function ControlPlaneObjectCard({
       </div>
 
       {card.details && card.details.length > 0 ? (
-        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="mt-3 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
           <div className="grid gap-2">
             {card.details.map(([key, value]) => (
               <MetaRow key={key} label={key} value={value} />
@@ -249,7 +249,7 @@ function ControlPlaneObjectCard({
       <button
         type="button"
         onClick={() => onTabChange(card.focusTab)}
-        className="mt-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+        className="mt-4 w-full rounded-xl border border-[#243044] bg-[#0b121d] px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:bg-[#101a29] hover:text-slate-100"
       >
         查看 {card.focusTab}
       </button>
@@ -344,15 +344,15 @@ export function ControlPlaneObjectCards({
       ],
     },
     {
-      title: "AI Advisor / Plan Run",
-      subtitle: "只读智能分析、建议、RAG 规划和风险解释。",
+      title: "Advisor / Plan Run",
+      subtitle: "只读建议、RAG 规划和风险解释。",
       value: agentRun?.recommendedAction ?? aiDecision?.agentAction?.type ?? riskText(summary.riskLevel),
       rawValue: `agent=${valueOrDash(evidencePayload?.agentRunId ?? agentRun?.agentRunId)} · plan=${valueOrDash(evidencePayload?.planRunId ?? planRun?.planRunId)}`,
       objectId: evidencePayload?.agentRunId ?? agentRun?.agentRunId,
       resource: advisor?.resource,
       resourceKey: advisor?.key,
       artifactRef: artifacts.agentRun ?? artifacts.planRun ?? artifacts.aiDecision,
-      icon: Bot,
+      icon: Activity,
       focusTab: "AI Advice",
       statusValue: agentRun?.priority ?? summary.riskLevel,
       details: [
@@ -400,23 +400,23 @@ export function ControlPlaneObjectCards({
   ]
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0f1724] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-3 border-b border-[#1a2535] pb-4 md:flex-row md:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Release Detail Consolidation
           </p>
-          <h3 className="mt-2 text-lg font-semibold tracking-tight text-[#031a41]">
+          <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-100">
             一次发布关联的控制平面对象
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            将 SLO、Policy、AI Advisor、Plan Run、Execution Request、Supply Chain 和 Environment 从 evidence 中收口到发布详情顶部。
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+            将 SLO、Policy、Advisor、Plan Run、Execution Request、Supply Chain 和 Environment 从 evidence 中收口到发布详情顶部。
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-3 text-sm">
           <p className="text-xs text-slate-500">Release ID</p>
-          <p className="mt-1 font-mono font-semibold text-[#031a41]">{selected.releaseId}</p>
+          <p className="mt-1 font-mono font-semibold text-slate-100">{selected.releaseId}</p>
           <p className="mt-1 text-xs text-slate-500">
             evidence={evidenceQuery?.isLoading ? "loading" : evidencePayload ? "parsed" : "fallback"}
           </p>
@@ -424,7 +424,7 @@ export function ControlPlaneObjectCards({
       </div>
 
       {evidenceQuery?.isError ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           控制平面对象深度信息读取失败，已回退到 Release resource index。
         </div>
       ) : null}
@@ -441,3 +441,5 @@ export function ControlPlaneObjectCards({
     </section>
   )
 }
+
+

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+﻿import { useMemo, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   Database,
@@ -220,17 +220,17 @@ export function EvidenceStorePanel({
   const releaseQueryErrorMessage = releaseQuery.isError ? queryErrorMessage(releaseQuery.error) : ""
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end">
+    <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             Evidence Search / Object Detail
           </p>
-          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-[#031a41]">
-            <Database className="h-5 w-5 text-cyan-700" />
+          <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-100">
+            <Database className="h-5 w-5 text-[#5d8fd8]" />
             EvidenceStore 当前发布对象索引
           </h3>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
             通过 EvidenceStore 查询当前 release 关联的对象，按 objectType / objectId / schemaVersion
             建立只读检索入口。点击对象后读取 object detail，用于后续 Agent Trace、Policy Explanation
             和 Supply Chain Gate View。
@@ -238,17 +238,17 @@ export function EvidenceStorePanel({
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-xs lg:min-w-[360px]">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Objects</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">{objectRows.length}</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{objectRows.length}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Types</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">{objectTypeCount}</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{objectTypeCount}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Mode</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">Read-only</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">Read-only</p>
           </div>
         </div>
       </div>
@@ -256,27 +256,27 @@ export function EvidenceStorePanel({
       <div
         className={`mt-4 rounded-2xl border p-4 ${
           evidenceStoreReady
-            ? "border-emerald-200 bg-emerald-50"
-            : "border-amber-200 bg-amber-50"
+            ? "border-emerald-900/45 bg-emerald-950/20"
+            : "border-amber-900/45 bg-amber-950/20"
         }`}
       >
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <div>
             <p
               className={`text-xs font-semibold uppercase tracking-[0.2em] ${
-                evidenceStoreReady ? "text-emerald-700" : "text-amber-700"
+                evidenceStoreReady ? "text-emerald-200" : "text-amber-200"
               }`}
             >
               EvidenceStore Status
             </p>
-            <h4 className="mt-1 text-base font-semibold text-[#031a41]">
+            <h4 className="mt-1 text-base font-semibold text-slate-100">
               {statusQuery.isLoading
                 ? "Checking EvidenceStore..."
                 : evidenceStoreReady
                   ? "Ready · SQLite index available"
                   : "Not Ready · refresh required"}
             </h4>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
+            <p className="mt-1 text-sm leading-6 text-slate-400">
               查询接口现在只读读取 SQLite 索引；需要通过 Refresh 显式导入 release evidence。
             </p>
           </div>
@@ -285,7 +285,7 @@ export function EvidenceStorePanel({
             type="button"
             onClick={() => refreshMutation.mutate()}
             disabled={refreshMutation.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${refreshMutation.isPending ? "animate-spin" : ""}`} />
             {refreshMutation.isPending ? "Refreshing..." : "Refresh EvidenceStore"}
@@ -293,62 +293,62 @@ export function EvidenceStorePanel({
         </div>
 
         <div className="mt-4 grid gap-2 text-xs md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">DB</p>
-            <p className="mt-1 break-all font-mono font-semibold text-[#031a41]">{shortValue(dbFile, 56)}</p>
+            <p className="mt-1 break-all font-mono font-semibold text-slate-100">{shortValue(dbFile, 56)}</p>
           </div>
-          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Releases</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">{releaseCount}</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{releaseCount}</p>
           </div>
-          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Imported / Skipped</p>
-            <p className="mt-1 text-lg font-semibold text-[#031a41]">
+            <p className="mt-1 text-lg font-semibold text-slate-100">
               {importedObjects}/{skippedObjects}
             </p>
           </div>
-          <div className="rounded-xl border border-white/70 bg-white/80 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Latest Release</p>
-            <p className="mt-1 break-all font-mono font-semibold text-[#031a41]">
+            <p className="mt-1 break-all font-mono font-semibold text-slate-100">
               {shortValue(latestReleaseId)}
             </p>
           </div>
         </div>
 
         {statusQuery.isError ? (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-white/80 p-3 text-sm text-amber-800">
+          <p className="mt-3 rounded-xl border border-amber-900/45 bg-[#0b121d] p-3 text-sm text-amber-200">
             EvidenceStore status 读取失败：{statusErrorMessage}
           </p>
         ) : null}
 
         {refreshMutation.isError ? (
-          <p className="mt-3 rounded-xl border border-amber-200 bg-white/80 p-3 text-sm text-amber-800">
+          <p className="mt-3 rounded-xl border border-amber-900/45 bg-[#0b121d] p-3 text-sm text-amber-200">
             EvidenceStore refresh 失败：{refreshErrorMessage}
           </p>
         ) : null}
       </div>
 
       {statusQuery.isLoading ? (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
           正在检查 EvidenceStore status...
         </div>
       ) : !evidenceStoreReady ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           <p className="font-semibold">EvidenceStore DB 尚未准备好</p>
           <p className="mt-2 leading-6">
             当前查询接口不会再隐式导入 evidence。请点击上方 Refresh EvidenceStore，显式刷新 SQLite 索引后再查看对象详情。
           </p>
         </div>
       ) : releaseQuery.isLoading ? (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
           正在查询 EvidenceStore release detail...
         </div>
       ) : releaseQuery.isError ? (
         <div
           className={`mt-4 rounded-xl border p-4 text-sm ${
             releaseIndexMissing
-              ? "border-cyan-200 bg-cyan-50 text-cyan-800"
-              : "border-amber-200 bg-amber-50 text-amber-800"
+              ? "border-[#35517a] bg-[#101a29] text-sky-200"
+              : "border-amber-900/45 bg-amber-950/20 text-amber-200"
           }`}
         >
           <p className="font-semibold">
@@ -367,7 +367,7 @@ export function EvidenceStorePanel({
           </p>
         </div>
       ) : objectRows.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           EvidenceStore 已返回数据，但没有解析出对象列表。当前面板保留为只读 Raw View，后续可根据真实 schema 调整解析路径。
         </div>
       ) : (
@@ -377,14 +377,14 @@ export function EvidenceStorePanel({
               {Object.entries(counts).map(([objectType, count]) => (
                 <span
                   key={objectType}
-                  className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-mono text-xs font-semibold text-cyan-800"
+                  className="rounded-full border border-[#35517a] bg-[#101a29] px-3 py-1 font-mono text-xs font-semibold text-sky-200"
                 >
                   {objectType}={count}
                 </span>
               ))}
             </div>
 
-            <label className="flex min-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+            <label className="flex min-w-[280px] items-center gap-2 rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-3 py-2 text-sm">
               <Search className="h-4 w-4 text-slate-400" />
               <input
                 value={searchText}
@@ -396,13 +396,13 @@ export function EvidenceStorePanel({
           </div>
 
           <section className="mt-5 grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50">
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-                  <FileSearch className="h-4 w-4 text-cyan-700" />
+            <div className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d]">
+              <div className="flex items-center justify-between border-b border-[#1f2b3d] px-4 py-3">
+                <div className="flex items-center gap-2 font-semibold text-slate-100">
+                  <FileSearch className="h-4 w-4 text-[#5d8fd8]" />
                   Evidence Objects
                 </div>
-                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
+                <span className="rounded-full border border-[#1f2b3d] bg-[#0b121d] px-2.5 py-1 text-xs font-semibold text-slate-500">
                   {filteredRows.length}/{objectRows.length}
                 </span>
               </div>
@@ -418,20 +418,20 @@ export function EvidenceStorePanel({
                       onClick={() => setSelectedKey(row.key)}
                       className={`mb-2 w-full rounded-xl border p-3 text-left transition ${
                         active
-                          ? "border-[#031a41] bg-white shadow-sm"
-                          : "border-slate-200 bg-white hover:border-cyan-200"
+                          ? "border-[#031a41] bg-[#0b121d] shadow-sm"
+                          : "border-[#1f2b3d] bg-[#0b121d] hover:border-[#35517a]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-mono text-xs font-semibold text-cyan-700">
+                          <p className="font-mono text-xs font-semibold text-[#5d8fd8]">
                             {row.objectType}
                           </p>
-                          <p className="mt-1 break-all font-mono text-sm font-semibold text-[#031a41]">
+                          <p className="mt-1 break-all font-mono text-sm font-semibold text-slate-100">
                             {shortValue(row.objectId)}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">
+                        <span className="shrink-0 rounded-full border border-[#1f2b3d] bg-[#0b121d] px-2 py-1 text-[11px] font-semibold text-slate-500">
                           detail
                         </span>
                       </div>
@@ -446,11 +446,11 @@ export function EvidenceStorePanel({
               </div>
             </div>
 
-            <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start">
+            <div className="min-w-0 rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+              <div className="flex flex-col justify-between gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start">
                 <div>
-                  <div className="flex items-center gap-2 font-semibold text-[#031a41]">
-                    <ShieldCheck className="h-4 w-4 text-cyan-700" />
+                  <div className="flex items-center gap-2 font-semibold text-slate-100">
+                    <ShieldCheck className="h-4 w-4 text-[#5d8fd8]" />
                     Object Detail
                   </div>
                   <p className="mt-2 break-all font-mono text-xs text-slate-500">
@@ -467,7 +467,7 @@ export function EvidenceStorePanel({
                     void releaseQuery.refetch()
                     void detailQuery.refetch()
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8]"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Refresh
@@ -476,11 +476,11 @@ export function EvidenceStorePanel({
 
               <div className="mt-4">
                 {detailQuery.isLoading ? (
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                  <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
                     正在读取 object detail...
                   </div>
                 ) : detailQuery.isError ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
                     Object detail 读取失败：
                     {queryErrorMessage(detailQuery.error)}
                   </div>
@@ -495,7 +495,7 @@ export function EvidenceStorePanel({
                     body={JSON.stringify(releaseQuery.data, null, 2)}
                   />
                 ) : (
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                  <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
                     暂无可展示对象。
                   </div>
                 )}
@@ -509,18 +509,19 @@ export function EvidenceStorePanel({
         <button
           type="button"
           onClick={() => onTabChange("Evidence")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8]"
         >
           查看 Release Evidence
         </button>
         <button
           type="button"
           onClick={() => onTabChange("AI Advice")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-cyan-200 hover:text-cyan-700"
+          className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8]"
         >
-          查看 AI Advice
+          查看 Advisor Trace
         </button>
       </div>
     </section>
   )
 }
+

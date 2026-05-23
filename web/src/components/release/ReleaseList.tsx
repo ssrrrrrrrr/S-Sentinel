@@ -22,21 +22,27 @@ export function ReleaseList({
   onRefresh: () => void
 }) {
   return (
-    <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <aside className="rounded-2xl border border-[#1f2b3d] bg-[#0f1724] p-4 shadow-sm shadow-black/20">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-slate-950">最近发布</h3>
+          <h3 className="font-semibold text-slate-100">最近发布</h3>
           <p className="text-xs text-slate-500">共 {totalCount} 条发布记录</p>
         </div>
-        <button type="button" onClick={onRefresh} title="刷新发布列表">
-          <RefreshCw className="h-4 w-4 text-slate-400 hover:text-cyan-600" />
+        <button
+          type="button"
+          onClick={onRefresh}
+          title="刷新发布列表"
+          className="rounded-lg border border-[#243044] bg-[#0b121d] p-2 text-slate-400 transition hover:border-[#35517a] hover:text-slate-100"
+        >
+          <RefreshCw className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="relative space-y-3 before:absolute before:left-3 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-slate-200">
+      <div className="relative space-y-3 before:absolute before:left-3 before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-[#243044]">
         {releases.map((release) => {
           const isActive = release.releaseId === selected.releaseId
           const result = release.summary.releaseResult
+          const pass = normalize(result).startsWith("PASS")
 
           return (
             <button
@@ -45,19 +51,25 @@ export function ReleaseList({
               onClick={() => onSelect(release.releaseId)}
               className={`relative w-full rounded-xl border py-4 pl-9 pr-4 text-left transition ${
                 isActive
-                  ? "border-[#031a41] bg-[#031a41] text-white shadow-md"
-                  : "border-slate-200 bg-white text-slate-900 hover:border-cyan-200 hover:bg-cyan-50/40 hover:shadow-sm"
+                  ? "border-[#35517a] bg-[#14233a] text-slate-50 shadow-md shadow-black/20"
+                  : "border-[#1f2b3d] bg-[#0b121d] text-slate-300 hover:border-[#35517a] hover:bg-[#101a29]"
               }`}
             >
-              <span className={`absolute left-[7px] top-5 h-3 w-3 rounded-full border-2 ${normalize(result).startsWith("PASS") ? "border-emerald-600 bg-emerald-100" : "border-rose-600 bg-rose-100"}`} />
+              <span
+                className={`absolute left-[7px] top-5 h-3 w-3 rounded-full border-2 ${
+                  pass
+                    ? "border-emerald-400 bg-emerald-950"
+                    : "border-rose-400 bg-rose-950"
+                }`}
+              />
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className={`font-mono text-sm font-semibold ${isActive ? "text-white" : "text-[#031a41]"}`}>
+                  <p className="font-mono text-sm font-semibold text-slate-100">
                     {release.releaseId}
                   </p>
-                  <p className={`mt-1 text-xs ${isActive ? "text-slate-300" : "text-slate-500"}`}>{release.generatedAt}</p>
+                  <p className="mt-1 text-xs text-slate-500">{release.generatedAt}</p>
                 </div>
-                <span className={`text-xs ${isActive ? "text-cyan-200" : "text-slate-500"}`}>{formatTime(release.modifiedAt)}</span>
+                <span className="text-xs text-slate-500">{formatTime(release.modifiedAt)}</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge value={result} label={resultDisplay(result)} />

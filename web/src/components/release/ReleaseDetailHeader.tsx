@@ -15,31 +15,31 @@ export function ReleaseDetailHeader({
   const selectedSummary = selected.summary
 
   return (
-    <div className="border-b border-slate-200 p-6">
+    <div className="border-b border-[#1a2535] p-6">
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600">
-            <GitBranch className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <GitBranch className="h-4 w-4 text-[#5d8fd8]" />
             当前选中发布
           </div>
-          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[#031a41]">{selected.releaseId}</h3>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-100">{selected.releaseId}</h3>
           <p className="mt-2 text-sm text-slate-500">
             GeneratedAt {selected.generatedAt} · ModifiedAt {selected.modifiedAt}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-xs text-slate-500">Risk Score</p>
-            <p className="mt-1 text-xl font-semibold text-[#031a41]">{selectedSummary.riskScore}<span className="text-xs text-slate-400"> /100</span></p>
+            <p className="mt-1 text-xl font-semibold text-slate-100">{selectedSummary.riskScore}<span className="text-xs text-slate-500"> /100</span></p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-xs text-slate-500">资源数量</p>
-            <p className="mt-1 text-xl font-semibold text-[#031a41]">{selected.resourceCount}</p>
+            <p className="mt-1 text-xl font-semibold text-slate-100">{selected.resourceCount}</p>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5">
+      <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-1.5">
         {tabs.map((tab) => (
           <button
             key={tab}
@@ -47,8 +47,8 @@ export function ReleaseDetailHeader({
             onClick={() => onTabChange(tab)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === tab
-                ? "bg-[#031a41] text-white shadow-sm"
-                : "text-slate-600 hover:bg-white hover:text-[#031a41] hover:shadow-sm"
+                ? "bg-[#14233a] text-slate-50 shadow-sm"
+                : "text-slate-400 hover:bg-[#101a29] hover:text-slate-100"
             }`}
           >
             {tab}
