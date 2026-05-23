@@ -1,4 +1,4 @@
-import type { ComponentType } from "react"
+﻿import type { ComponentType } from "react"
 import type { UseQueryResult } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -233,7 +233,7 @@ function ApprovalBoundaryPanel({
       label: "执行开关",
       value: Boolean(willExecute),
       expectedSafe: false,
-      description: "Stage 41 必须保持 false，任何执行都应进入后续 Policy-bound Executor。",
+      description: "当前控制台必须保持 false，任何执行都应进入后续 Policy-bound Executor。",
     },
     {
       key: "portalReadOnly",
@@ -380,7 +380,7 @@ export function ApprovalConsolePanel({
     {
       label: "Will Execute",
       value: boolText(willExecute),
-      hint: "Stage 41 Portal 不执行任何动作。",
+      hint: "Portal 不执行任何动作。",
       status: willExecute ? "REQUIRED" : "NOT REQUIRED",
       icon: willExecute ? AlertTriangle : CheckCircle2,
     },
@@ -422,7 +422,7 @@ export function ApprovalConsolePanel({
       title: "Execution Boundary",
       description: willExecute
         ? "检测到 willExecute=true，必须视为高风险状态，不能由 Portal 直接执行。"
-        : "willExecute=false，符合 Stage 41 只读控制台边界。",
+        : "willExecute=false，符合只读控制台边界。",
       status: willExecute ? "REQUIRED" : "PASS",
       icon: willExecute ? XCircle : CheckCircle2,
     },
@@ -582,3 +582,4 @@ export function ApprovalConsolePanel({
     </section>
   )
 }
+

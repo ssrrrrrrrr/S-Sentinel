@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+﻿import { useMemo } from "react"
 import type { ComponentType } from "react"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 import {
@@ -481,7 +481,7 @@ export function AgentTracePanel({
     {
       label: "Will Execute",
       value: boolText(willExecute),
-      hint: "Stage 41 只展示 trace，不执行动作。",
+      hint: "当前只展示 trace，不执行动作。",
       status: willExecute ? "REQUIRED" : "PASS",
       icon: willExecute ? AlertTriangle : CheckCircle2,
     },
@@ -611,7 +611,7 @@ export function AgentTracePanel({
 
         <ObjectEntriesPanel
           title="Guardrails"
-          description="AgentTrace 的只读安全边界，Stage 41 不允许执行任何动作。"
+          description="AgentTrace 的只读安全边界不允许执行任何动作。"
           record={guardrails}
         />
       </section>
@@ -652,3 +652,4 @@ export function AgentTracePanel({
     </section>
   )
 }
+
