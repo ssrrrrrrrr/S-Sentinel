@@ -30,7 +30,15 @@ spec:
       - LATENCY_MS
   metricBinding:
     provider: prometheus
-    bindingSource: SLOConfig.spec.observability.prometheus
+    bindingSource: CompilerProfile.spec.metricBinding.prometheus
+    prometheus:
+      requestCounter: demo_http_requests_total
+      latencyHistogram: demo_http_request_duration_seconds_bucket
+      labels:
+        namespace: namespace
+        version: version
+        status: status
+      errorStatusRegex: "5.."
     supportedObjectiveTypes:
       - request_count
       - error_rate

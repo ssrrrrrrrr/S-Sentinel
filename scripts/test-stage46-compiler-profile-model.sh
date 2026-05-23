@@ -65,6 +65,13 @@ for key in ["serviceConfig", "runtimeProfile", "metricBinding", "rendererRefs", 
 assert spec["serviceConfig"]["containerPort"] == 8080, spec["serviceConfig"]
 assert spec["runtimeProfile"]["replicas"] == 3, spec["runtimeProfile"]
 assert spec["metricBinding"]["provider"] == "prometheus", spec["metricBinding"]
+assert spec["metricBinding"]["bindingSource"] == "CompilerProfile.spec.metricBinding.prometheus", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["requestCounter"] == "demo_http_requests_total", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["latencyHistogram"] == "demo_http_request_duration_seconds_bucket", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["labels"]["namespace"] == "namespace", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["labels"]["version"] == "version", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["labels"]["status"] == "status", spec["metricBinding"]
+assert spec["metricBinding"]["prometheus"]["errorStatusRegex"] == "5..", spec["metricBinding"]
 assert spec["rendererRefs"]["rolloutTemplate"] == "argo-rollouts-canary-v1", spec["rendererRefs"]
 assert spec["rendererRefs"]["analysisTemplateRenderer"] == "prometheus-analysis-template-v1", spec["rendererRefs"]
 assert spec["rendererRefs"]["environmentOverlayRenderer"] == "kustomize-overlay-v1", spec["rendererRefs"]
@@ -88,6 +95,10 @@ assert compiler_profile["profileRef"] == "configs/compiler-profiles/demo-app.pro
 assert compiler_profile["serviceConfig"]["serviceName"] == "demo-app", compiler_profile
 assert compiler_profile["runtimeProfile"]["runtimeType"] == "container", compiler_profile
 assert compiler_profile["metricBinding"]["provider"] == "prometheus", compiler_profile
+assert compiler_profile["metricBinding"]["bindingSource"] == "CompilerProfile.spec.metricBinding.prometheus", compiler_profile
+assert compiler_profile["metricBinding"]["prometheus"]["requestCounter"] == "demo_http_requests_total", compiler_profile
+assert compiler_profile["metricBinding"]["prometheus"]["latencyHistogram"] == "demo_http_request_duration_seconds_bucket", compiler_profile
+assert compiler_profile["metricBinding"]["prometheus"]["errorStatusRegex"] == "5..", compiler_profile
 assert compiler_profile["rendererRefs"]["prometheusRuleRenderer"] == "prometheus-rule-v1", compiler_profile
 assert compiler_profile["guardrails"]["profileModelOnly"] is False, compiler_profile
 assert compiler_profile["guardrails"]["drivesRenderedWorkloadShape"] is True, compiler_profile
@@ -103,6 +114,16 @@ assert prometheus_rule["kind"] == "PrometheusRule", prometheus_rule
 assert analysis["metadata"]["name"] == "demo-app-error-rate", analysis["metadata"]
 assert rollout["metadata"]["name"] == "demo-app", rollout["metadata"]
 assert prometheus_rule["metadata"]["name"] == "demo-app-rollout-alerts", prometheus_rule["metadata"]
+
+prom = plan["slo"]["observability"]["prometheus"]
+assert prom["provider"] == "prometheus", prom
+assert prom["bindingSource"] == "CompilerProfile.spec.metricBinding.prometheus", prom
+assert prom["requestCounter"] == "demo_http_requests_total", prom
+assert prom["latencyHistogram"] == "demo_http_request_duration_seconds_bucket", prom
+assert prom["errorStatusRegex"] == "5..", prom
+assert prom["labels"]["namespace"] == "namespace", prom
+assert prom["labels"]["version"] == "version", prom
+assert prom["labels"]["status"] == "status", prom
 
 container = rollout["spec"]["template"]["spec"]["containers"][0]
 assert rollout["spec"]["replicas"] == spec["runtimeProfile"]["replicas"], rollout["spec"]

@@ -240,25 +240,30 @@ def prom_window(slo_doc: dict[str, Any]) -> str:
 
 
 
-def prometheus_bindings(slo_doc: dict[str, Any]) -> dict[str, Any]:
+def prometheus_bindings(slo_doc: dict[str, Any], metric_binding: dict[str, Any] | None = None) -> dict[str, Any]:
     prom = (
         slo_doc.get("spec", {})
         .get("observability", {})
         .get("prometheus", {})
     )
+    metric_binding = metric_binding or {}
+    profile_prom = metric_binding.get("prometheus") or {}
+
     labels = prom.get("labels") or {}
+    profile_labels = profile_prom.get("labels") or {}
 
     return {
-        "requestCounter": str(prom.get("requestCounter") or "demo_http_requests_total"),
-        "latencyHistogram": str(prom.get("latencyHistogram") or "demo_http_request_duration_seconds_bucket"),
-        "errorStatusRegex": str(prom.get("errorStatusRegex") or "5.."),
+        "provider": str(metric_binding.get("provider") or "prometheus"),
+        "bindingSource": str(metric_binding.get("bindingSource") or "SLOConfig.spec.observability.prometheus"),
+        "requestCounter": str(profile_prom.get("requestCounter") or prom.get("requestCounter") or "demo_http_requests_total"),
+        "latencyHistogram": str(profile_prom.get("latencyHistogram") or prom.get("latencyHistogram") or "demo_http_request_duration_seconds_bucket"),
+        "errorStatusRegex": str(profile_prom.get("errorStatusRegex") or prom.get("errorStatusRegex") or "5.."),
         "labels": {
-            "namespace": str(labels.get("namespace") or "namespace"),
-            "version": str(labels.get("version") or "version"),
-            "status": str(labels.get("status") or "status"),
+            "namespace": str(profile_labels.get("namespace") or labels.get("namespace") or "namespace"),
+            "version": str(profile_labels.get("version") or labels.get("version") or "version"),
+            "status": str(profile_labels.get("status") or labels.get("status") or "status"),
         },
     }
-
 
 def prom_matchers(metric_bindings: dict[str, Any], namespace: str, version: str | None = None, status_regex: str | None = None) -> str:
     labels = metric_bindings.get("labels") or {}
@@ -470,7 +475,7 @@ strategy_analysis = strategy_spec.get("analysis") or {}
 objectives = objective_by_id(slo_doc)
 metric_ids = strategy_analysis.get("metrics") or list(objectives.keys())
 window = prom_window(slo_doc)
-prometheus_metric_bindings = prometheus_bindings(slo_doc)
+prometheus_metric_bindings = prometheus_bindings(slo_doc, compiler_profile_spec.get("metricBinding") or {})
 
 min_request_count = (
     slo_spec.get("evaluation", {}).get("minRequestCount")
