@@ -436,10 +436,24 @@ if compiler_profile_refs:
         )
     compiler_profile_spec = compiler_profile_doc.get("spec") or {}
 
+service_config = compiler_profile_spec.get("serviceConfig") or {}
+runtime_profile = compiler_profile_spec.get("runtimeProfile") or {}
+health_config = service_config.get("health") or {}
+
+container_name = str(service_config.get("containerName") or service)
+service_port_name = str(service_config.get("servicePortName") or "http")
+container_port = int(service_config.get("containerPort") or 8080)
+readiness_path = str(health_config.get("readinessPath") or "/healthz")
+liveness_path = str(health_config.get("livenessPath") or "/healthz")
+
+replicas = int(runtime_profile.get("replicas") or 3)
+revision_history_limit = int(runtime_profile.get("revisionHistoryLimit") or 3)
+image_pull_policy = str(runtime_profile.get("imagePullPolicy") or "IfNotPresent")
+
 compiler_profile_guardrails = dict(compiler_profile_spec.get("guardrails") or {})
 compiler_profile_guardrails.update({
-    "profileModelOnly": True,
-    "doesNotChangeRenderedManifests": True,
+    "profileModelOnly": False if compiler_profile_doc else True,
+    "drivesRenderedWorkloadShape": bool(compiler_profile_doc),
     "doesNotApplyKubernetes": True,
     "doesNotCommitOrPush": True,
 })
@@ -540,8 +554,8 @@ rollout_yaml = {
         },
     },
     "spec": {
-        "replicas": 3,
-        "revisionHistoryLimit": 3,
+        "replicas": replicas,
+        "revisionHistoryLimit": revision_history_limit,
         "selector": {
             "matchLabels": {
                 "app": service,
@@ -557,13 +571,13 @@ rollout_yaml = {
             "spec": {
                 "containers": [
                     {
-                        "name": service,
+                        "name": container_name,
                         "image": remote_image,
-                        "imagePullPolicy": "IfNotPresent",
+                        "imagePullPolicy": image_pull_policy,
                         "ports": [
                             {
-                                "containerPort": 8080,
-                                "name": "http",
+                                "containerPort": container_port,
+                                "name": service_port_name,
                             }
                         ],
                         "env": [
@@ -574,16 +588,16 @@ rollout_yaml = {
                         ],
                         "readinessProbe": {
                             "httpGet": {
-                                "path": "/healthz",
-                                "port": 8080,
+                                "path": readiness_path,
+                                "port": container_port,
                             },
                             "initialDelaySeconds": 3,
                             "periodSeconds": 5,
                         },
                         "livenessProbe": {
                             "httpGet": {
-                                "path": "/healthz",
-                                "port": 8080,
+                                "path": liveness_path,
+                                "port": container_port,
                             },
                             "initialDelaySeconds": 10,
                             "periodSeconds": 10,

@@ -68,7 +68,9 @@ assert spec["metricBinding"]["provider"] == "prometheus", spec["metricBinding"]
 assert spec["rendererRefs"]["rolloutTemplate"] == "argo-rollouts-canary-v1", spec["rendererRefs"]
 assert spec["rendererRefs"]["analysisTemplateRenderer"] == "prometheus-analysis-template-v1", spec["rendererRefs"]
 assert spec["rendererRefs"]["environmentOverlayRenderer"] == "kustomize-overlay-v1", spec["rendererRefs"]
-assert spec["guardrails"]["profileModelOnly"] is True, spec["guardrails"]
+assert spec["guardrails"]["profileModelOnly"] is False, spec["guardrails"]
+assert spec["guardrails"]["drivesRenderedWorkloadShape"] is True, spec["guardrails"]
+assert spec["guardrails"]["doesNotApplyKubernetes"] is True, spec["guardrails"]
 
 assert env["spec"]["compiler"]["defaultProfile"] == "demo-app-compiler-profile", env["spec"]["compiler"]
 assert "configs/compiler-profiles/demo-app.profile.yaml" in env["spec"]["compiler"]["profileRefs"], env["spec"]["compiler"]
@@ -87,8 +89,8 @@ assert compiler_profile["serviceConfig"]["serviceName"] == "demo-app", compiler_
 assert compiler_profile["runtimeProfile"]["runtimeType"] == "container", compiler_profile
 assert compiler_profile["metricBinding"]["provider"] == "prometheus", compiler_profile
 assert compiler_profile["rendererRefs"]["prometheusRuleRenderer"] == "prometheus-rule-v1", compiler_profile
-assert compiler_profile["guardrails"]["profileModelOnly"] is True, compiler_profile
-assert compiler_profile["guardrails"]["doesNotChangeRenderedManifests"] is True, compiler_profile
+assert compiler_profile["guardrails"]["profileModelOnly"] is False, compiler_profile
+assert compiler_profile["guardrails"]["drivesRenderedWorkloadShape"] is True, compiler_profile
 assert compiler_profile["guardrails"]["doesNotApplyKubernetes"] is True, compiler_profile
 
 assert plan["inputs"]["compilerProfileRef"] == "configs/compiler-profiles/demo-app.profile.yaml", plan["inputs"]
@@ -101,6 +103,18 @@ assert prometheus_rule["kind"] == "PrometheusRule", prometheus_rule
 assert analysis["metadata"]["name"] == "demo-app-error-rate", analysis["metadata"]
 assert rollout["metadata"]["name"] == "demo-app", rollout["metadata"]
 assert prometheus_rule["metadata"]["name"] == "demo-app-rollout-alerts", prometheus_rule["metadata"]
+
+container = rollout["spec"]["template"]["spec"]["containers"][0]
+assert rollout["spec"]["replicas"] == spec["runtimeProfile"]["replicas"], rollout["spec"]
+assert rollout["spec"]["revisionHistoryLimit"] == spec["runtimeProfile"]["revisionHistoryLimit"], rollout["spec"]
+assert container["name"] == spec["serviceConfig"]["containerName"], container
+assert container["imagePullPolicy"] == spec["runtimeProfile"]["imagePullPolicy"], container
+assert container["ports"][0]["containerPort"] == spec["serviceConfig"]["containerPort"], container["ports"]
+assert container["ports"][0]["name"] == spec["serviceConfig"]["servicePortName"], container["ports"]
+assert container["readinessProbe"]["httpGet"]["path"] == spec["serviceConfig"]["health"]["readinessPath"], container
+assert container["readinessProbe"]["httpGet"]["port"] == spec["serviceConfig"]["containerPort"], container
+assert container["livenessProbe"]["httpGet"]["path"] == spec["serviceConfig"]["health"]["livenessPath"], container
+assert container["livenessProbe"]["httpGet"]["port"] == spec["serviceConfig"]["containerPort"], container
 
 print("PASS: Stage46 CompilerProfile model is valid")
 PY
