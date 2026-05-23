@@ -115,6 +115,16 @@ grep -q "native-sqlite-repository" watcher/evidence_repository_native_sqlite.go
 grep -q "S_SENTINEL_EVIDENCE_REPOSITORY_MODE" watcher/evidence_repository.go
 grep -q "github.com/mattn/go-sqlite3" watcher/evidence_repository_native_sqlite.go
 grep -q "SupportsNativeSQLite:        true" watcher/evidence_repository_native_sqlite.go
+grep -q "SupportsGetRelease:          true" watcher/evidence_repository_native_sqlite.go
+grep -q "SupportsListArtifacts:       true" watcher/evidence_repository_native_sqlite.go
+grep -q "SupportsSearch:              true" watcher/evidence_repository_native_sqlite.go
+grep -q "SupportsVerificationSummary: true" watcher/evidence_repository_native_sqlite.go
+grep -q "SupportsGraph:               true" watcher/evidence_repository_native_sqlite.go
+grep -q "func (repo \*NativeSQLiteEvidenceRepository) GetRelease" watcher/evidence_repository_native_sqlite.go
+grep -q "func (repo \*NativeSQLiteEvidenceRepository) ListArtifacts" watcher/evidence_repository_native_sqlite.go
+grep -q "func (repo \*NativeSQLiteEvidenceRepository) SearchObjects" watcher/evidence_repository_native_sqlite.go
+grep -q "func (repo \*NativeSQLiteEvidenceRepository) GetVerificationSummary" watcher/evidence_repository_native_sqlite.go
+grep -q "func (repo \*NativeSQLiteEvidenceRepository) GetGraph" watcher/evidence_repository_native_sqlite.go
 grep -q "TestPortalEvidenceAPINativeSQLiteRepositoryIntegration" watcher/evidence_repository_native_sqlite_test.go
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/evidence_repository_native_sqlite_test.go
 grep -q "repositoryType\", \"native-sqlite" watcher/evidence_repository_native_sqlite_test.go

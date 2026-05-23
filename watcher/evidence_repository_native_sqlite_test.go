@@ -157,6 +157,63 @@ func TestPortalEvidenceAPINativeSQLiteRepositoryIntegration(t *testing.T) {
 	if got := objectRecorder.Header().Get("X-S-Sentinel-Evidence-Repository-Type"); got != "native-sqlite" {
 		t.Fatalf("expected native sqlite repository header for object endpoint, got %q", got)
 	}
+
+	detailBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceStoreReleaseDetail,
+		http.MethodGet,
+		"/api/evidence/releases/20260101-000000?includeRaw=true",
+		http.StatusOK,
+	)
+	assertPortalSchema(t, detailBody, "evidence.store.release/v1alpha1")
+	assertPortalNestedString(t, detailBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNumberAtLeast(t, detailBody, "objectCount", 2)
+	assertPortalNumberAtLeast(t, detailBody, "artifactCount", 1)
+
+	artifactBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceArtifactList,
+		http.MethodGet,
+		"/api/evidence/artifacts?releaseId=20260101-000000",
+		http.StatusOK,
+	)
+	assertPortalSchema(t, artifactBody, "evidence.store.artifactList/v1alpha1")
+	assertPortalNestedString(t, artifactBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNumberAtLeast(t, artifactBody, "count", 1)
+
+	searchBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceSearch,
+		http.MethodGet,
+		"/api/evidence/search?q=demo-app&limit=10",
+		http.StatusOK,
+	)
+	assertPortalSchema(t, searchBody, "evidence.store.search/v1alpha1")
+	assertPortalNestedString(t, searchBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNumberAtLeast(t, searchBody, "count", 1)
+
+	verificationBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceVerificationSummary,
+		http.MethodGet,
+		"/api/evidence/verification-summary?releaseId=20260101-000000",
+		http.StatusOK,
+	)
+	assertPortalSchema(t, verificationBody, "evidence.store.verificationSummary/v1alpha1")
+	assertPortalNestedString(t, verificationBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNumberAtLeast(t, verificationBody, "count", 1)
+
+	graphBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceGraph,
+		http.MethodGet,
+		"/api/evidence/graph?releaseId=20260101-000000",
+		http.StatusOK,
+	)
+	assertPortalSchema(t, graphBody, "evidence.store.graph/v1alpha1")
+	assertPortalNestedString(t, graphBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNumberAtLeast(t, graphBody, "nodeCount", 4)
+	assertPortalNumberAtLeast(t, graphBody, "edgeCount", 3)
 }
 
 func callPortalEvidenceStoreHandlerWithRecorder(
@@ -231,6 +288,18 @@ CREATE TABLE evidence_objects (
   summary_json TEXT NOT NULL,
   raw_json TEXT NOT NULL
 );
+
+CREATE TABLE release_artifacts (
+  release_id TEXT NOT NULL,
+  artifact_kind TEXT NOT NULL,
+  path TEXT NOT NULL,
+  exists_flag INTEGER,
+  content_type TEXT,
+  size_bytes INTEGER,
+  modified_at TEXT,
+  source_object_pk TEXT,
+  PRIMARY KEY (release_id, artifact_kind, path)
+);
 `)
 	if err != nil {
 		t.Fatalf("create sqlite schema: %v", err)
@@ -267,8 +336,18 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		t.Fatalf("insert release: %v", err)
 	}
 
-	_, err = db.Exec(
-		`
+	insertObject := func(
+		objectPK string,
+		objectType string,
+		objectID string,
+		schemaVersion string,
+		summaryJSON string,
+		rawJSON string,
+	) {
+		t.Helper()
+
+		_, err = db.Exec(
+			`
 INSERT INTO evidence_objects (
   object_pk, object_type, object_id, release_id, schema_version,
   source_path, source_mtime, content_sha256, generated_at,
@@ -276,21 +355,60 @@ INSERT INTO evidence_objects (
 )
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `,
+			objectPK,
+			objectType,
+			objectID,
+			"20260101-000000",
+			schemaVersion,
+			"/tmp/"+objectID+".json",
+			"2026-01-01T00:00:00Z",
+			"sha256-"+objectID,
+			"2026-01-01T00:00:00Z",
+			"2026-01-01T00:00:00Z",
+			summaryJSON,
+			rawJSON,
+		)
+		if err != nil {
+			t.Fatalf("insert evidence object %s: %v", objectID, err)
+		}
+	}
+
+	insertObject(
 		"releaseEvidence:20260101-000000:re-20260101-000000",
 		"releaseEvidence",
 		"re-20260101-000000",
-		"20260101-000000",
 		"release.evidence.bundle/v1alpha1",
+		`{"releaseResult":"PASS","riskLevel":"low","service":"demo-app"}`,
+		`{"schemaVersion":"release.evidence.bundle/v1alpha1","releaseResult":"PASS","service":"demo-app"}`,
+	)
+
+	insertObject(
+		"signedReleaseGate:20260101-000000:srg-20260101-000000",
+		"signedReleaseGate",
+		"srg-20260101-000000",
+		"signed.release.gate/v1alpha1",
+		`{"objectType":"signedReleaseGate","verificationMode":"input_derived","verificationToolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true,"verification":{"mode":"input_derived","tool":"cosign","toolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true}}`,
+		`{"schemaVersion":"signed.release.gate/v1alpha1","signedReleaseGateId":"srg-20260101-000000"}`,
+	)
+
+	_, err = db.Exec(
+		`
+INSERT INTO release_artifacts (
+  release_id, artifact_kind, path, exists_flag, content_type, size_bytes, modified_at, source_object_pk
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`,
+		"20260101-000000",
+		"releaseEvidence",
 		"/tmp/release-evidence-20260101-000000.json",
+		1,
+		"application/json",
+		128,
 		"2026-01-01T00:00:00Z",
-		"sha256-test",
-		"2026-01-01T00:00:00Z",
-		"2026-01-01T00:00:00Z",
-		`{"releaseResult":"PASS","riskLevel":"low"}`,
-		`{"schemaVersion":"release.evidence.bundle/v1alpha1","releaseResult":"PASS"}`,
+		"releaseEvidence:20260101-000000:re-20260101-000000",
 	)
 	if err != nil {
-		t.Fatalf("insert evidence object: %v", err)
+		t.Fatalf("insert release artifact: %v", err)
 	}
 
 	return dbFile
