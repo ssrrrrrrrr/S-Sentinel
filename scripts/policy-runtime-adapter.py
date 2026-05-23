@@ -50,6 +50,22 @@ POLICY_RUNTIME_REGISTRY: dict[str, dict[str, Any]] = {
         "previewOnly": True,
         "externalDependency": True,
         "requiredBinary": "opa",
+        "policyBundleRef": "policy/opa",
+        "policyFile": "policy/opa/release_policy.rego",
+        "entrypoint": "data.ssentinel.release.decision",
+        "inputContract": "policy.input/v1alpha1",
+        "outputContract": "release.policy.evaluator/v1alpha1",
+        "commandPreviewTemplate": [
+            "opa",
+            "eval",
+            "--format",
+            "json",
+            "--data",
+            "policy/opa",
+            "--input",
+            "${POLICY_INPUT}",
+            "data.ssentinel.release.decision"
+        ],
         "description": "Preview-only OPA/Rego policy runtime placeholder.",
     },
     "kyverno-cli": {
@@ -107,6 +123,19 @@ def runtime_registry_document() -> dict[str, Any]:
         "defaultRuntime": "local-python",
         "runtimes": [runtime_capability(name) for name in runtime_names()],
     }
+
+
+def runtime_command_preview(runtime_name: str, policy_input_file: Path | None = None) -> list[str] | None:
+    capability = POLICY_RUNTIME_REGISTRY.get(runtime_name) or {}
+    template = capability.get("commandPreviewTemplate")
+    if not isinstance(template, list):
+        return None
+
+    policy_input_ref = str(policy_input_file) if policy_input_file is not None else "${POLICY_INPUT}"
+    return [
+        policy_input_ref if item == "${POLICY_INPUT}" else str(item)
+        for item in template
+    ]
 
 
 def preview_policy_decision(policy_input: dict[str, Any], runtime_name: str) -> dict[str, Any]:
@@ -168,6 +197,7 @@ def evaluate_preview_runtime(
             **capability,
             "status": "preview_only",
             "mode": "registry_preview",
+            "commandPreview": runtime_command_preview(runtime_name, policy_input_file),
         },
         "policyInputRef": str(policy_input_file),
         "policyDecision": policy_decision,
