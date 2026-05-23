@@ -117,6 +117,18 @@ grep -q "s-sentinel.io/evidence-api/v1alpha1" watcher/evidence_service.go
 grep -q "evidence.api.response/v1alpha1" watcher/evidence_service.go
 grep -q "encodeEvidenceRepositoryResponseBody" watcher/portal_api.go
 
+grep -q "controlPlane" docs/release-portal-api.md
+grep -q "s-sentinel.io/evidence-api/v1alpha1" docs/release-portal-api.md
+grep -q "evidence.api.response/v1alpha1" docs/release-portal-api.md
+grep -q "cli-sqlite-runtime" docs/release-portal-api.md
+grep -q "evidence.repository/v1alpha1" docs/release-portal-api.md
+
+grep -q "controlPlane" scripts/validate-release-portal-api.sh
+grep -q "s-sentinel.io/evidence-api/v1alpha1" scripts/validate-release-portal-api.sh
+grep -q "evidence.api.response/v1alpha1" scripts/validate-release-portal-api.sh
+grep -q "cli-sqlite-runtime" scripts/validate-release-portal-api.sh
+grep -q "evidence.repository/v1alpha1" scripts/validate-release-portal-api.sh
+
 if grep -q "runEvidenceStoreCommand" watcher/portal_api.go; then
   echo "portal_api.go still owns EvidenceStore CLI runtime"
   exit 1

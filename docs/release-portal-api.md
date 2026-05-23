@@ -133,6 +133,29 @@ Stage43 开始，Release Portal API 增加了一组 canonical Evidence API，用
 
 这些旧路径继续保留，用于兼容 Stage41/42 Portal 与 EvidenceStore 调用方。
 
+Stage43 后，`/api/evidence/*` 与兼容路径 `/api/evidence-store/*` 都会在保持原始 EvidenceStore 顶层字段不变的基础上，额外注入 `controlPlane` 元数据。该字段用于标识当前响应来自 S Sentinel Evidence API 控制平面，而不是裸 CLI JSON 透传。
+
+`controlPlane` 关键字段：
+
+    schemaVersion: evidence.api.controlPlane/v1alpha1
+    apiVersion: s-sentinel.io/evidence-api/v1alpha1
+    contractVersion: evidence.api.response/v1alpha1
+    generatedBy: s-sentinel-evidence-api
+    runtimeMode: cli-sqlite-runtime
+    repositoryType: cli-backed
+    repositoryMode: cli-repository
+    repositoryContract: evidence.repository/v1alpha1
+    readOnly: true
+    willExecute: false
+
+其中：
+
+- `runtime` 描述底层 Evidence 运行方式，当前为 `cli-sqlite-runtime`。
+- `repository` 描述查询模型，当前为 `cli-backed` repository。
+- `service` 描述 Evidence API 服务契约。
+- `capabilities` 描述当前支持的只读查询能力。
+- 旧字段如 `schemaVersion`、`count`、`items`、`release`、`objects`、`nodes`、`edges` 保持不变，用于兼容现有 Portal 前端。
+
 ---
 
 ---
@@ -246,6 +269,24 @@ Evidence API 返回结构化 JSON，核心 schema 包括：
     evidence.store.search/v1alpha1
     evidence.store.verificationSummary/v1alpha1
     evidence.store.graph/v1alpha1
+
+Stage43 的 API surface hardening 增加了统一的 `controlPlane` 元数据。该字段不会替换原始 schema，也不会移除原有字段，而是作为附加元数据帮助 Portal、Policy、Signed Gate、Agent Trace 等调用方识别当前 Evidence API 的服务契约、runtime、repository 和能力边界。
+
+通用 `controlPlane` 字段：
+
+    controlPlane
+    controlPlane.apiVersion
+    controlPlane.contractVersion
+    controlPlane.service
+    controlPlane.runtime
+    controlPlane.repository
+    controlPlane.capabilities
+    controlPlane.runtimeMode
+    controlPlane.repositoryType
+    controlPlane.repositoryMode
+    controlPlane.repositoryContract
+    controlPlane.readOnly
+    controlPlane.willExecute
 
 常见查询参数：
 
@@ -460,4 +501,12 @@ Stage43 Evidence API 的轻量验收脚本：
 
     stage43 evidence api compatibility assertions passed
     stage43 evidence api compatibility PASS
+
+Stage43 同时要求文档与验证脚本包含 Evidence API control-plane contract：
+
+    controlPlane
+    s-sentinel.io/evidence-api/v1alpha1
+    evidence.api.response/v1alpha1
+    cli-sqlite-runtime
+    evidence.repository/v1alpha1
 

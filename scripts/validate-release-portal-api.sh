@@ -240,11 +240,24 @@ section "Validate EvidenceStore adapter"
 request "/api/evidence-store/releases?limit=5" "200" "$TMP_DIR/evidence-store-releases.json"
 check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list schema is valid" 'data.get("schemaVersion") == "evidence.store.releaseList/v1alpha1"'
 check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list is read model" 'isinstance(data.get("items"), list)'
+check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list has controlPlane apiVersion" '(data.get("controlPlane") or {}).get("apiVersion") == "s-sentinel.io/evidence-api/v1alpha1"'
+check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list runtime is cli-sqlite-runtime" '(data.get("controlPlane") or {}).get("runtimeMode") == "cli-sqlite-runtime"'
+check_json_expr "$TMP_DIR/evidence-store-releases.json" "evidence-store release list repository contract is valid" '(data.get("controlPlane") or {}).get("repositoryContract") == "evidence.repository/v1alpha1"'
+
+request "/api/evidence/releases?limit=5" "200" "$TMP_DIR/evidence-releases.json"
+check_json_expr "$TMP_DIR/evidence-releases.json" "canonical evidence release list schema is valid" 'data.get("schemaVersion") == "evidence.store.releaseList/v1alpha1"'
+check_json_expr "$TMP_DIR/evidence-releases.json" "canonical evidence release list has controlPlane apiVersion" '(data.get("controlPlane") or {}).get("apiVersion") == "s-sentinel.io/evidence-api/v1alpha1"'
+check_json_expr "$TMP_DIR/evidence-releases.json" "canonical evidence release list response contract is valid" '(data.get("controlPlane") or {}).get("contractVersion") == "evidence.api.response/v1alpha1"'
 
 if [ -n "$RELEASE_ID" ]; then
   request "/api/evidence-store/releases/${RELEASE_ID}" "200" "$TMP_DIR/evidence-store-release-detail.json"
   check_json_expr "$TMP_DIR/evidence-store-release-detail.json" "evidence-store release detail schema is valid" 'data.get("schemaVersion") == "evidence.store.release/v1alpha1"'
   check_json_expr "$TMP_DIR/evidence-store-release-detail.json" "evidence-store release detail has objects" 'isinstance(data.get("objects"), list) and len(data.get("objects")) >= 1'
+  check_json_expr "$TMP_DIR/evidence-store-release-detail.json" "evidence-store release detail has controlPlane" '(data.get("controlPlane") or {}).get("apiVersion") == "s-sentinel.io/evidence-api/v1alpha1"'
+
+  request "/api/evidence/releases/${RELEASE_ID}" "200" "$TMP_DIR/evidence-release-detail.json"
+  check_json_expr "$TMP_DIR/evidence-release-detail.json" "canonical evidence release detail schema is valid" 'data.get("schemaVersion") == "evidence.store.release/v1alpha1"'
+  check_json_expr "$TMP_DIR/evidence-release-detail.json" "canonical evidence release detail has controlPlane" '(data.get("controlPlane") or {}).get("repositoryType") == "cli-backed"'
 
   OBJECT_TYPE="$(json_value "$TMP_DIR/evidence-store-release-detail.json" '(data.get("objects") or [{}])[0].get("object_type", "")')"
   OBJECT_ID="$(json_value "$TMP_DIR/evidence-store-release-detail.json" '(data.get("objects") or [{}])[0].get("object_id", "")')"
@@ -253,6 +266,11 @@ if [ -n "$RELEASE_ID" ]; then
     request "/api/evidence-store/objects/${OBJECT_TYPE}/${OBJECT_ID}?releaseId=${RELEASE_ID}" "200" "$TMP_DIR/evidence-store-object.json"
     check_json_expr "$TMP_DIR/evidence-store-object.json" "evidence-store object schema is valid" 'data.get("schemaVersion") == "evidence.store.object/v1alpha1"'
     check_json_expr "$TMP_DIR/evidence-store-object.json" "evidence-store object has summary" 'isinstance((data.get("object") or {}).get("summary"), dict)'
+    check_json_expr "$TMP_DIR/evidence-store-object.json" "evidence-store object has controlPlane" '(data.get("controlPlane") or {}).get("runtimeMode") == "cli-sqlite-runtime"'
+
+    request "/api/evidence/objects/${OBJECT_TYPE}/${OBJECT_ID}?releaseId=${RELEASE_ID}" "200" "$TMP_DIR/evidence-object.json"
+    check_json_expr "$TMP_DIR/evidence-object.json" "canonical evidence object schema is valid" 'data.get("schemaVersion") == "evidence.store.object/v1alpha1"'
+    check_json_expr "$TMP_DIR/evidence-object.json" "canonical evidence object has controlPlane" '(data.get("controlPlane") or {}).get("repositoryContract") == "evidence.repository/v1alpha1"'
   else
     fail "unable to select evidence-store object from release detail"
   fi
