@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://s-sentinel.local/schemas/rendered-release-plan.schema.json",
+  "title": "S Sentinel Rendered Release Plan",
+  "description": "Rendered output contract produced by the S Sentinel Config Compiler.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "generatedBy",
+    "release",
+    "inputs",
+    "sourceConfigRefs",
+    "compilerProfile",
+    "outputs",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "ssentinel.rendered-release-plan/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "RenderedReleasePlan"
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "const": "scripts/compile-release-config.sh"
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "service",
+        "env",
+        "namespace",
+        "clusterName",
+        "environmentClass",
+        "policyProfile",
+        "project",
+        "imageRepository",
+        "image",
+        "imageTag",
+        "appVersion"
+      ],
+      "properties": {
+        "service": { "type": "string", "minLength": 1 },
+        "env": { "type": "string", "minLength": 1 },
+        "namespace": { "type": "string", "minLength": 1 },
+        "clusterName": { "type": "string", "minLength": 1 },
+        "environmentClass": { "type": "string", "minLength": 1 },
+        "policyProfile": { "type": "string", "minLength": 1 },
+        "project": { "type": "string", "minLength": 1 },
+        "imageRepository": { "type": "string", "minLength": 1 },
+        "image": { "type": "string", "minLength": 1 },
+        "imageTag": { "type": "string", "minLength": 1 },
+        "appVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "environmentConfigRef",
+        "sloConfigRef",
+        "strategyConfigRef",
+        "compilerProfileRef",
+        "overlayPath"
+      ],
+      "properties": {
+        "environmentConfigRef": { "type": "string", "minLength": 1 },
+        "sloConfigRef": { "type": "string", "minLength": 1 },
+        "strategyConfigRef": { "type": "string", "minLength": 1 },
+        "compilerProfileRef": { "type": ["string", "null"] },
+        "overlayPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceConfigRefs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "environmentConfig",
+        "sloConfig",
+        "progressiveDeliveryStrategy",
+        "compilerProfile"
+      ]
+    },
+    "compilerProfile": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "enabled",
+        "profileId",
+        "profileRef",
+        "apiVersion",
+        "kind",
+        "serviceConfig",
+        "runtimeProfile",
+        "metricBinding",
+        "rendererRefs",
+        "guardrails"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "profileId": { "type": ["string", "null"] },
+        "profileRef": { "type": ["string", "null"] },
+        "apiVersion": { "type": ["string", "null"] },
+        "kind": { "type": ["string", "null"] },
+        "serviceConfig": { "type": "object" },
+        "runtimeProfile": { "type": "object" },
+        "metricBinding": { "type": "object" },
+        "rendererRefs": { "type": "object" },
+        "guardrails": { "type": "object" }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "outputDir",
+        "analysisTemplate",
+        "rollout",
+        "prometheusRule",
+        "kustomization",
+        "renderedReleasePlan",
+        "rendererRefs",
+        "artifacts"
+      ],
+      "properties": {
+        "outputDir": { "type": "string", "minLength": 1 },
+        "analysisTemplate": { "type": "string", "const": "analysis.yaml" },
+        "rollout": { "type": "string", "const": "rollout.yaml" },
+        "prometheusRule": { "type": "string", "const": "prometheusrule.yaml" },
+        "kustomization": { "type": "string", "const": "kustomization.yaml" },
+        "renderedReleasePlan": { "type": "string", "const": "rendered-release-plan.json" },
+        "rendererRefs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "analysisTemplate",
+            "rollout",
+            "prometheusRule",
+            "environmentOverlay"
+          ],
+          "properties": {
+            "analysisTemplate": { "type": "string", "minLength": 1 },
+            "rollout": { "type": "string", "minLength": 1 },
+            "prometheusRule": { "type": "string", "minLength": 1 },
+            "environmentOverlay": { "type": "string", "minLength": 1 }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "path", "rendererRef"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "AnalysisTemplate",
+                  "Rollout",
+                  "PrometheusRule",
+                  "Kustomization"
+                ]
+              },
+              "path": { "type": "string", "minLength": 1 },
+              "rendererRef": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "doesNotApplyKubernetes",
+        "doesNotCommitOrPush",
+        "doesNotBuildImages",
+        "doesNotModifyCluster"
+      ],
+      "properties": {
+        "doesNotApplyKubernetes": { "type": "boolean", "const": true },
+        "doesNotCommitOrPush": { "type": "boolean", "const": true },
+        "doesNotBuildImages": { "type": "boolean", "const": true },
+        "doesNotModifyCluster": { "type": "boolean", "const": true }
+      }
+    }
+  }
+}
