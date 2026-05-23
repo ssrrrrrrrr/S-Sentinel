@@ -13,9 +13,7 @@ import {
   type PortalRoute,
 } from "@/components/layout/portalRoutes"
 import type { ReleaseContext } from "@/components/layout/ReleaseContextBar"
-import { releaseTabIds } from "@/config/releaseTabs"
 
-const tabs = releaseTabIds
 
 function displayValue(value: unknown, fallback = "unknown") {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -112,7 +110,6 @@ function App() {
           totalCount={releasesQuery.data?.count ?? releases.length}
           onSelect={setSelectedId}
           onRefresh={refreshAll}
-          tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onRouteChange={setActiveRoute}
@@ -128,6 +125,7 @@ function App() {
 }
 
 export default App
+
 
 
 

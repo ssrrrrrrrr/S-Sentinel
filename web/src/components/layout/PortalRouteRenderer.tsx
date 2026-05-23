@@ -76,7 +76,6 @@ export function PortalRouteRenderer({
   totalCount,
   onSelect,
   onRefresh,
-  tabs,
   activeTab,
   onTabChange,
   onRouteChange,
@@ -92,7 +91,6 @@ export function PortalRouteRenderer({
   totalCount: number
   onSelect: (releaseId: string) => void
   onRefresh: () => void
-  tabs: string[]
   activeTab: string
   onTabChange: (tab: string) => void
   onRouteChange: (route: PortalRoute) => void
@@ -149,7 +147,6 @@ export function PortalRouteRenderer({
             totalCount={totalCount}
             onSelect={onSelect}
             onRefresh={onRefresh}
-            tabs={tabs}
             activeTab={activeTab}
             onTabChange={onTabChange}
             latest={latest}
@@ -252,6 +249,7 @@ export function PortalRouteRenderer({
       return null
   }
 }
+
 
 
 

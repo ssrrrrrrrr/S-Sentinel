@@ -14,7 +14,6 @@ export function ReleaseDetailWorkspace({
   totalCount,
   onSelect,
   onRefresh,
-  tabs,
   activeTab,
   onTabChange,
   latest,
@@ -26,7 +25,6 @@ export function ReleaseDetailWorkspace({
   totalCount: ReleaseListProps["totalCount"]
   onSelect: ReleaseListProps["onSelect"]
   onRefresh: ReleaseListProps["onRefresh"]
-  tabs: ReleaseDetailHeaderProps["tabs"]
   activeTab: ReleaseDetailHeaderProps["activeTab"]
   onTabChange: ReleaseDetailHeaderProps["onTabChange"]
   latest: ReleaseResourcePanelProps["latest"]
@@ -46,7 +44,6 @@ export function ReleaseDetailWorkspace({
       <Panel padding="none">
         <ReleaseDetailHeader
           selected={selected}
-          tabs={tabs}
           activeTab={activeTab}
           onTabChange={onTabChange}
         />

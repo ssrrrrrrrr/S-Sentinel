@@ -1,14 +1,13 @@
 ﻿import { GitBranch } from "lucide-react"
+import { releaseTabIds } from "@/config/releaseTabs"
 import type { ReleaseIndexItem } from "@/types/release"
 
 export function ReleaseDetailHeader({
   selected,
-  tabs,
   activeTab,
   onTabChange,
 }: {
   selected: ReleaseIndexItem
-  tabs: string[]
   activeTab: string
   onTabChange: (tab: string) => void
 }) {
@@ -40,7 +39,7 @@ export function ReleaseDetailHeader({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-1.5">
-        {tabs.map((tab) => (
+        {releaseTabIds.map((tab) => (
           <button
             key={tab}
             type="button"
