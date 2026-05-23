@@ -509,7 +509,7 @@ export function AgentTracePanel({
           <p className="text-xs text-slate-500">Trace Source</p>
           <p className="mt-1 font-semibold text-slate-100">{traceSource}</p>
           <p className="mt-1 font-mono text-xs text-slate-500">
-            /api/evidence-store/objects/agentTrace/{fallbackAgentTraceId}
+            /api/evidence/objects/agentTrace/{fallbackAgentTraceId}
           </p>
         </div>
       </div>
@@ -635,6 +635,7 @@ export function AgentTracePanel({
     </section>
   )
 }
+
 
 
 

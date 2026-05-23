@@ -456,7 +456,7 @@ export function EvidenceStorePanel({
                   </div>
                   <p className="mt-2 break-all font-mono text-xs text-slate-500">
                     {selectedObject
-                      ? `/api/evidence-store/objects/${selectedObject.objectType}/${selectedObject.objectId}`
+                      ? `/api/evidence/objects/${selectedObject.objectType}/${selectedObject.objectId}`
                       : "no object selected"}
                   </p>
                 </div>
@@ -519,6 +519,7 @@ export function EvidenceStorePanel({
     </section>
   )
 }
+
 
 
 

@@ -1,4 +1,4 @@
-export type EvidenceStoreJson = Record<string, unknown>
+﻿export type EvidenceStoreJson = Record<string, unknown>
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -34,7 +34,7 @@ export function fetchEvidenceStoreRelease(releaseId: string, includeRaw = true) 
   }
 
   const suffix = params.toString() ? `?${params.toString()}` : ""
-  return fetchJson<EvidenceStoreJson>(`/api/evidence-store/releases/${encodeURIComponent(releaseId)}${suffix}`)
+  return fetchJson<EvidenceStoreJson>(`/api/evidence/releases/${encodeURIComponent(releaseId)}${suffix}`)
 }
 
 export function fetchEvidenceStoreObject({
@@ -61,6 +61,7 @@ export function fetchEvidenceStoreObject({
   const suffix = params.toString() ? `?${params.toString()}` : ""
 
   return fetchJson<EvidenceStoreJson>(
-    `/api/evidence-store/objects/${encodeURIComponent(objectType)}/${encodeURIComponent(objectId)}${suffix}`,
+    `/api/evidence/objects/${encodeURIComponent(objectType)}/${encodeURIComponent(objectId)}${suffix}`,
   )
 }
+
