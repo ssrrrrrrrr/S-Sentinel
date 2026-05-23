@@ -1,4 +1,4 @@
-import { Panel } from "@/components/common/Panel"
+﻿import { Panel } from "@/components/common/Panel"
 import { Pill } from "@/components/common/Pill"
 import type { LatestReleaseResponse } from "@/types/release"
 
@@ -59,7 +59,7 @@ export function PortalInformationArchitecture({
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
-            Stage 41 · Portal as Product
+            Release Control Plane
           </p>
           <h3 className="mt-2 text-lg font-semibold tracking-tight text-[#031a41]">
             将 Release Portal 整理成产品化控制台，而不是继续堆叠零散报告。
@@ -93,9 +93,6 @@ export function PortalInformationArchitecture({
                 <h4 className="font-semibold text-[#031a41]">{lane.title}</h4>
                 <p className="mt-1 text-xs font-medium text-cyan-700">{lane.signal}</p>
               </div>
-              <Pill tone="info" className="text-[11px]">
-                Stage 41
-              </Pill>
             </div>
 
             <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
@@ -141,3 +138,4 @@ export function PortalInformationArchitecture({
     </Panel>
   )
 }
+

@@ -8,7 +8,7 @@ export function StageBanner({ latest }: { latest?: LatestReleaseResponse }) {
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">
-            Stage 41 · Portal as Product
+            Release Control Plane
           </p>
           <h2 className="mt-2 max-w-3xl text-[1.35rem] font-semibold leading-snug tracking-tight text-[#031a41]">
             把 SLO、策略、供应链、AI Advisor、执行申请和 Evidence Record 整合成产品化发布控制台。
@@ -30,3 +30,4 @@ export function StageBanner({ latest }: { latest?: LatestReleaseResponse }) {
     </Panel>
   )
 }
+
