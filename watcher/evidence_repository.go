@@ -6,6 +6,7 @@ import (
 )
 
 type EvidenceRepository interface {
+	Descriptor() EvidenceRepositoryDescriptor
 	ListReleases(r *http.Request, query EvidenceReleaseListQuery) (*EvidenceRepositoryResponse, error)
 	GetRelease(r *http.Request, query EvidenceReleaseQuery) (*EvidenceRepositoryResponse, error)
 	GetObject(r *http.Request, query EvidenceObjectQuery) (*EvidenceRepositoryResponse, error)
@@ -13,6 +14,30 @@ type EvidenceRepository interface {
 	SearchObjects(r *http.Request, query EvidenceSearchQuery) (*EvidenceRepositoryResponse, error)
 	GetVerificationSummary(r *http.Request, query EvidenceVerificationSummaryQuery) (*EvidenceRepositoryResponse, error)
 	GetGraph(r *http.Request, query EvidenceGraphQuery) (*EvidenceRepositoryResponse, error)
+}
+
+type EvidenceRepositoryDescriptor struct {
+	RepositoryID                string `json:"repositoryId"`
+	RepositoryType              string `json:"repositoryType"`
+	Mode                        string `json:"mode"`
+	RuntimeMode                 string `json:"runtimeMode"`
+	Backend                     string `json:"backend"`
+	Adapter                     string `json:"adapter"`
+	Storage                     string `json:"storage"`
+	QueryModel                  string `json:"queryModel"`
+	ContractVersion             string `json:"contractVersion"`
+	ReadOnly                    bool   `json:"readOnly"`
+	WillExecute                 bool   `json:"willExecute"`
+	SupportsListReleases        bool   `json:"supportsListReleases"`
+	SupportsGetRelease          bool   `json:"supportsGetRelease"`
+	SupportsGetObject           bool   `json:"supportsGetObject"`
+	SupportsListArtifacts       bool   `json:"supportsListArtifacts"`
+	SupportsSearch              bool   `json:"supportsSearch"`
+	SupportsVerificationSummary bool   `json:"supportsVerificationSummary"`
+	SupportsGraph               bool   `json:"supportsGraph"`
+	SupportsNativeSQLite        bool   `json:"supportsNativeSQLite"`
+	SupportsRemoteAPI           bool   `json:"supportsRemoteApi"`
+	Description                 string `json:"description"`
 }
 
 type EvidenceReleaseListQuery struct {
@@ -58,9 +83,10 @@ type EvidenceGraphQuery struct {
 }
 
 type EvidenceRepositoryResponse struct {
-	Body   []byte
-	DBFile string
-	Mode   string
+	Body       []byte
+	DBFile     string
+	Mode       string
+	Repository EvidenceRepositoryDescriptor
 }
 
 type EvidenceRepositoryError struct {
@@ -89,6 +115,10 @@ func (err *EvidenceRepositoryError) Unwrap() error {
 	return err.Err
 }
 
+func NewEvidenceRepositoryForRuntime(runtime EvidenceRuntime) EvidenceRepository {
+	return NewCLIEvidenceRepository(runtime)
+}
+
 type CLIEvidenceRepository struct {
 	runtime EvidenceRuntime
 }
@@ -96,6 +126,34 @@ type CLIEvidenceRepository struct {
 func NewCLIEvidenceRepository(runtime EvidenceRuntime) *CLIEvidenceRepository {
 	return &CLIEvidenceRepository{
 		runtime: runtime,
+	}
+}
+
+func (repo *CLIEvidenceRepository) Descriptor() EvidenceRepositoryDescriptor {
+	runtimeDescriptor := repo.runtime.Descriptor()
+
+	return EvidenceRepositoryDescriptor{
+		RepositoryID:                "cli-evidence-repository",
+		RepositoryType:              "cli-backed",
+		Mode:                        "cli-repository",
+		RuntimeMode:                 runtimeDescriptor.Mode,
+		Backend:                     runtimeDescriptor.Backend,
+		Adapter:                     runtimeDescriptor.Adapter,
+		Storage:                     runtimeDescriptor.Storage,
+		QueryModel:                  "repository-through-runtime",
+		ContractVersion:             "evidence.repository/v1alpha1",
+		ReadOnly:                    true,
+		WillExecute:                 false,
+		SupportsListReleases:        true,
+		SupportsGetRelease:          true,
+		SupportsGetObject:           true,
+		SupportsListArtifacts:       true,
+		SupportsSearch:              true,
+		SupportsVerificationSummary: true,
+		SupportsGraph:               true,
+		SupportsNativeSQLite:        false,
+		SupportsRemoteAPI:           false,
+		Description:                 "Compatibility repository that maps EvidenceRepository queries to the configured EvidenceRuntime.",
 	}
 }
 
@@ -261,8 +319,9 @@ func (repo *CLIEvidenceRepository) query(r *http.Request, args ...string) (*Evid
 	}
 
 	return &EvidenceRepositoryResponse{
-		Body:   output,
-		DBFile: dbFile,
-		Mode:   repo.runtime.Mode(),
+		Body:       output,
+		DBFile:     dbFile,
+		Mode:       repo.runtime.Mode(),
+		Repository: repo.Descriptor(),
 	}, nil
 }

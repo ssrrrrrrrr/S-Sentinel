@@ -458,6 +458,9 @@ func (api *portalAPI) writeEvidenceRepositoryResponse(
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-S-Sentinel-Evidence-Runtime-Mode", response.Mode)
+	w.Header().Set("X-S-Sentinel-Evidence-Repository-Type", response.Repository.RepositoryType)
+	w.Header().Set("X-S-Sentinel-Evidence-Repository-Mode", response.Repository.Mode)
+	w.Header().Set("X-S-Sentinel-Evidence-Repository-Contract", response.Repository.ContractVersion)
 	w.Header().Set("X-S-Sentinel-Evidence-DB", response.DBFile)
 	w.Header().Set("X-S-Sentinel-Evidence-Store-Mode", response.Mode)
 	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", response.DBFile)

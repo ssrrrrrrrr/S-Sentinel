@@ -18,8 +18,9 @@ type EvidenceServiceConfig struct {
 }
 
 type EvidenceService struct {
-	cfg     EvidenceServiceConfig
-	runtime EvidenceRuntime
+	cfg        EvidenceServiceConfig
+	runtime    EvidenceRuntime
+	repository EvidenceRepository
 }
 
 type EvidenceRuntime interface {
@@ -55,12 +56,15 @@ type EvidenceRuntimeDescriptor struct {
 }
 
 func NewEvidenceService(cfg Config, reportDir string) *EvidenceService {
+	runtime := NewCLIEvidenceRuntime(cfg.RepoDir)
+
 	return &EvidenceService{
 		cfg: EvidenceServiceConfig{
 			RepoDir:   cfg.RepoDir,
 			ReportDir: reportDir,
 		},
-		runtime: NewCLIEvidenceRuntime(cfg.RepoDir),
+		runtime:    runtime,
+		repository: NewEvidenceRepositoryForRuntime(runtime),
 	}
 }
 
@@ -73,7 +77,7 @@ func (api *portalAPI) evidenceRepository() EvidenceRepository {
 }
 
 func (svc *EvidenceService) Repository() EvidenceRepository {
-	return NewCLIEvidenceRepository(svc.runtime)
+	return svc.repository
 }
 
 func (svc *EvidenceService) DBFile() string {
@@ -139,6 +143,7 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 	scriptFile := svc.runtime.ScriptFile()
 	refreshStateFile := svc.runtime.RefreshStateFile()
 	descriptor := svc.runtime.Descriptor()
+	repositoryDescriptor := svc.repository.Descriptor()
 
 	body := map[string]interface{}{
 		"schemaVersion":    "evidence.store.status/v1alpha1",
@@ -147,6 +152,7 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 		"legacyMode":       descriptor.LegacyMode,
 		"service":          svc.serviceContract(),
 		"runtime":          descriptor,
+		"repository":       repositoryDescriptor,
 		"paths":            svc.runtimePaths(),
 		"capabilities":     svc.capabilities(),
 		"readOnly":         true,
@@ -216,6 +222,7 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 func (svc *EvidenceService) Refresh(ctx context.Context) (map[string]interface{}, error) {
 	dbFile := svc.runtime.DBFile()
 	descriptor := svc.runtime.Descriptor()
+	repositoryDescriptor := svc.repository.Descriptor()
 
 	initOutput, err := svc.runtime.Run(ctx, "init-db", "--db", dbFile)
 	if err != nil {
@@ -239,6 +246,7 @@ func (svc *EvidenceService) Refresh(ctx context.Context) (map[string]interface{}
 		"legacyMode":       descriptor.LegacyMode,
 		"service":          svc.serviceContract(),
 		"runtime":          descriptor,
+		"repository":       repositoryDescriptor,
 		"paths":            svc.runtimePaths(),
 		"capabilities":     svc.capabilities(),
 		"readOnly":         true,

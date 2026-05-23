@@ -121,6 +121,9 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalStringNotEmpty(t, statusBeforeRefreshBody, "pythonRuntime")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "mode", "cli-sqlite-runtime")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "contractVersion", "evidence.runtime/v1alpha1")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "repository", "repositoryType", "cli-backed")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "repository", "mode", "cli-repository")
+	assertPortalNestedString(t, statusBeforeRefreshBody, "repository", "contractVersion", "evidence.repository/v1alpha1")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "service", "contractVersion", "evidence.api.service/v1alpha1")
 	assertPortalNestedBool(t, statusBeforeRefreshBody, "capabilities", "search", true)
 
