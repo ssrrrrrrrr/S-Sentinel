@@ -1,4 +1,5 @@
 ﻿import type { LucideIcon } from "lucide-react"
+import { Panel } from "@/components/common/Panel"
 import { statusClass } from "@/utils/format"
 
 export function ProductMetricCard({
@@ -17,7 +18,7 @@ export function ProductMetricCard({
   statusValue?: string
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60">
+    <Panel padding="sm" className="min-w-0 overflow-hidden">
       <div className="flex min-w-0 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p
@@ -57,6 +58,6 @@ export function ProductMetricCard({
           <Icon className="h-4 w-4" />
         </div>
       </div>
-    </div>
+    </Panel>
   )
 }

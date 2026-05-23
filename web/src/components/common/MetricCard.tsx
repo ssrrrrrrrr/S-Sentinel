@@ -1,4 +1,5 @@
 ﻿import type { LucideIcon } from "lucide-react"
+import { Panel } from "@/components/common/Panel"
 
 export function MetricCard({
   label,
@@ -14,7 +15,10 @@ export function MetricCard({
   hint: string
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+    <Panel
+      padding="sm"
+      className="group relative overflow-hidden transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#031a41] via-cyan-500 to-sky-300" />
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
@@ -29,6 +33,6 @@ export function MetricCard({
         ) : null}
         <p className="mt-1 text-xs text-slate-600">{hint}</p>
       </div>
-    </article>
+    </Panel>
   )
 }
