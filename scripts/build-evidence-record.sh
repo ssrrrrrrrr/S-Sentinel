@@ -321,6 +321,28 @@ supply_chain_image = as_dict(supply_chain_decision.get("image"))
 supply_chain_gitops = as_dict(supply_chain_decision.get("gitops"))
 supply_chain_guardrails = as_dict(supply_chain_decision.get("guardrails"))
 
+agent_trace_path = resolve_ref(artifacts.get("agentTrace"), evidence_path)
+agent_trace = load_json(agent_trace_path)
+
+otel_span_bundle_path = resolve_ref(artifacts.get("otelSpanBundle"), evidence_path)
+otel_span_bundle = load_json(otel_span_bundle_path)
+otel_source = as_dict(otel_span_bundle.get("source"))
+
+trace_id = first_not_none(
+    evidence.get("traceId"),
+    agent_trace.get("traceId"),
+    otel_span_bundle.get("traceId"),
+)
+agent_trace_id = first_not_none(
+    evidence.get("agentTraceId"),
+    agent_trace.get("agentTraceId"),
+    otel_source.get("agentTraceId"),
+)
+root_span_id = first_not_none(
+    evidence.get("rootSpanId"),
+    otel_span_bundle.get("rootSpanId"),
+)
+
 link_map = {
     "releaseContext": artifacts.get("releaseContext"),
     "environmentConfig": artifacts.get("environmentConfig") or environment_config_ref,
@@ -333,6 +355,8 @@ link_map = {
     "runbook": artifacts.get("runbook"),
     "rca": artifacts.get("rca"),
     "agentRun": artifacts.get("agentRun"),
+    "agentTrace": artifacts.get("agentTrace"),
+    "otelSpanBundle": artifacts.get("otelSpanBundle"),
     "planRun": artifacts.get("planRun"),
     "executionRequest": artifacts.get("executionRequest"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
@@ -354,6 +378,8 @@ artifact_defs = [
     ("releaseIntelligence", artifacts.get("releaseIntelligence"), False),
     ("releaseIntelligenceReport", artifacts.get("releaseIntelligenceReport"), False),
     ("agentRun", link_map["agentRun"], False),
+    ("agentTrace", link_map["agentTrace"], False),
+    ("otelSpanBundle", link_map["otelSpanBundle"], False),
     ("planRun", link_map["planRun"], False),
     ("executionRequest", link_map["executionRequest"], False),
     ("approval", link_map["approval"], False),
@@ -384,10 +410,23 @@ record = {
     "generatedAt": now(),
     "evidenceId": evidence_id,
     "releaseId": release_id,
+    "traceId": nullable_string(trace_id),
+    "agentTraceId": nullable_string(agent_trace_id),
+    "rootSpanId": nullable_string(root_span_id),
     "service": service,
     "namespace": namespace,
     "env": env,
     "environmentConfigRef": nullable_string(environment_config_ref),
+    "observability": {
+        "traceId": nullable_string(trace_id),
+        "agentTraceId": nullable_string(agent_trace_id),
+        "rootSpanId": nullable_string(root_span_id),
+        "agentTrace": str(agent_trace_path) if agent_trace_path else None,
+        "otelSpanBundle": str(otel_span_bundle_path) if otel_span_bundle_path else None,
+        "localFileOnly": True,
+        "doesNotSendExternalTelemetry": True,
+        "doesNotCallExternalCollector": True,
+    },
     "environmentProfile": nullable_string(environment_profile),
     "clusterName": nullable_string(cluster_name),
     "environmentClass": nullable_string(environment_class),
