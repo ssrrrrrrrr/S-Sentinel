@@ -477,10 +477,33 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["provenancePresent"] = verification_summary.get("provenancePresent")
         result["canRunExternalVerification"] = verification_summary.get("canRunExternalVerification")
 
+    observability = as_dict(data.get("observability"))
+    source = as_dict(data.get("source"))
+    guardrails = as_dict(data.get("guardrails"))
+
+    trace_id = first_non_empty(
+        data.get("traceId"),
+        observability.get("traceId"),
+    )
+    agent_trace_id = first_non_empty(
+        data.get("agentTraceId"),
+        observability.get("agentTraceId"),
+        source.get("agentTraceId"),
+        summary.get("sourceAgentTraceId"),
+    )
+    root_span_id = first_non_empty(
+        data.get("rootSpanId"),
+        observability.get("rootSpanId"),
+    )
+
+    if trace_id:
+        result["traceId"] = trace_id
+    if agent_trace_id:
+        result["agentTraceId"] = agent_trace_id
+    if root_span_id:
+        result["rootSpanId"] = root_span_id
+
     if object_type == "otelSpanBundle":
-        guardrails = as_dict(data.get("guardrails"))
-        result["traceId"] = data.get("traceId")
-        result["rootSpanId"] = data.get("rootSpanId")
         result["spanCount"] = summary.get("spanCount")
         result["hasRootSpan"] = summary.get("hasRootSpan")
         result["sourceAgentTraceId"] = summary.get("sourceAgentTraceId")
@@ -488,6 +511,20 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["localFileOnly"] = guardrails.get("localFileOnly")
         result["doesNotSendExternalTelemetry"] = guardrails.get("doesNotSendExternalTelemetry")
         result["doesNotCallExternalCollector"] = guardrails.get("doesNotCallExternalCollector")
+
+    if object_type in ("releaseEvidence", "evidenceRecord"):
+        artifacts = as_dict(data.get("artifacts"))
+        result["agentTrace"] = first_non_empty(
+            observability.get("agentTrace"),
+            artifacts.get("agentTrace"),
+        )
+        result["otelSpanBundle"] = first_non_empty(
+            observability.get("otelSpanBundle"),
+            artifacts.get("otelSpanBundle"),
+        )
+        result["localFileOnly"] = observability.get("localFileOnly")
+        result["doesNotSendExternalTelemetry"] = observability.get("doesNotSendExternalTelemetry")
+        result["doesNotCallExternalCollector"] = observability.get("doesNotCallExternalCollector")
 
     return result
 
