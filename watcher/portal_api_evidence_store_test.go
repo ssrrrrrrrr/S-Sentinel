@@ -119,6 +119,10 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, statusBeforeRefreshBody, "evidence.store.status/v1alpha1")
 	assertPortalBool(t, statusBeforeRefreshBody, "ready", false)
 	assertPortalStringNotEmpty(t, statusBeforeRefreshBody, "pythonRuntime")
+	assertPortalBool(t, statusBeforeRefreshBody, "doesNotModifyCluster", true)
+	assertPortalBool(t, statusBeforeRefreshBody, "doesNotModifyGitOps", true)
+	assertPortalBool(t, statusBeforeRefreshBody, "doesNotTriggerRollout", true)
+	assertPortalBool(t, statusBeforeRefreshBody, "mutatesLocalEvidenceIndex", false)
 	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "mode", "cli-sqlite-runtime")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "runtime", "contractVersion", "evidence.runtime/v1alpha1")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "repository", "repositoryType", "cli-backed")
@@ -126,6 +130,21 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalNestedString(t, statusBeforeRefreshBody, "repository", "contractVersion", "evidence.repository/v1alpha1")
 	assertPortalNestedString(t, statusBeforeRefreshBody, "service", "contractVersion", "evidence.api.service/v1alpha1")
 	assertPortalNestedBool(t, statusBeforeRefreshBody, "capabilities", "search", true)
+
+	errorBeforeRefreshBody := callPortalEvidenceStoreHandlerWithExpectedStatus(
+		t,
+		api.handleEvidenceStoreReleaseList,
+		http.MethodGet,
+		"/api/evidence/releases?limit=10",
+		http.StatusConflict,
+	)
+	assertPortalSchema(t, errorBeforeRefreshBody, "evidence.store.adapter.error/v1alpha1")
+	assertPortalNestedString(t, errorBeforeRefreshBody, "controlPlane", "apiVersion", "s-sentinel.io/evidence-api/v1alpha1")
+	assertPortalNestedString(t, errorBeforeRefreshBody, "controlPlane", "operation", "query-error")
+	assertPortalNestedBool(t, errorBeforeRefreshBody, "controlPlane", "doesNotModifyCluster", true)
+	assertPortalNestedBool(t, errorBeforeRefreshBody, "controlPlane", "doesNotModifyGitOps", true)
+	assertPortalNestedBool(t, errorBeforeRefreshBody, "controlPlane", "doesNotTriggerRollout", true)
+	assertPortalNestedBool(t, errorBeforeRefreshBody, "controlPlane", "mutatesLocalEvidenceIndex", false)
 
 	initialRefreshBody := callPortalEvidenceStoreHandlerWithMethod(
 		t,
@@ -135,6 +154,12 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, initialRefreshBody, "evidence.store.refresh/v1alpha1")
 	assertPortalLatestReleaseID(t, initialRefreshBody, releaseID)
+	assertPortalBool(t, initialRefreshBody, "doesNotModifyCluster", true)
+	assertPortalBool(t, initialRefreshBody, "doesNotModifyGitOps", true)
+	assertPortalBool(t, initialRefreshBody, "doesNotTriggerRollout", true)
+	assertPortalBool(t, initialRefreshBody, "mutatesLocalEvidenceIndex", true)
+	assertPortalNestedString(t, initialRefreshBody, "controlPlane", "operation", "refresh")
+	assertPortalNestedBool(t, initialRefreshBody, "controlPlane", "mutatesLocalEvidenceIndex", true)
 
 	listBody := callPortalEvidenceStoreHandler(
 		t,
@@ -235,6 +260,11 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	assertPortalSchema(t, refreshBody, "evidence.store.refresh/v1alpha1")
 	assertPortalBool(t, refreshBody, "readOnly", true)
 	assertPortalBool(t, refreshBody, "willExecute", false)
+	assertPortalBool(t, refreshBody, "doesNotModifyCluster", true)
+	assertPortalBool(t, refreshBody, "doesNotModifyGitOps", true)
+	assertPortalBool(t, refreshBody, "doesNotTriggerRollout", true)
+	assertPortalBool(t, refreshBody, "mutatesLocalEvidenceIndex", true)
+	assertPortalNestedString(t, refreshBody, "controlPlane", "operation", "refresh")
 	assertPortalLatestReleaseID(t, refreshBody, releaseID)
 
 	statusAfterRefreshBody := callPortalEvidenceStoreHandler(
@@ -274,6 +304,32 @@ func callPortalEvidenceStoreHandlerWithMethod(
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected HTTP 200 for %s %s, got %d: %s", method, target, rec.Code, rec.Body.String())
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response for %s %s: %v: %s", method, target, err, rec.Body.String())
+	}
+
+	return body
+}
+
+func callPortalEvidenceStoreHandlerWithExpectedStatus(
+	t *testing.T,
+	handler http.HandlerFunc,
+	method string,
+	target string,
+	expectedStatus int,
+) map[string]interface{} {
+	t.Helper()
+
+	req := httptest.NewRequest(method, target, nil)
+	rec := httptest.NewRecorder()
+
+	handler(rec, req)
+
+	if rec.Code != expectedStatus {
+		t.Fatalf("expected HTTP %d for %s %s, got %d: %s", expectedStatus, method, target, rec.Code, rec.Body.String())
 	}
 
 	var body map[string]interface{}

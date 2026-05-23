@@ -98,12 +98,15 @@ func (svc *EvidenceService) RefreshStateFile() string {
 
 func (svc *EvidenceService) serviceContract() map[string]interface{} {
 	return map[string]interface{}{
-		"name":            "s-sentinel-evidence-api",
-		"schemaVersion":   "evidence.service/v1alpha1",
-		"contractVersion": "evidence.api.service/v1alpha1",
-		"role":            "release-evidence-control-plane",
-		"readOnly":        true,
-		"willExecute":     false,
+		"name":                  "s-sentinel-evidence-api",
+		"schemaVersion":         "evidence.service/v1alpha1",
+		"contractVersion":       "evidence.api.service/v1alpha1",
+		"role":                  "release-evidence-control-plane",
+		"readOnly":              true,
+		"willExecute":           false,
+		"doesNotModifyCluster":  true,
+		"doesNotModifyGitOps":   true,
+		"doesNotTriggerRollout": true,
 	}
 }
 
@@ -119,26 +122,35 @@ func (svc *EvidenceService) runtimePaths() map[string]interface{} {
 
 func (svc *EvidenceService) capabilities() map[string]interface{} {
 	return map[string]interface{}{
-		"readOnly":                true,
-		"willExecute":             false,
-		"refresh":                 true,
-		"listReleases":            true,
-		"getRelease":              true,
-		"getObject":               true,
-		"listArtifacts":           true,
-		"search":                  true,
-		"verificationSummary":     true,
-		"graph":                   true,
-		"nativeSQLiteRepository":  false,
-		"remoteEvidenceAPI":       false,
-		"backgroundRefreshWorker": false,
-		"policyRuntimeConsumer":   true,
-		"signedGateConsumer":      true,
-		"agentTraceConsumer":      true,
+		"readOnly":                  true,
+		"willExecute":               false,
+		"refresh":                   true,
+		"listReleases":              true,
+		"getRelease":                true,
+		"getObject":                 true,
+		"listArtifacts":             true,
+		"search":                    true,
+		"verificationSummary":       true,
+		"graph":                     true,
+		"nativeSQLiteRepository":    false,
+		"remoteEvidenceAPI":         false,
+		"backgroundRefreshWorker":   false,
+		"localEvidenceIndexRefresh": true,
+		"policyRuntimeConsumer":     true,
+		"signedGateConsumer":        true,
+		"agentTraceConsumer":        true,
 	}
 }
 
 func (svc *EvidenceService) ControlPlaneMetadata(response *EvidenceRepositoryResponse) map[string]interface{} {
+	return svc.ControlPlaneMetadataForOperation(response, "query", false)
+}
+
+func (svc *EvidenceService) ControlPlaneMetadataForOperation(
+	response *EvidenceRepositoryResponse,
+	operation string,
+	mutatesLocalEvidenceIndex bool,
+) map[string]interface{} {
 	runtimeDescriptor := svc.runtime.Descriptor()
 	repositoryDescriptor := svc.repository.Descriptor()
 	dbFile := svc.runtime.DBFile()
@@ -156,23 +168,34 @@ func (svc *EvidenceService) ControlPlaneMetadata(response *EvidenceRepositoryRes
 	}
 
 	return map[string]interface{}{
-		"schemaVersion":      "evidence.api.controlPlane/v1alpha1",
-		"apiVersion":         "s-sentinel.io/evidence-api/v1alpha1",
-		"contractVersion":    "evidence.api.response/v1alpha1",
-		"generatedAt":        time.Now().Format(time.RFC3339),
-		"generatedBy":        "s-sentinel-evidence-api",
-		"service":            svc.serviceContract(),
-		"runtime":            runtimeDescriptor,
-		"repository":         repositoryDescriptor,
-		"paths":              svc.runtimePaths(),
-		"capabilities":       svc.capabilities(),
-		"dbFile":             dbFile,
-		"runtimeMode":        runtimeDescriptor.Mode,
-		"repositoryType":     repositoryDescriptor.RepositoryType,
-		"repositoryMode":     repositoryDescriptor.Mode,
-		"repositoryContract": repositoryDescriptor.ContractVersion,
-		"readOnly":           true,
-		"willExecute":        false,
+		"schemaVersion":             "evidence.api.controlPlane/v1alpha1",
+		"apiVersion":                "s-sentinel.io/evidence-api/v1alpha1",
+		"contractVersion":           "evidence.api.response/v1alpha1",
+		"generatedAt":               time.Now().Format(time.RFC3339),
+		"generatedBy":               "s-sentinel-evidence-api",
+		"operation":                 operation,
+		"service":                   svc.serviceContract(),
+		"runtime":                   runtimeDescriptor,
+		"repository":                repositoryDescriptor,
+		"paths":                     svc.runtimePaths(),
+		"capabilities":              svc.capabilities(),
+		"dbFile":                    dbFile,
+		"runtimeMode":               runtimeDescriptor.Mode,
+		"repositoryType":            repositoryDescriptor.RepositoryType,
+		"repositoryMode":            repositoryDescriptor.Mode,
+		"repositoryContract":        repositoryDescriptor.ContractVersion,
+		"readOnly":                  true,
+		"willExecute":               false,
+		"doesNotModifyCluster":      true,
+		"doesNotModifyGitOps":       true,
+		"doesNotTriggerRollout":     true,
+		"mutatesLocalEvidenceIndex": mutatesLocalEvidenceIndex,
+		"mutationSemantics": map[string]interface{}{
+			"doesNotModifyCluster":      true,
+			"doesNotModifyGitOps":       true,
+			"doesNotTriggerRollout":     true,
+			"mutatesLocalEvidenceIndex": mutatesLocalEvidenceIndex,
+		},
 	}
 }
 
@@ -184,24 +207,29 @@ func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 	repositoryDescriptor := svc.repository.Descriptor()
 
 	body := map[string]interface{}{
-		"schemaVersion":    "evidence.store.status/v1alpha1",
-		"generatedAt":      time.Now().Format(time.RFC3339),
-		"mode":             descriptor.Mode,
-		"legacyMode":       descriptor.LegacyMode,
-		"service":          svc.serviceContract(),
-		"runtime":          descriptor,
-		"repository":       repositoryDescriptor,
-		"paths":            svc.runtimePaths(),
-		"capabilities":     svc.capabilities(),
-		"readOnly":         true,
-		"willExecute":      false,
-		"repoDir":          svc.cfg.RepoDir,
-		"reportDir":        svc.cfg.ReportDir,
-		"dbFile":           dbFile,
-		"scriptFile":       scriptFile,
-		"pythonRuntime":    svc.runtime.PythonBin(),
-		"refreshStateFile": refreshStateFile,
-		"ready":            false,
+		"schemaVersion":             "evidence.store.status/v1alpha1",
+		"generatedAt":               time.Now().Format(time.RFC3339),
+		"mode":                      descriptor.Mode,
+		"legacyMode":                descriptor.LegacyMode,
+		"service":                   svc.serviceContract(),
+		"runtime":                   descriptor,
+		"repository":                repositoryDescriptor,
+		"paths":                     svc.runtimePaths(),
+		"capabilities":              svc.capabilities(),
+		"controlPlane":              svc.ControlPlaneMetadataForOperation(nil, "status", false),
+		"readOnly":                  true,
+		"willExecute":               false,
+		"doesNotModifyCluster":      true,
+		"doesNotModifyGitOps":       true,
+		"doesNotTriggerRollout":     true,
+		"mutatesLocalEvidenceIndex": false,
+		"repoDir":                   svc.cfg.RepoDir,
+		"reportDir":                 svc.cfg.ReportDir,
+		"dbFile":                    dbFile,
+		"scriptFile":                scriptFile,
+		"pythonRuntime":             svc.runtime.PythonBin(),
+		"refreshStateFile":          refreshStateFile,
+		"ready":                     false,
 	}
 
 	if refreshState, ok, err := svc.readRefreshState(); err != nil {
@@ -278,24 +306,29 @@ func (svc *EvidenceService) Refresh(ctx context.Context) (map[string]interface{}
 	}
 
 	refreshResult := map[string]interface{}{
-		"schemaVersion":    "evidence.store.refresh/v1alpha1",
-		"generatedAt":      time.Now().Format(time.RFC3339),
-		"mode":             descriptor.Mode,
-		"legacyMode":       descriptor.LegacyMode,
-		"service":          svc.serviceContract(),
-		"runtime":          descriptor,
-		"repository":       repositoryDescriptor,
-		"paths":            svc.runtimePaths(),
-		"capabilities":     svc.capabilities(),
-		"readOnly":         true,
-		"willExecute":      false,
-		"repoDir":          svc.cfg.RepoDir,
-		"reportDir":        svc.cfg.ReportDir,
-		"dbFile":           dbFile,
-		"refreshStateFile": svc.runtime.RefreshStateFile(),
-		"initResult":       decodeEvidenceStoreJSON(initOutput),
-		"importResult":     decodeEvidenceStoreJSON(importOutput),
-		"releaseList":      decodeEvidenceStoreJSON(listOutput),
+		"schemaVersion":             "evidence.store.refresh/v1alpha1",
+		"generatedAt":               time.Now().Format(time.RFC3339),
+		"mode":                      descriptor.Mode,
+		"legacyMode":                descriptor.LegacyMode,
+		"service":                   svc.serviceContract(),
+		"runtime":                   descriptor,
+		"repository":                repositoryDescriptor,
+		"paths":                     svc.runtimePaths(),
+		"capabilities":              svc.capabilities(),
+		"controlPlane":              svc.ControlPlaneMetadataForOperation(nil, "refresh", true),
+		"readOnly":                  true,
+		"willExecute":               false,
+		"doesNotModifyCluster":      true,
+		"doesNotModifyGitOps":       true,
+		"doesNotTriggerRollout":     true,
+		"mutatesLocalEvidenceIndex": true,
+		"repoDir":                   svc.cfg.RepoDir,
+		"reportDir":                 svc.cfg.ReportDir,
+		"dbFile":                    dbFile,
+		"refreshStateFile":          svc.runtime.RefreshStateFile(),
+		"initResult":                decodeEvidenceStoreJSON(initOutput),
+		"importResult":              decodeEvidenceStoreJSON(importOutput),
+		"releaseList":               decodeEvidenceStoreJSON(listOutput),
 	}
 
 	refreshResult["latestRelease"] = latestEvidenceStoreRelease(refreshResult["releaseList"].(map[string]interface{}))

@@ -116,6 +116,12 @@ grep -q "ControlPlaneMetadata" watcher/evidence_service.go
 grep -q "s-sentinel.io/evidence-api/v1alpha1" watcher/evidence_service.go
 grep -q "evidence.api.response/v1alpha1" watcher/evidence_service.go
 grep -q "encodeEvidenceRepositoryResponseBody" watcher/portal_api.go
+grep -q "ControlPlaneMetadataForOperation" watcher/evidence_service.go
+grep -q "doesNotModifyCluster" watcher/evidence_service.go
+grep -q "doesNotModifyGitOps" watcher/evidence_service.go
+grep -q "doesNotTriggerRollout" watcher/evidence_service.go
+grep -q "mutatesLocalEvidenceIndex" watcher/evidence_service.go
+grep -q "writeEvidenceStoreErrorWithOperation" watcher/portal_api.go
 
 grep -q "controlPlane" docs/release-portal-api.md
 grep -q "s-sentinel.io/evidence-api/v1alpha1" docs/release-portal-api.md

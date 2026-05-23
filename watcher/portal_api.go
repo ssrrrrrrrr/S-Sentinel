@@ -264,7 +264,7 @@ func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.
 
 	refreshResult, err := api.evidenceService().Refresh(r.Context())
 	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to refresh evidence store", err)
+		api.writeEvidenceStoreErrorWithOperation(w, http.StatusInternalServerError, "failed to refresh evidence store", err, "refresh", true)
 		return
 	}
 
@@ -492,12 +492,29 @@ func (api *portalAPI) encodeEvidenceRepositoryResponseBody(response *EvidenceRep
 }
 
 func (api *portalAPI) writeEvidenceStoreError(w http.ResponseWriter, statusCode int, message string, err error) {
+	api.writeEvidenceStoreErrorWithOperation(w, statusCode, message, err, "query-error", false)
+}
+
+func (api *portalAPI) writeEvidenceStoreErrorWithOperation(
+	w http.ResponseWriter,
+	statusCode int,
+	message string,
+	err error,
+	operation string,
+	mutatesLocalEvidenceIndex bool,
+) {
 	body := map[string]interface{}{
-		"schemaVersion": "evidence.store.adapter.error/v1alpha1",
-		"generatedAt":   time.Now().Format(time.RFC3339),
-		"error":         message,
-		"readOnly":      true,
-		"willExecute":   false,
+		"schemaVersion":             "evidence.store.adapter.error/v1alpha1",
+		"generatedAt":               time.Now().Format(time.RFC3339),
+		"error":                     message,
+		"operation":                 operation,
+		"controlPlane":              api.evidenceService().ControlPlaneMetadataForOperation(nil, operation, mutatesLocalEvidenceIndex),
+		"readOnly":                  true,
+		"willExecute":               false,
+		"doesNotModifyCluster":      true,
+		"doesNotModifyGitOps":       true,
+		"doesNotTriggerRollout":     true,
+		"mutatesLocalEvidenceIndex": mutatesLocalEvidenceIndex,
 	}
 
 	if err != nil {
