@@ -188,6 +188,18 @@
             "null"
           ],
           "description": "Path to the environment config used by this release evidence bundle."
+        },
+        "agentTrace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "otelSpanBundle": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -662,6 +674,75 @@
         "object",
         "null"
       ],
+      "additionalProperties": true
+    },
+    "releaseId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "traceId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agentTraceId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rootSpanId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observability": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agentTraceId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rootSpanId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agentTrace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "otelSpanBundle": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "localFileOnly": {
+          "type": "boolean"
+        },
+        "doesNotSendExternalTelemetry": {
+          "type": "boolean"
+        },
+        "doesNotCallExternalCollector": {
+          "type": "boolean"
+        }
+      },
       "additionalProperties": true
     }
   }

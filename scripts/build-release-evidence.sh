@@ -146,6 +146,24 @@ def read_yaml_object(path):
     except Exception:
         return None
 
+def first_not_none(*values):
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+def nullable_string(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text if text else None
+
+def release_id_from_output_path(path):
+    name = path.name
+    if name.startswith("release-evidence-") and name.endswith(".json"):
+        return name[len("release-evidence-"):-len(".json")]
+    return None
+
 release_context_path = resolve_existing_path(sources.get("releaseContext"))
 release_context = read_json_object(release_context_path)
 
@@ -204,9 +222,39 @@ strategy_config_ref = release_context.get("strategyConfigRef")
 strategy_config_path = resolve_existing_path(strategy_config_ref)
 strategy_config_snapshot = read_yaml_object(strategy_config_path)
 
+release_id = release_id_from_output_path(output_path) or ai.get("releaseId") or evidence.get("releaseId")
+agent_trace_path = resolve_existing_path(f"agent-trace-{release_id}.json") if release_id else None
+otel_span_bundle_path = resolve_existing_path(f"otel-span-bundle-{release_id}.json") if release_id else None
+
+agent_trace = read_json_object(agent_trace_path)
+otel_span_bundle = read_json_object(otel_span_bundle_path)
+otel_source = otel_span_bundle.get("source") if isinstance(otel_span_bundle.get("source"), dict) else {}
+
+trace_id = first_not_none(
+    ai.get("traceId"),
+    policy.get("traceId"),
+    evidence.get("traceId"),
+    agent_trace.get("traceId"),
+    otel_span_bundle.get("traceId"),
+)
+agent_trace_id = first_not_none(
+    ai.get("agentTraceId"),
+    evidence.get("agentTraceId"),
+    agent_trace.get("agentTraceId"),
+    otel_source.get("agentTraceId"),
+)
+root_span_id = first_not_none(
+    evidence.get("rootSpanId"),
+    otel_span_bundle.get("rootSpanId"),
+)
+
 bundle = {
     "schemaVersion": "release.evidence.bundle/v1alpha1",
     "generatedBy": "build-release-evidence.sh",
+    "releaseId": nullable_string(release_id),
+    "traceId": nullable_string(trace_id),
+    "agentTraceId": nullable_string(agent_trace_id),
+    "rootSpanId": nullable_string(root_span_id),
     "releaseResult": ai.get("releaseResult", "UNKNOWN"),
     "policyDecision": policy.get("policyDecision", "UNKNOWN"),
     "finalAction": policy.get("finalAction", "UNKNOWN"),
@@ -266,9 +314,21 @@ bundle = {
         "aiDecision": str(ai_path),
         "policyDecision": str(policy_path),
         "releaseSummary": str(summary_path),
+        "agentTrace": str(agent_trace_path) if agent_trace_path else None,
+        "otelSpanBundle": str(otel_span_bundle_path) if otel_span_bundle_path else None,
         "actionPlan": None,
         "actionPlanReport": None,
         "signedReleaseGate": None,
+    },
+    "observability": {
+        "traceId": nullable_string(trace_id),
+        "agentTraceId": nullable_string(agent_trace_id),
+        "rootSpanId": nullable_string(root_span_id),
+        "agentTrace": str(agent_trace_path) if agent_trace_path else None,
+        "otelSpanBundle": str(otel_span_bundle_path) if otel_span_bundle_path else None,
+        "localFileOnly": True,
+        "doesNotSendExternalTelemetry": True,
+        "doesNotCallExternalCollector": True,
     },
     "decisionRefs": {
         "aiDecision": {
