@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -61,7 +62,21 @@ func (svc *EvidenceService) schemaHealth(ctx context.Context) map[string]interfa
 		},
 	}
 
-	raw, err := svc.runtime.Run(ctx, "schema")
+	dbFile := svc.runtime.DBFile()
+	health["dbFile"] = dbFile
+
+	if info, err := os.Stat(dbFile); err != nil {
+		health["dbExists"] = false
+		health["reason"] = "evidence store db is not initialized"
+		health["error"] = err.Error()
+		return health
+	} else {
+		health["dbExists"] = true
+		health["dbSizeBytes"] = info.Size()
+		health["dbModifiedAt"] = info.ModTime().Format(time.RFC3339)
+	}
+
+	raw, err := svc.runtime.Run(ctx, "schema", "--db", dbFile)
 	if err != nil {
 		health["reason"] = "schema command failed"
 		health["error"] = err.Error()

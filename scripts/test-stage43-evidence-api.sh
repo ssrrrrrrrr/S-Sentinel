@@ -135,6 +135,12 @@ grep -q "TestPortalEvidenceAPINativeSQLiteRepositoryIntegration" watcher/evidenc
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/evidence_repository_native_sqlite_test.go
 grep -q "repositoryType\", \"native-sqlite" watcher/evidence_repository_native_sqlite_test.go
 grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
+grep -q "TestPortalEvidenceStoreStatusRefreshRuntimeContract" watcher/evidence_api_status_refresh_contract_test.go
+grep -q "evidence.store.schemaHealth/v1alpha1" watcher/evidence_api_status_refresh_contract_test.go
+grep -q "evidence.store.refresh.error/v1alpha1" watcher/evidence_api_status_refresh_contract_test.go
+grep -q "schemaCompatible" watcher/evidence_api_status_refresh_contract_test.go
+grep -q "schemaReady" watcher/evidence_api_status_refresh_contract_test.go
+grep -q "mutatesLocalEvidenceIndex" watcher/evidence_api_status_refresh_contract_test.go
 grep -q "TestPortalEvidenceAPIResponseControlPlaneContractNativeSQLite" watcher/evidence_api_contract_test.go
 grep -q "TestPortalEvidenceAPIErrorControlPlaneContractForNativeSchemaMismatch" watcher/evidence_api_contract_test.go
 grep -q "requireEvidenceAPIControlPlaneContract" watcher/evidence_api_contract_test.go

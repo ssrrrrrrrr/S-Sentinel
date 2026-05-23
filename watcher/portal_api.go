@@ -252,12 +252,18 @@ func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.R
 func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writePortalJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
-			"schemaVersion": "evidence.store.refresh.error/v1alpha1",
-			"generatedAt":   time.Now().Format(time.RFC3339),
-			"error":         "method not allowed",
-			"allowedMethod": "POST",
-			"readOnly":      true,
-			"willExecute":   false,
+			"schemaVersion":             "evidence.store.refresh.error/v1alpha1",
+			"generatedAt":               time.Now().Format(time.RFC3339),
+			"error":                     "method not allowed",
+			"allowedMethod":             "POST",
+			"operation":                 "refresh",
+			"controlPlane":              api.evidenceService().ControlPlaneMetadataForOperation(nil, "refresh", false),
+			"readOnly":                  true,
+			"willExecute":               false,
+			"doesNotModifyCluster":      true,
+			"doesNotModifyGitOps":       true,
+			"doesNotTriggerRollout":     true,
+			"mutatesLocalEvidenceIndex": false,
 		})
 		return
 	}
