@@ -112,6 +112,79 @@ func TestNativeSQLiteEvidenceRepositoryListReleasesAndGetObject(t *testing.T) {
 	}
 }
 
+func TestPortalEvidenceAPINativeSQLiteRepositoryIntegration(t *testing.T) {
+	dbFile := createNativeSQLiteTestDB(t)
+
+	t.Setenv("S_SENTINEL_EVIDENCE_STORE_DB", dbFile)
+	t.Setenv("S_SENTINEL_EVIDENCE_REPOSITORY_MODE", "native-sqlite")
+
+	api := &portalAPI{
+		cfg: Config{
+			RepoDir: t.TempDir(),
+		},
+		reportDir: t.TempDir(),
+	}
+
+	listBody, listRecorder := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceStoreReleaseList,
+		http.MethodGet,
+		"/api/evidence/releases?limit=10",
+		http.StatusOK,
+	)
+
+	assertPortalSchema(t, listBody, "evidence.store.releaseList/v1alpha1")
+	assertPortalNestedString(t, listBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNestedString(t, listBody, "controlPlane", "repositoryMode", "native-sqlite-repository")
+	assertPortalNestedString(t, listBody, "controlPlane", "runtimeMode", "cli-sqlite-runtime")
+
+	if got := listRecorder.Header().Get("X-S-Sentinel-Evidence-Repository-Type"); got != "native-sqlite" {
+		t.Fatalf("expected native sqlite repository header, got %q", got)
+	}
+
+	objectBody, objectRecorder := callPortalEvidenceStoreHandlerWithRecorder(
+		t,
+		api.handleEvidenceStoreObjectDetail,
+		http.MethodGet,
+		"/api/evidence/objects/releaseEvidence/re-20260101-000000?releaseId=20260101-000000&includeRaw=true",
+		http.StatusOK,
+	)
+
+	assertPortalSchema(t, objectBody, "evidence.store.object/v1alpha1")
+	assertPortalNestedString(t, objectBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalNestedString(t, objectBody, "controlPlane", "repositoryMode", "native-sqlite-repository")
+
+	if got := objectRecorder.Header().Get("X-S-Sentinel-Evidence-Repository-Type"); got != "native-sqlite" {
+		t.Fatalf("expected native sqlite repository header for object endpoint, got %q", got)
+	}
+}
+
+func callPortalEvidenceStoreHandlerWithRecorder(
+	t *testing.T,
+	handler http.HandlerFunc,
+	method string,
+	target string,
+	expectedStatus int,
+) (map[string]interface{}, *httptest.ResponseRecorder) {
+	t.Helper()
+
+	req := httptest.NewRequest(method, target, nil)
+	rec := httptest.NewRecorder()
+
+	handler(rec, req)
+
+	if rec.Code != expectedStatus {
+		t.Fatalf("expected HTTP %d for %s %s, got %d: %s", expectedStatus, method, target, rec.Code, rec.Body.String())
+	}
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response for %s %s: %v: %s", method, target, err, rec.Body.String())
+	}
+
+	return body, rec
+}
+
 func createNativeSQLiteTestDB(t *testing.T) string {
 	t.Helper()
 

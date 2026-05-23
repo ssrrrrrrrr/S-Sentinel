@@ -115,6 +115,9 @@ grep -q "native-sqlite-repository" watcher/evidence_repository_native_sqlite.go
 grep -q "S_SENTINEL_EVIDENCE_REPOSITORY_MODE" watcher/evidence_repository.go
 grep -q "github.com/mattn/go-sqlite3" watcher/evidence_repository_native_sqlite.go
 grep -q "SupportsNativeSQLite:        true" watcher/evidence_repository_native_sqlite.go
+grep -q "TestPortalEvidenceAPINativeSQLiteRepositoryIntegration" watcher/evidence_repository_native_sqlite_test.go
+grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/evidence_repository_native_sqlite_test.go
+grep -q "repositoryType\", \"native-sqlite" watcher/evidence_repository_native_sqlite_test.go
 grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/portal_api.go
 grep -q "ControlPlaneMetadata" watcher/evidence_service.go
