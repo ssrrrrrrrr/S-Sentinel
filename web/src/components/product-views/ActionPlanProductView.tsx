@@ -113,18 +113,18 @@ function ExecutionSummaryPanel({
             <Badge value={requiresApproval ? "REQUIRED" : "NOT REQUIRED"} label={requiresApproval ? "需要人工审批" : "无需人工审批"} />
             <Badge value={blocked ? "REQUIRED" : "NOT REQUIRED"} label={blocked ? "已阻断" : "未阻断"} />
           </div>
-          <h4 className="mt-4 text-lg font-semibold text-[#031a41]">安全执行结论</h4>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-700">{message}</p>
+          <h4 className="mt-4 text-lg font-semibold text-slate-100">安全执行结论</h4>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">{message}</p>
         </div>
 
-        <div className="grid min-w-[260px] gap-2 rounded-xl border border-white/70 bg-white/80 p-4 text-sm shadow-sm">
+        <div className="grid min-w-[260px] gap-2 rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm shadow-sm">
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">executionMode</span>
-            <span className="font-mono font-semibold text-[#031a41]">{executionMode || "-"}</span>
+            <span className="font-mono font-semibold text-slate-100">{executionMode || "-"}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">sourceMode</span>
-            <span className="font-mono font-semibold text-[#031a41]">{sourceExecutionMode || "-"}</span>
+            <span className="font-mono font-semibold text-slate-100">{sourceExecutionMode || "-"}</span>
           </div>
         </div>
       </div>
@@ -214,17 +214,17 @@ function SafetyGateMatrix({
             key={gate.key}
             className={`rounded-xl border p-4 ${
               isSafe
-                ? "border-emerald-200 bg-emerald-50"
-                : "border-amber-200 bg-amber-50"
+                ? "border-emerald-900/45 bg-emerald-950/20"
+                : "border-amber-900/45 bg-amber-950/20"
             }`}
           >
-            <p className={`text-sm font-semibold ${isSafe ? "text-emerald-900" : "text-amber-900"}`}>
+            <p className={`text-sm font-semibold ${isSafe ? "text-emerald-200" : "text-amber-200"}`}>
               {gate.label}
             </p>
-            <p className={`mt-2 font-mono text-lg font-bold ${isSafe ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`mt-2 font-mono text-lg font-bold ${isSafe ? "text-emerald-300" : "text-amber-300"}`}>
               {boolText(gate.value)}
             </p>
-            <p className={`mt-2 text-xs leading-5 ${isSafe ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`mt-2 text-xs leading-5 ${isSafe ? "text-emerald-300" : "text-amber-300"}`}>
               {gate.description}
             </p>
           </div>
@@ -239,24 +239,24 @@ function HumanStepsPanel({ steps }: { steps?: string[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
         当前 Action Plan 没有人工步骤。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">人工处理步骤</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">人工处理步骤</h4>
       </div>
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[#1f2b3d]">
         {items.map((step, index) => (
           <div key={`${index}-${step}`} className="flex gap-3 px-4 py-3 text-sm">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#031a41] text-xs font-semibold text-white">
               {index + 1}
             </span>
-            <span className="leading-6 text-slate-700">{step}</span>
+            <span className="leading-6 text-slate-300">{step}</span>
           </div>
         ))}
       </div>
@@ -269,18 +269,18 @@ function CandidateCommandsPanel({ commands }: { commands?: CandidateCommand[] })
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+      <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-300">
         当前 Action Plan 没有候选命令，说明本次发布无需人工执行命令。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+    <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4">
       <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-amber-900">候选命令</h4>
-          <p className="mt-1 text-xs text-amber-700">
+          <h4 className="text-sm font-semibold text-amber-200">候选命令</h4>
+          <p className="mt-1 text-xs text-amber-300">
             这些命令只作为 Runbook 参考，前端不会执行；写操作候选必须由人工在终端确认。
           </p>
         </div>
@@ -289,10 +289,10 @@ function CandidateCommandsPanel({ commands }: { commands?: CandidateCommand[] })
 
       <div className="mt-4 space-y-3">
         {items.map((item) => (
-          <div key={`${item.name}-${item.command}`} className="rounded-lg border border-amber-200 bg-white p-4">
+          <div key={`${item.name}-${item.command}`} className="rounded-lg border border-amber-900/45 bg-[#0b121d] p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="font-mono text-sm font-semibold text-[#031a41]">{item.name}</p>
+                <p className="font-mono text-sm font-semibold text-slate-100">{item.name}</p>
                 <p className="mt-1 text-xs text-slate-500">{commandTypeLabel(item.type)}</p>
               </div>
               <Badge
@@ -315,22 +315,22 @@ function RawGuardrailsPanel({ guardrails }: { guardrails?: Record<string, boolea
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
         当前 Action Plan 没有 guardrails 字段。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">原始安全护栏字段</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">原始安全护栏字段</h4>
       </div>
       <div className="grid gap-3 p-4 md:grid-cols-2">
         {entries.map(([key, value]) => (
-          <div key={key} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div key={key} className="rounded-lg border border-[#1f2b3d] bg-[#070b12] p-3">
             <p className="break-all font-mono text-xs text-slate-500">{key}</p>
-            <p className="mt-2 font-mono text-sm font-semibold text-[#031a41]">{String(value)}</p>
+            <p className="mt-2 font-mono text-sm font-semibold text-slate-100">{String(value)}</p>
           </div>
         ))}
       </div>
@@ -343,7 +343,7 @@ export function ActionPlanProductView({ body }: { body: string }) {
 
   if (!plan) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+      <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-300">
         Action Plan JSON 解析失败，已保留下方原始内容用于审计。
       </div>
     )
@@ -355,11 +355,11 @@ export function ActionPlanProductView({ body }: { body: string }) {
   const requiresApproval = Boolean(plan.requiresHumanApproval)
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+      <div className="flex flex-col gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">Action Plan 安全执行视图</h4>
-          <p className="mt-1 text-sm text-slate-600">
+          <h4 className="text-base font-semibold text-slate-100">Action Plan 安全执行视图</h4>
+          <p className="mt-1 text-sm text-slate-400">
             重点回答：当前建议做什么、是否允许执行、为什么不会自动执行，以及人工应该如何处理。
           </p>
         </div>
@@ -427,7 +427,7 @@ export function ActionPlanProductView({ body }: { body: string }) {
       </section>
 
       <section className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">安全门禁矩阵</h4>
+        <h4 className="text-sm font-semibold text-slate-100">安全门禁矩阵</h4>
         <SafetyGateMatrix
           plan={plan}
           blocked={blocked}
@@ -438,7 +438,7 @@ export function ActionPlanProductView({ body }: { body: string }) {
 
       <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">目标对象</h4>
+          <h4 className="text-sm font-semibold text-slate-100">目标对象</h4>
           <KeyValueRows
             rows={[
               ["namespace", plan.target?.namespace ?? "-"],
@@ -458,13 +458,13 @@ export function ActionPlanProductView({ body }: { body: string }) {
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-slate-500" />
-          <h4 className="text-sm font-semibold text-slate-900">安全护栏审计</h4>
+          <h4 className="text-sm font-semibold text-slate-100">安全护栏审计</h4>
         </div>
         <RawGuardrailsPanel guardrails={plan.guardrails} />
       </section>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
           <Eye className="h-4 w-4" />
           只读边界说明
         </div>
@@ -475,3 +475,4 @@ export function ActionPlanProductView({ body }: { body: string }) {
     </div>
   )
 }
+

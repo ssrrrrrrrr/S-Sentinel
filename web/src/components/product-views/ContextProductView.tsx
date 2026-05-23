@@ -124,8 +124,8 @@ function ReleaseContextSummary({
   return (
     <div className={`rounded-2xl border p-5 ${
       isPass
-        ? "border-emerald-200 bg-emerald-50"
-        : "border-rose-200 bg-rose-50"
+        ? "border-emerald-900/45 bg-emerald-950/20"
+        : "border-rose-900/45 bg-rose-950/20"
     }`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -136,30 +136,30 @@ function ReleaseContextSummary({
             <Badge value={imageChanged ? "REQUIRED" : "PASS"} label={`image=${changedText(imageChanged)}`} />
           </div>
 
-          <h4 className={`mt-4 text-lg font-semibold ${isPass ? "text-emerald-950" : "text-rose-950"}`}>
+          <h4 className={`mt-4 text-lg font-semibold ${isPass ? "text-emerald-200" : "text-rose-200"}`}>
             发布上下文结论：{context.reason || "Context 已采集"}
           </h4>
-          <p className={`mt-2 max-w-4xl text-sm leading-6 ${isPass ? "text-emerald-800" : "text-rose-800"}`}>
+          <p className={`mt-2 max-w-4xl text-sm leading-6 ${isPass ? "text-emerald-200" : "text-rose-200"}`}>
             本页重点展示发布对象、GitOps commit、镜像差异、环境变量变化和 AnalysisRun 采样指标，用于回答“这次到底发布了什么、变更了什么”。
           </p>
         </div>
 
-        <div className="grid min-w-[280px] gap-2 rounded-xl border border-white/70 bg-white/80 p-4 text-sm shadow-sm">
+        <div className="grid min-w-[280px] gap-2 rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm shadow-sm">
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">imageChanged</span>
-            <span className="font-mono font-semibold text-[#031a41]">{String(imageChanged ?? "-")}</span>
+            <span className="font-mono font-semibold text-slate-100">{String(imageChanged ?? "-")}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">commitChanged</span>
-            <span className="font-mono font-semibold text-[#031a41]">{String(commitChanged)}</span>
+            <span className="font-mono font-semibold text-slate-100">{String(commitChanged)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">envChanges</span>
-            <span className="font-mono font-semibold text-[#031a41]">{envChangeCount}</span>
+            <span className="font-mono font-semibold text-slate-100">{envChangeCount}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-slate-500">metrics</span>
-            <span className="font-mono font-semibold text-[#031a41]">{metricCount}</span>
+            <span className="font-mono font-semibold text-slate-100">{metricCount}</span>
           </div>
         </div>
       </div>
@@ -174,9 +174,9 @@ function GitOpsChangePanel({ context }: { context: ContextPayload }) {
   const commitChanged = Boolean(previousCommit && currentCommit && previousCommit !== currentCommit)
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">GitOps 变更上下文</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">GitOps 变更上下文</h4>
         <p className="mt-1 text-xs text-slate-500">
           说明这次发布来自哪个 GitOps 变更，以及 commit 是否发生变化。
         </p>
@@ -203,26 +203,26 @@ function ImageChangePanel({ context }: { context: ContextPayload }) {
   const image = context.changeContext?.image
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">镜像变更</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">镜像变更</h4>
         <p className="mt-1 text-xs text-slate-500">
           对比上一版本镜像和当前目标镜像，判断是否真正引入新版本。
         </p>
       </div>
 
       <div className="grid gap-4 p-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Previous Image</p>
-          <p className="mt-3 break-all font-mono text-sm font-semibold text-[#031a41]">{image?.previous ?? "-"}</p>
+          <p className="mt-3 break-all font-mono text-sm font-semibold text-slate-100">{image?.previous ?? "-"}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Current Image</p>
-          <p className="mt-3 break-all font-mono text-sm font-semibold text-[#031a41]">{image?.current ?? "-"}</p>
+          <p className="mt-3 break-all font-mono text-sm font-semibold text-slate-100">{image?.current ?? "-"}</p>
         </div>
       </div>
 
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-[#1f2b3d] p-4">
         <Badge
           value={image?.changed ? "REQUIRED" : "PASS"}
           label={changedText(image?.changed)}
@@ -237,23 +237,23 @@ function AnalysisMetricsPanel({ metrics }: { metrics?: AnalysisRunMetric[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
         当前 Context 没有 AnalysisRun 指标。
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">AnalysisRun 采样指标</h4>
+    <div className="overflow-hidden rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">AnalysisRun 采样指标</h4>
         <p className="mt-1 text-xs text-slate-500">
           展示本次发布分析阶段采样到的 SLO 指标值和成功 / 失败次数。
         </p>
       </div>
       <div className="overflow-auto">
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500">
+          <thead className="border-b border-[#1f2b3d] bg-[#070b12] text-xs uppercase tracking-[0.14em] text-slate-500">
             <tr>
               <th className="px-4 py-3">Metric</th>
               <th className="px-4 py-3">Phase</th>
@@ -264,18 +264,18 @@ function AnalysisMetricsPanel({ metrics }: { metrics?: AnalysisRunMetric[] }) {
               <th className="px-4 py-3">Error</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-[#1f2b3d]">
             {items.map((metric) => (
-              <tr key={metric.name ?? stringifyValue(metric)} className="bg-white">
-                <td className="px-4 py-3 font-mono font-semibold text-[#031a41]">{metric.name ?? "-"}</td>
+              <tr key={metric.name ?? stringifyValue(metric)} className="bg-[#0b121d]">
+                <td className="px-4 py-3 font-mono font-semibold text-slate-100">{metric.name ?? "-"}</td>
                 <td className="px-4 py-3">
                   <Badge value={metric.phase ?? "-"} />
                 </td>
-                <td className="break-all px-4 py-3 font-mono text-slate-700">{metric.value ?? "-"}</td>
-                <td className="px-4 py-3 font-mono text-emerald-700">{metric.successful ?? 0}</td>
-                <td className="px-4 py-3 font-mono text-rose-700">{metric.failed ?? 0}</td>
-                <td className="px-4 py-3 font-mono text-slate-700">{metric.inconclusive ?? 0}</td>
-                <td className="px-4 py-3 font-mono text-amber-700">{metric.error ?? 0}</td>
+                <td className="break-all px-4 py-3 font-mono text-slate-300">{metric.value ?? "-"}</td>
+                <td className="px-4 py-3 font-mono text-emerald-300">{metric.successful ?? 0}</td>
+                <td className="px-4 py-3 font-mono text-rose-300">{metric.failed ?? 0}</td>
+                <td className="px-4 py-3 font-mono text-slate-300">{metric.inconclusive ?? 0}</td>
+                <td className="px-4 py-3 font-mono text-amber-300">{metric.error ?? 0}</td>
               </tr>
             ))}
           </tbody>
@@ -290,26 +290,26 @@ function EnvChangesPanel({ changes }: { changes?: EnvChange[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+      <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-300">
         当前 Context 没有环境变量变更。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">环境变量变更</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">环境变量变更</h4>
         <p className="mt-1 text-xs text-slate-500">
           展示 RELEASE_TAG、VERSION 或其他环境变量是否发生变化。
         </p>
       </div>
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[#1f2b3d]">
         {items.map((change, index) => (
           <div key={`${change.name ?? "env"}-${index}`} className="grid gap-3 px-4 py-3 text-sm lg:grid-cols-[150px_1fr_1fr_110px_90px]">
-            <span className="font-mono font-semibold text-[#031a41]">{change.name ?? "-"}</span>
-            <span className="break-all font-mono text-slate-600">previous: {change.previous ?? "-"}</span>
-            <span className="break-all font-mono text-slate-600">current: {change.current ?? "-"}</span>
+            <span className="font-mono font-semibold text-slate-100">{change.name ?? "-"}</span>
+            <span className="break-all font-mono text-slate-400">previous: {change.previous ?? "-"}</span>
+            <span className="break-all font-mono text-slate-400">current: {change.current ?? "-"}</span>
             <Badge value={change.changed ? "REQUIRED" : "PASS"} label={changedText(change.changed)} />
             <Badge value={change.risk ?? "-"} label={change.risk ?? "-"} />
           </div>
@@ -336,7 +336,7 @@ function RiskContextPanel({
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">风险上下文</h4>
+        <h4 className="text-sm font-semibold text-slate-100">风险上下文</h4>
         <KeyValueRows
           rows={[
             ["runtimeRiskLevel", riskText(severity)],
@@ -350,9 +350,9 @@ function RiskContextPanel({
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">风险提示</h4>
+        <h4 className="text-sm font-semibold text-slate-100">风险提示</h4>
         {riskReasons.length === 0 && changeRiskHints.length === 0 ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-300">
             当前 Context 没有运行时风险原因，也没有变更风险提示。
           </div>
         ) : (
@@ -368,7 +368,7 @@ export function ContextProductView({ body }: { body: string }) {
 
   if (!context) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+      <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-300">
         Context JSON 解析失败，已保留下方原始内容用于审计。
       </div>
     )
@@ -392,11 +392,11 @@ export function ContextProductView({ body }: { body: string }) {
   const metricCount = context.analysisRunMetrics?.length ?? 0
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+      <div className="flex flex-col gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">Context 发布变更上下文</h4>
-          <p className="mt-1 text-sm text-slate-600">
+          <h4 className="text-base font-semibold text-slate-100">Context 发布变更上下文</h4>
+          <p className="mt-1 text-sm text-slate-400">
             重点回答：这次发布对象是谁、GitOps / 镜像 / 环境变量是否变化，以及 AnalysisRun 采样到了什么。
           </p>
         </div>
@@ -464,7 +464,7 @@ export function ContextProductView({ body }: { body: string }) {
 
       <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">发布目标</h4>
+          <h4 className="text-sm font-semibold text-slate-100">发布目标</h4>
           <KeyValueRows
             rows={[
               ["namespace", context.namespace ?? "-"],
@@ -488,12 +488,12 @@ export function ContextProductView({ body }: { body: string }) {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">失败指标上下文</h4>
+          <h4 className="text-sm font-semibold text-slate-100">失败指标上下文</h4>
           <FailedMetricsPanel metrics={failedMetrics} />
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">运行状态摘要</h4>
+          <h4 className="text-sm font-semibold text-slate-100">运行状态摘要</h4>
           <KeyValueRows
             rows={[
               ["result", resultDisplay(result)],
@@ -513,8 +513,8 @@ export function ContextProductView({ body }: { body: string }) {
         changeRiskHints={changeRiskHints}
       />
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
           <ShieldCheck className="h-4 w-4" />
           Context 视图边界
         </div>
@@ -525,4 +525,5 @@ export function ContextProductView({ body }: { body: string }) {
     </div>
   )
 }
+
 

@@ -113,10 +113,10 @@ function IntelligenceConclusionPanel({
   return (
     <div className={`rounded-2xl border p-5 ${
       healthyPattern
-        ? "border-emerald-200 bg-emerald-50"
+        ? "border-emerald-900/45 bg-emerald-950/20"
         : repeatedRiskPattern
-          ? "border-rose-200 bg-rose-50"
-          : "border-amber-200 bg-amber-50"
+          ? "border-rose-900/45 bg-rose-950/20"
+          : "border-amber-900/45 bg-amber-950/20"
     }`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -131,27 +131,27 @@ function IntelligenceConclusionPanel({
 
           <h4 className={`mt-4 text-lg font-semibold ${
             healthyPattern
-              ? "text-emerald-950"
+              ? "text-emerald-200"
               : repeatedRiskPattern
-                ? "text-rose-950"
-                : "text-amber-950"
+                ? "text-rose-200"
+                : "text-amber-200"
           }`}>
             历史智能结论：{healthyPattern ? "健康发布模式" : repeatedRiskPattern ? "命中重复风险" : "需要结合历史记录判断"}
           </h4>
           <p className={`mt-2 max-w-4xl text-sm leading-6 ${
             healthyPattern
-              ? "text-emerald-800"
+              ? "text-emerald-200"
               : repeatedRiskPattern
-                ? "text-rose-800"
-                : "text-amber-800"
+                ? "text-rose-200"
+                : "text-amber-200"
           }`}>
             {conclusion || "当前 Intelligence 没有提供 humanSummary / conclusion。"}
           </p>
         </div>
 
-        <div className="rounded-xl border border-white/70 bg-white/80 p-4 text-sm shadow-sm">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm shadow-sm">
           <p className="text-slate-500">Intelligence 视图职责</p>
-          <p className="mt-2 max-w-xs text-slate-700">
+          <p className="mt-2 max-w-xs text-slate-300">
             这里重点判断历史上是否出现过类似风险，而不是解释 SLO 证据或执行动作。
           </p>
         </div>
@@ -235,7 +235,7 @@ function CurrentReleasePanel({ intelligence }: { intelligence: IntelligencePaylo
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">当前发布摘要</h4>
+        <h4 className="text-sm font-semibold text-slate-100">当前发布摘要</h4>
         <KeyValueRows
           rows={[
             ["releaseResult", resultDisplay(release.releaseResult ?? "-")],
@@ -250,7 +250,7 @@ function CurrentReleasePanel({ intelligence }: { intelligence: IntelligencePaylo
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">当前风险摘要</h4>
+        <h4 className="text-sm font-semibold text-slate-100">当前风险摘要</h4>
         <KeyValueRows
           rows={[
             ["riskLevel", riskText(release.riskLevel ?? "-")],
@@ -277,25 +277,25 @@ function HistoryRecordList({
 }) {
   if (records.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
         当前没有 {title}。
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">{title}</h4>
         <p className="mt-1 text-xs text-slate-500">{description}</p>
       </div>
 
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[#1f2b3d]">
         {records.slice(0, 6).map((record) => (
           <div key={`${record.releaseId}-${record.generatedAt}`} className="space-y-3 px-4 py-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="font-mono text-sm font-semibold text-[#031a41]">
+                <p className="font-mono text-sm font-semibold text-slate-100">
                   {record.releaseId ?? "-"}
                 </p>
                 <p className="mt-1 break-all text-xs text-slate-500">
@@ -334,31 +334,31 @@ function ArtifactsAndGuardrailsPanel({ intelligence }: { intelligence: Intellige
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h4 className="text-sm font-semibold text-slate-900">历史智能资源索引</h4>
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+        <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+          <h4 className="text-sm font-semibold text-slate-100">历史智能资源索引</h4>
         </div>
-        <div className="divide-y divide-slate-200">
+        <div className="divide-y divide-[#1f2b3d]">
           {artifactEntries.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-slate-600">没有 artifacts 字段。</div>
+            <div className="px-4 py-3 text-sm text-slate-400">没有 artifacts 字段。</div>
           ) : (
             artifactEntries.map(([key, value]) => (
               <div key={key} className="grid gap-2 px-4 py-3 text-sm md:grid-cols-[170px_1fr]">
                 <span className="font-mono text-xs text-slate-500">{key}</span>
-                <span className="break-all font-mono text-[#031a41]">{valueOrDash(value)}</span>
+                <span className="break-all font-mono text-slate-100">{valueOrDash(value)}</span>
               </div>
             ))
           )}
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h4 className="text-sm font-semibold text-slate-900">只读分析边界</h4>
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+        <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+          <h4 className="text-sm font-semibold text-slate-100">只读分析边界</h4>
         </div>
         <div className="p-4">
           {guardrailEntries.length === 0 ? (
-            <div className="text-sm text-slate-600">没有 guardrails 字段。</div>
+            <div className="text-sm text-slate-400">没有 guardrails 字段。</div>
           ) : (
             <RuleChipsPanel rules={guardrailEntries.map(([key, value]) => `${key}=${String(value)}`)} />
           )}
@@ -373,7 +373,7 @@ export function IntelligenceProductView({ body }: { body: string }) {
 
   if (!intelligence) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+      <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-300">
         Intelligence JSON 解析失败，已保留下方原始内容用于审计。
       </div>
     )
@@ -401,11 +401,11 @@ export function IntelligenceProductView({ body }: { body: string }) {
   const focusFailures = similarFailures.length > 0 ? similarFailures : recentFailures
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+      <div className="flex flex-col gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">Intelligence 历史风险识别视图</h4>
-          <p className="mt-1 text-sm text-slate-600">
+          <h4 className="text-base font-semibold text-slate-100">Intelligence 历史风险识别视图</h4>
+          <p className="mt-1 text-sm text-slate-400">
             重点回答：这类发布风险历史上是否出现过、是否重复、失败指标组合是否相似，以及下一步应该如何处理。
           </p>
         </div>
@@ -481,12 +481,12 @@ export function IntelligenceProductView({ body }: { body: string }) {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">当前失败指标</h4>
+          <h4 className="text-sm font-semibold text-slate-100">当前失败指标</h4>
           <FailedMetricsPanel metrics={release.failedMetrics ?? []} />
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">智能建议摘要</h4>
+          <h4 className="text-sm font-semibold text-slate-100">智能建议摘要</h4>
           <KeyValueRows
             rows={[
               ["riskPattern", riskPattern],
@@ -514,8 +514,8 @@ export function IntelligenceProductView({ body }: { body: string }) {
 
       <ArtifactsAndGuardrailsPanel intelligence={intelligence} />
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
           <ShieldCheck className="h-4 w-4" />
           Intelligence 视图边界
         </div>
@@ -526,3 +526,4 @@ export function IntelligenceProductView({ body }: { body: string }) {
     </div>
   )
 }
+

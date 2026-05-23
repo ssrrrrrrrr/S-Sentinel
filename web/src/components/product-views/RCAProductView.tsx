@@ -1,4 +1,4 @@
-import { FileSearch, Lightbulb, Radar, ShieldAlert } from "lucide-react"
+﻿import { FileSearch, Lightbulb, Radar, ShieldAlert } from "lucide-react"
 import {
   markdownListAfterHeading,
   markdownValue,
@@ -14,8 +14,8 @@ function InfoCard({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#031a41]">
+    <section className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
         {icon}
         {title}
       </div>
@@ -28,9 +28,9 @@ function Rows({ rows }: { rows: Array<[string, string]> }) {
   return (
     <div className="grid gap-2 text-sm">
       {rows.map(([key, value]) => (
-        <div key={key} className="grid grid-cols-[170px_minmax(0,1fr)] gap-3 rounded-lg bg-slate-50 px-3 py-2">
+        <div key={key} className="grid grid-cols-[170px_minmax(0,1fr)] gap-3 rounded-lg bg-[#070b12] px-3 py-2">
           <span className="text-slate-500">{key}</span>
-          <span className="break-words font-mono text-slate-900">{value}</span>
+          <span className="break-words font-mono text-slate-100">{value}</span>
         </div>
       ))}
     </div>
@@ -45,7 +45,7 @@ function BulletPanel({ items, emptyText }: { items: string[]; emptyText: string 
   return (
     <ul className="space-y-2">
       {items.map((item, index) => (
-        <li key={`${item}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
+        <li key={`${item}-${index}`} className="rounded-lg border border-[#1f2b3d] bg-[#070b12] px-3 py-2 text-sm leading-6 text-slate-300">
           {item}
         </li>
       ))}
@@ -118,3 +118,4 @@ export function RCAProductView({ body }: { body: string }) {
     </div>
   )
 }
+

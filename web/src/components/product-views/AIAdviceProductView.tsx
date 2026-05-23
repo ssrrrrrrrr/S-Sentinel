@@ -65,8 +65,8 @@ function AdvisorConclusionPanel({
   return (
     <div className={`rounded-2xl border p-5 ${
       isPass
-        ? "border-emerald-200 bg-emerald-50"
-        : "border-rose-200 bg-rose-50"
+        ? "border-emerald-900/45 bg-emerald-950/20"
+        : "border-rose-900/45 bg-rose-950/20"
     }`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -79,19 +79,19 @@ function AdvisorConclusionPanel({
             />
           </div>
 
-          <h4 className={`mt-4 text-lg font-semibold ${isPass ? "text-emerald-950" : "text-rose-950"}`}>
+          <h4 className={`mt-4 text-lg font-semibold ${isPass ? "text-emerald-200" : "text-rose-200"}`}>
             Advisor 结论：{isPass ? "发布可继续观察" : "发布需要人工排查"}
           </h4>
-          <p className={`mt-2 max-w-4xl whitespace-pre-wrap text-sm leading-6 ${isPass ? "text-emerald-800" : "text-rose-800"}`}>
+          <p className={`mt-2 max-w-4xl whitespace-pre-wrap text-sm leading-6 ${isPass ? "text-emerald-200" : "text-rose-200"}`}>
             {conclusion || "当前 Advice 没有解析到结论段落。"}
           </p>
         </div>
 
-        <div className={`rounded-xl border bg-white/80 p-4 text-sm shadow-sm ${
+        <div className={`rounded-xl border bg-[#070b12] p-4 text-sm shadow-sm ${
           isPass ? "border-emerald-100" : "border-rose-100"
         }`}>
           <p className="text-slate-500">Advisor Trace 视图职责</p>
-          <p className="mt-2 max-w-xs text-slate-700">
+          <p className="mt-2 max-w-xs text-slate-300">
             这里重点展示 AI / 规则如何解释这次发布，以及给人看的处理建议。
           </p>
         </div>
@@ -120,7 +120,7 @@ function AdvisorRuntimePanel({
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">模型调用上下文</h4>
+        <h4 className="text-sm font-semibold text-slate-100">模型调用上下文</h4>
         <KeyValueRows
           rows={[
             ["model", model || "-"],
@@ -133,7 +133,7 @@ function AdvisorRuntimePanel({
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">Advisor 执行状态</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Advisor 执行状态</h4>
         <KeyValueRows
           rows={[
             ["advisorMode", advisorFallback ? "deterministic_rule_fallback" : "llm_generated"],
@@ -158,11 +158,11 @@ function RecommendationPanel({
 }) {
   return (
     <section className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h4 className="text-sm font-semibold text-slate-900">影响范围判断</h4>
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+        <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+          <h4 className="text-sm font-semibold text-slate-100">影响范围判断</h4>
         </div>
-        <div className="p-4 text-sm leading-6 text-slate-700">
+        <div className="p-4 text-sm leading-6 text-slate-300">
           {impactText ? (
             <p className="whitespace-pre-wrap">{compactText(impactText)}</p>
           ) : (
@@ -171,15 +171,15 @@ function RecommendationPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h4 className="text-sm font-semibold text-slate-900">建议动作</h4>
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+        <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+          <h4 className="text-sm font-semibold text-slate-100">建议动作</h4>
         </div>
         <div className="p-4">
           {recommendationSteps.length > 0 ? (
             <RuleChipsPanel rules={recommendationSteps} />
           ) : (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
               当前 Advice 没有解析到建议动作列表。
             </div>
           )}
@@ -187,15 +187,15 @@ function RecommendationPanel({
       </div>
 
       <div className="lg:col-span-2">
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <h4 className="text-sm font-semibold text-slate-900">Release Risk Reasons</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+          <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+            <h4 className="text-sm font-semibold text-slate-100">Release Risk Reasons</h4>
           </div>
           <div className="p-4">
             {riskReasons.length > 0 ? (
               <RuleChipsPanel rules={riskReasons} />
             ) : (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+              <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-300">
                 当前 Advice 没有风险原因列表。
               </div>
             )}
@@ -224,7 +224,7 @@ function PolicyAdvisorPanel({
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">Policy Evaluator Decision</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Policy Evaluator Decision</h4>
         <KeyValueRows
           rows={[
             ["policyDecision", policyDisplay(policyDecision)],
@@ -237,7 +237,7 @@ function PolicyAdvisorPanel({
       </div>
 
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">Matched Policy Rules</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
         <RuleChipsPanel rules={matchedPolicyRules} />
       </div>
     </section>
@@ -262,7 +262,7 @@ function IntelligenceAdvisorPanel({
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-slate-900">Release Intelligence Summary</h4>
+        <h4 className="text-sm font-semibold text-slate-100">Release Intelligence Summary</h4>
         <KeyValueRows
           rows={[
             ["riskPattern", riskPattern || "-"],
@@ -274,11 +274,11 @@ function IntelligenceAdvisorPanel({
         />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <h4 className="text-sm font-semibold text-slate-900">历史智能解释</h4>
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+        <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+          <h4 className="text-sm font-semibold text-slate-100">历史智能解释</h4>
         </div>
-        <div className="p-4 text-sm leading-6 text-slate-700">
+        <div className="p-4 text-sm leading-6 text-slate-300">
           {intelligenceText ? (
             <p className="whitespace-pre-wrap">{compactText(intelligenceText)}</p>
           ) : (
@@ -337,11 +337,11 @@ export function AIAdviceProductView({ body }: { body: string }) {
   const hasSafetyBoundary = markdownContainsAny(body, ["Safety Boundary", "read-only analysis"])
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+      <div className="flex flex-col gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">Advisor Trace 建议报告视图</h4>
-          <p className="mt-1 text-sm text-slate-600">
+          <h4 className="text-base font-semibold text-slate-100">Advisor Trace 建议报告视图</h4>
+          <p className="mt-1 text-sm text-slate-400">
             重点回答：AI / 规则如何解释本次发布、给出了什么人工建议，以及当前建议是否处于只读安全边界内。
           </p>
         </div>
@@ -439,8 +439,8 @@ export function AIAdviceProductView({ body }: { body: string }) {
         intelligenceText={intelligenceText}
       />
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
           <FileText className="h-4 w-4" />
           Advisor Trace 视图边界
         </div>
@@ -451,4 +451,5 @@ export function AIAdviceProductView({ body }: { body: string }) {
     </div>
   )
 }
+
 

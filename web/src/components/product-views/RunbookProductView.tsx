@@ -1,4 +1,4 @@
-import { ClipboardList, RotateCcw, ShieldCheck, Target } from "lucide-react"
+﻿import { ClipboardList, RotateCcw, ShieldCheck, Target } from "lucide-react"
 import {
   markdownBooleanValue,
   markdownListAfterHeading,
@@ -15,8 +15,8 @@ function InfoCard({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#031a41]">
+    <section className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
         {icon}
         {title}
       </div>
@@ -29,9 +29,9 @@ function Rows({ rows }: { rows: Array<[string, string]> }) {
   return (
     <div className="grid gap-2 text-sm">
       {rows.map(([key, value]) => (
-        <div key={key} className="grid grid-cols-[160px_minmax(0,1fr)] gap-3 rounded-lg bg-slate-50 px-3 py-2">
+        <div key={key} className="grid grid-cols-[160px_minmax(0,1fr)] gap-3 rounded-lg bg-[#070b12] px-3 py-2">
           <span className="text-slate-500">{key}</span>
-          <span className="break-words font-mono text-slate-900">{value}</span>
+          <span className="break-words font-mono text-slate-100">{value}</span>
         </div>
       ))}
     </div>
@@ -46,8 +46,8 @@ function ActionList({ items }: { items: string[] }) {
   return (
     <ol className="space-y-2">
       {items.map((item, index) => (
-        <li key={`${item}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
-          <span className="mr-2 font-mono text-xs font-semibold text-cyan-700">#{index + 1}</span>
+        <li key={`${item}-${index}`} className="rounded-lg border border-[#1f2b3d] bg-[#070b12] px-3 py-2 text-sm leading-6 text-slate-300">
+          <span className="mr-2 font-mono text-xs font-semibold text-sky-300">#{index + 1}</span>
           {item}
         </li>
       ))}
@@ -62,12 +62,12 @@ export function RunbookProductView({ body }: { body: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
-        <div className="flex items-center gap-2 font-semibold text-cyan-900">
+      <div className="rounded-xl border border-cyan-100 bg-[#101a29] p-4">
+        <div className="flex items-center gap-2 font-semibold text-sky-200">
           <ClipboardList className="h-4 w-4" />
           Runbook 执行视图
         </div>
-        <p className="mt-2 text-sm leading-6 text-cyan-800">
+        <p className="mt-2 text-sm leading-6 text-sky-200">
           该视图从 Runbook Markdown 中提取关键状态、目标对象和建议动作。当前仍是只读展示，不会执行任何 Kubernetes / GitOps 操作。
         </p>
       </div>
@@ -107,9 +107,10 @@ export function RunbookProductView({ body }: { body: string }) {
         <ActionList items={rollbackActions} />
       </InfoCard>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+      <div className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm leading-6 text-amber-200">
         安全边界：Runbook 只提供人工操作建议。当前 Release Portal 不会自动执行 rollback、promote、patch、delete 或 GitOps 写入。
       </div>
     </div>
   )
 }
+

@@ -105,8 +105,8 @@ function ReleaseHeroPanel({
   return (
     <div className={`rounded-2xl border p-5 ${
       failed
-        ? "border-rose-200 bg-rose-50"
-        : "border-emerald-200 bg-emerald-50"
+        ? "border-rose-900/45 bg-rose-950/20"
+        : "border-emerald-900/45 bg-emerald-950/20"
     }`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -116,23 +116,23 @@ function ReleaseHeroPanel({
             <Badge value={finalAction} label={actionDisplay(finalAction)} />
           </div>
 
-          <h4 className={`mt-4 text-lg font-semibold ${failed ? "text-rose-950" : "text-emerald-950"}`}>
+          <h4 className={`mt-4 text-lg font-semibold ${failed ? "text-rose-200" : "text-emerald-200"}`}>
             发布总览结论：{failed ? "当前发布不安全，需要先处理风险" : "当前发布通过，可归档并继续观察"}
           </h4>
 
-          <p className={`mt-2 max-w-4xl whitespace-pre-wrap text-sm leading-6 ${failed ? "text-rose-800" : "text-emerald-800"}`}>
+          <p className={`mt-2 max-w-4xl whitespace-pre-wrap text-sm leading-6 ${failed ? "text-rose-200" : "text-emerald-200"}`}>
             {humanConclusion || "当前摘要没有解析到人工结论。"}
           </p>
         </div>
 
-        <div className="grid min-w-[280px] gap-3 rounded-xl border border-white/70 bg-white/80 p-4 text-sm shadow-sm">
+        <div className="grid min-w-[280px] gap-3 rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm shadow-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Next Step</p>
-            <p className="mt-2 font-semibold text-[#031a41]">{nextStep || "-"}</p>
+            <p className="mt-2 font-semibold text-slate-100">{nextStep || "-"}</p>
           </div>
-          <div className="border-t border-slate-200 pt-3">
+          <div className="border-t border-[#1f2b3d] pt-3">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recommended Tabs</p>
-            <p className="mt-2 font-semibold text-[#031a41]">{focusTab}</p>
+            <p className="mt-2 font-semibold text-slate-100">{focusTab}</p>
           </div>
         </div>
       </div>
@@ -162,23 +162,23 @@ function TabGuidePanel({
       ]
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">推荐排查路径</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">推荐排查路径</h4>
         <p className="mt-1 text-xs text-slate-500">
           Overview 只做总览，不展开全部细节；具体问题跳转到对应 Tab。
         </p>
       </div>
 
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-[#1f2b3d]">
         {guides.map(([tab, desc], index) => (
           <div key={tab} className="flex gap-3 px-4 py-3">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#031a41] text-xs font-bold text-white">
               {index + 1}
             </div>
             <div>
-              <p className="font-semibold text-[#031a41]">{tab}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{desc}</p>
+              <p className="font-semibold text-slate-100">{tab}</p>
+              <p className="mt-1 text-sm leading-6 text-slate-400">{desc}</p>
             </div>
           </div>
         ))}
@@ -189,9 +189,9 @@ function TabGuidePanel({
 
 function OverviewBoundaryPanel({ latest }: { latest?: LatestReleaseResponse }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h4 className="text-sm font-semibold text-slate-900">系统安全边界</h4>
+    <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+      <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+        <h4 className="text-sm font-semibold text-slate-100">系统安全边界</h4>
       </div>
 
       <div className="p-4">
@@ -258,11 +258,11 @@ export function OverviewProductView({
   const chainComplete = artifactCompleteness.total > 0 && artifactCompleteness.provided >= Math.min(artifactCompleteness.total, 7)
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
+      <div className="flex flex-col gap-3 border-b border-[#1f2b3d] pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">Overview 发布总览</h4>
-          <p className="mt-1 text-sm text-slate-600">
+          <h4 className="text-base font-semibold text-slate-100">Overview 发布总览</h4>
+          <p className="mt-1 text-sm text-slate-400">
             只保留最终结论、当前风险、建议下一步和推荐查看路径，用于快速判断这次发布是否安全。
           </p>
         </div>
@@ -336,7 +336,7 @@ export function OverviewProductView({
 
         <div className="space-y-4">
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-slate-900">发布链路摘要</h4>
+            <h4 className="text-sm font-semibold text-slate-100">发布链路摘要</h4>
             <KeyValueRows
               rows={[
                 ["releaseId", selected.releaseId],
@@ -352,24 +352,24 @@ export function OverviewProductView({
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <h4 className="text-sm font-semibold text-slate-900">SLO 门禁总览</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+          <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+            <h4 className="text-sm font-semibold text-slate-100">SLO 门禁总览</h4>
           </div>
           <div className="p-4">
             {failedSloGates.length > 0 ? (
               <RuleChipsPanel rules={failedSloGates} />
             ) : (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+              <div className="rounded-xl border border-emerald-900/45 bg-emerald-950/20 p-4 text-sm text-emerald-200">
                 当前发布没有失败的 SLO 门禁。
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-            <h4 className="text-sm font-semibold text-slate-900">Policy Rules</h4>
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d]">
+          <div className="border-b border-[#1f2b3d] bg-[#070b12] px-4 py-3">
+            <h4 className="text-sm font-semibold text-slate-100">Policy Rules</h4>
           </div>
           <div className="p-4">
             <RuleChipsPanel rules={matchedRules} />
@@ -379,14 +379,14 @@ export function OverviewProductView({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">策略裁决原因</h4>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+          <h4 className="text-sm font-semibold text-slate-100">策略裁决原因</h4>
+          <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm leading-6 text-slate-300">
             {policyReason || "-"}
           </div>
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">历史智能摘要</h4>
+          <h4 className="text-sm font-semibold text-slate-100">历史智能摘要</h4>
           <KeyValueRows
             rows={[
               ["riskPattern", riskPattern],
@@ -401,7 +401,7 @@ export function OverviewProductView({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-slate-900">风险摘要</h4>
+          <h4 className="text-sm font-semibold text-slate-100">风险摘要</h4>
           <KeyValueRows
             rows={[
               ["runtimeRiskLevel", riskText(runtimeRiskLevel)],
@@ -419,8 +419,8 @@ export function OverviewProductView({
 
       <ResourceMetadataPanel selected={selected} />
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-[#031a41]">
+      <div className="rounded-xl border border-[#1f2b3d] bg-[#070b12] p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-slate-100">
           <Compass className="h-4 w-4" />
           Overview 视图边界
         </div>
@@ -431,5 +431,7 @@ export function OverviewProductView({
     </div>
   )
 }
+
+
 
 
