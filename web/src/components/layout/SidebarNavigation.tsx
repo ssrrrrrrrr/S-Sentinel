@@ -91,23 +91,25 @@ export function SidebarNavigation({
 }) {
   return (
     <aside className="hidden min-h-screen border-r border-[#1a2535] bg-[#080d15] lg:flex lg:flex-col">
-      <div className="border-b border-[#1a2535] px-5 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#33445d] bg-[#c8d6e8]">
-            <img
-              src="/brand/s-sentinel-logo.svg"
-              alt="S Sentinel logo"
-              className="h-7 w-7 object-contain"
-            />
-          </div>
+      <div className="border-b border-[#1a2535] bg-[#080d15] px-3.5 py-4">
+        <div className="rounded-2xl border border-[#223149] bg-[#eaf1f8] p-3 shadow-sm shadow-black/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#c6d4e5] bg-white shadow-sm">
+              <img
+                src="/brand/s-sentinel-logo.svg"
+                alt="S Sentinel logo"
+                className="h-6.5 w-6.5 object-contain"
+              />
+            </div>
 
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold tracking-tight text-slate-100">
-              S Sentinel
-            </p>
-            <p className="mt-0.5 truncate text-xs text-slate-500">
-              Control Plane
-            </p>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-[15px] font-bold tracking-tight text-[#071a33]">
+                S Sentinel
+              </p>
+              <p className="mt-1 truncate text-xs font-semibold text-[#64748b]">
+                Control Plane
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -189,3 +191,6 @@ export function SidebarNavigation({
     </aside>
   )
 }
+
+
+

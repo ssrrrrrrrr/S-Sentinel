@@ -9,7 +9,10 @@ import {
   ReleaseContextBar,
   type ReleaseContext,
 } from "@/components/layout/ReleaseContextBar"
-import type { PortalRoute } from "@/components/layout/portalRoutes"
+import {
+  getPortalRouteMeta,
+  type PortalRoute,
+} from "@/components/layout/portalRoutes"
 
 export function LayoutShell({
   children,
@@ -29,6 +32,8 @@ export function LayoutShell({
   releaseContext: ReleaseContext
   onRefresh: () => void
 }>) {
+  const routeMeta = getPortalRouteMeta(activeRoute)
+
   return (
     <div className="min-h-screen bg-[#070b12] text-slate-100 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       <SidebarNavigation
@@ -39,22 +44,20 @@ export function LayoutShell({
       <main className="min-w-0">
         <header className="sticky top-0 z-20 border-b border-[#1a2535] bg-[#080d15]">
           <div className="flex h-16 items-center justify-between px-5 lg:px-7">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#33445d] bg-[#c8d6e8]">
-                <img
-                  src="/brand/s-sentinel-logo.svg"
-                  alt="S Sentinel logo"
-                  className="h-8 w-8 object-contain"
-                />
-              </div>
-
-              <div className="min-w-0 leading-tight">
-                <h1 className="truncate text-base font-bold tracking-tight text-slate-100">
-                  S Sentinel
-                </h1>
-                <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
-                  Evidence-first Release Control Plane
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#5d8fd8]" />
+                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Release Control Plane
                 </p>
+              </div>
+              <div className="mt-1 flex min-w-0 items-center gap-2">
+                <h1 className="truncate text-base font-bold tracking-tight text-slate-100">
+                  {routeMeta.pageTitle}
+                </h1>
+                <span className="hidden rounded-full border border-[#243044] bg-[#0b121d] px-2 py-0.5 text-[11px] font-semibold text-slate-500 md:inline-flex">
+                  {routeMeta.eyebrow}
+                </span>
               </div>
             </div>
 
