@@ -22,9 +22,15 @@ echo "===== Stage 36: Config Compiler acceptance ====="
 echo
 echo "===== syntax check ====="
 bash -n scripts/compile-release-config.sh
+bash -n scripts/validate-compiler-profile.sh
+bash -n scripts/test-stage46-compiler-profile-validation.sh
 bash -n scripts/test-config-compiler.sh
 bash -n scripts/test-config-compiler-drift.sh
 bash -n scripts/test-release-gitops-compiler-integration.sh
+
+echo
+echo "===== compiler profile validation ====="
+./scripts/validate-compiler-profile.sh
 
 echo
 echo "===== compiler multi-env test ====="
