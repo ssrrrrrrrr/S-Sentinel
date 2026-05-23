@@ -1,3 +1,4 @@
+import { Panel } from "@/components/common/Panel"
 import type { LatestReleaseResponse } from "@/types/release"
 
 type PortalLane = {
@@ -53,7 +54,7 @@ export function PortalInformationArchitecture({
   const safetyMode = latest?.safety?.readOnly === false ? "Writable" : "Read-only"
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm shadow-slate-200/60">
+    <Panel padding="md" className="bg-white/95">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
@@ -135,6 +136,6 @@ export function PortalInformationArchitecture({
           </div>
         ))}
       </div>
-    </section>
+    </Panel>
   )
 }

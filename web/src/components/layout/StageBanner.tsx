@@ -1,9 +1,10 @@
 ﻿import { ShieldCheck } from "lucide-react"
+import { Panel } from "@/components/common/Panel"
 import type { LatestReleaseResponse } from "@/types/release"
 
 export function StageBanner({ latest }: { latest?: LatestReleaseResponse }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm shadow-slate-200/60">
+    <Panel padding="sm" className="bg-white/95">
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">
@@ -26,6 +27,6 @@ export function StageBanner({ latest }: { latest?: LatestReleaseResponse }) {
           </p>
         </div>
       </div>
-    </section>
+    </Panel>
   )
 }
