@@ -112,6 +112,10 @@ grep -q "NewEvidenceRepositoryForRuntime" watcher/evidence_repository.go
 grep -q "NewCLIEvidenceRepository" watcher/evidence_repository.go
 grep -q "X-S-Sentinel-Evidence-Runtime-Mode" watcher/portal_api.go
 grep -q "X-S-Sentinel-Evidence-Repository-Type" watcher/portal_api.go
+grep -q "ControlPlaneMetadata" watcher/evidence_service.go
+grep -q "s-sentinel.io/evidence-api/v1alpha1" watcher/evidence_service.go
+grep -q "evidence.api.response/v1alpha1" watcher/evidence_service.go
+grep -q "encodeEvidenceRepositoryResponseBody" watcher/portal_api.go
 
 if grep -q "runEvidenceStoreCommand" watcher/portal_api.go; then
   echo "portal_api.go still owns EvidenceStore CLI runtime"

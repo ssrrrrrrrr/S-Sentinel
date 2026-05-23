@@ -86,6 +86,7 @@ type EvidenceRepositoryResponse struct {
 	Body       []byte
 	DBFile     string
 	Mode       string
+	Runtime    EvidenceRuntimeDescriptor
 	Repository EvidenceRepositoryDescriptor
 }
 
@@ -318,10 +319,14 @@ func (repo *CLIEvidenceRepository) query(r *http.Request, args ...string) (*Evid
 		}
 	}
 
+	runtimeDescriptor := repo.runtime.Descriptor()
+	repositoryDescriptor := repo.Descriptor()
+
 	return &EvidenceRepositoryResponse{
 		Body:       output,
 		DBFile:     dbFile,
-		Mode:       repo.runtime.Mode(),
-		Repository: repo.Descriptor(),
+		Mode:       runtimeDescriptor.Mode,
+		Runtime:    runtimeDescriptor,
+		Repository: repositoryDescriptor,
 	}, nil
 }

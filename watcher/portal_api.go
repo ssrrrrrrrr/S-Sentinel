@@ -456,6 +456,12 @@ func (api *portalAPI) writeEvidenceRepositoryResponse(
 		return
 	}
 
+	body, encodeErr := api.encodeEvidenceRepositoryResponseBody(response)
+	if encodeErr != nil {
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to encode evidence api response", encodeErr)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-S-Sentinel-Evidence-Runtime-Mode", response.Mode)
 	w.Header().Set("X-S-Sentinel-Evidence-Repository-Type", response.Repository.RepositoryType)
@@ -465,7 +471,24 @@ func (api *portalAPI) writeEvidenceRepositoryResponse(
 	w.Header().Set("X-S-Sentinel-Evidence-Store-Mode", response.Mode)
 	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", response.DBFile)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(response.Body)
+	_, _ = w.Write(body)
+}
+
+func (api *portalAPI) encodeEvidenceRepositoryResponseBody(response *EvidenceRepositoryResponse) ([]byte, error) {
+	if response == nil || len(response.Body) == 0 {
+		return nil, nil
+	}
+
+	body := map[string]interface{}{}
+	if err := json.Unmarshal(response.Body, &body); err != nil {
+		return response.Body, nil
+	}
+
+	if _, exists := body["controlPlane"]; !exists {
+		body["controlPlane"] = api.evidenceService().ControlPlaneMetadata(response)
+	}
+
+	return json.MarshalIndent(body, "", "  ")
 }
 
 func (api *portalAPI) writeEvidenceStoreError(w http.ResponseWriter, statusCode int, message string, err error) {

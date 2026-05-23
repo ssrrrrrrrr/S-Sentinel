@@ -138,6 +138,44 @@ func (svc *EvidenceService) capabilities() map[string]interface{} {
 	}
 }
 
+func (svc *EvidenceService) ControlPlaneMetadata(response *EvidenceRepositoryResponse) map[string]interface{} {
+	runtimeDescriptor := svc.runtime.Descriptor()
+	repositoryDescriptor := svc.repository.Descriptor()
+	dbFile := svc.runtime.DBFile()
+
+	if response != nil {
+		if response.Runtime.RuntimeID != "" {
+			runtimeDescriptor = response.Runtime
+		}
+		if response.Repository.RepositoryID != "" {
+			repositoryDescriptor = response.Repository
+		}
+		if response.DBFile != "" {
+			dbFile = response.DBFile
+		}
+	}
+
+	return map[string]interface{}{
+		"schemaVersion":      "evidence.api.controlPlane/v1alpha1",
+		"apiVersion":         "s-sentinel.io/evidence-api/v1alpha1",
+		"contractVersion":    "evidence.api.response/v1alpha1",
+		"generatedAt":        time.Now().Format(time.RFC3339),
+		"generatedBy":        "s-sentinel-evidence-api",
+		"service":            svc.serviceContract(),
+		"runtime":            runtimeDescriptor,
+		"repository":         repositoryDescriptor,
+		"paths":              svc.runtimePaths(),
+		"capabilities":       svc.capabilities(),
+		"dbFile":             dbFile,
+		"runtimeMode":        runtimeDescriptor.Mode,
+		"repositoryType":     repositoryDescriptor.RepositoryType,
+		"repositoryMode":     repositoryDescriptor.Mode,
+		"repositoryContract": repositoryDescriptor.ContractVersion,
+		"readOnly":           true,
+		"willExecute":        false,
+	}
+}
+
 func (svc *EvidenceService) Status(ctx context.Context) map[string]interface{} {
 	dbFile := svc.runtime.DBFile()
 	scriptFile := svc.runtime.ScriptFile()

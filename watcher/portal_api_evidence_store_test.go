@@ -142,6 +142,10 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		"/api/evidence-store/releases?limit=10",
 	)
 	assertPortalSchema(t, listBody, "evidence.store.releaseList/v1alpha1")
+	assertPortalNestedString(t, listBody, "controlPlane", "apiVersion", "s-sentinel.io/evidence-api/v1alpha1")
+	assertPortalNestedString(t, listBody, "controlPlane", "contractVersion", "evidence.api.response/v1alpha1")
+	assertPortalNestedString(t, listBody, "controlPlane", "repositoryType", "cli-backed")
+	assertPortalNestedString(t, listBody, "controlPlane", "runtimeMode", "cli-sqlite-runtime")
 
 	detailBody := callPortalEvidenceStoreHandler(
 		t,
@@ -170,6 +174,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		"/api/evidence/releases/"+releaseID,
 	)
 	assertPortalSchema(t, canonicalDetailBody, "evidence.store.release/v1alpha1")
+	assertPortalNestedString(t, canonicalDetailBody, "controlPlane", "apiVersion", "s-sentinel.io/evidence-api/v1alpha1")
 
 	canonicalObjectBody := callPortalEvidenceStoreHandler(
 		t,
@@ -192,6 +197,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, searchBody, "evidence.store.search/v1alpha1")
 	assertPortalNestedBool(t, searchBody, "filters", "includeRaw", false)
+	assertPortalNestedString(t, searchBody, "controlPlane", "repositoryContract", "evidence.repository/v1alpha1")
 
 	verificationSummaryBody := callPortalEvidenceStoreHandler(
 		t,
