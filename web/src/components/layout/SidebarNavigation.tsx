@@ -10,22 +10,10 @@
   ShieldCheck,
 } from "lucide-react"
 import {
-  portalWorkspaces,
-  type PortalWorkspace,
-} from "@/components/layout/portalWorkspaceConfig"
-
-const platformItems = [
-  {
-    label: "Overview",
-    description: "release health",
-    icon: Activity,
-  },
-  {
-    label: "Releases",
-    description: "rollout history",
-    icon: GitBranch,
-  },
-]
+  platformRoutes,
+  workspaceRoutes,
+  type PortalRoute,
+} from "@/components/layout/portalRoutes"
 
 const systemItems = [
   {
@@ -42,7 +30,9 @@ const systemItems = [
   },
 ]
 
-const workspaceIcon: Record<PortalWorkspace, typeof ShieldCheck> = {
+const routeIcon: Record<PortalRoute, typeof ShieldCheck> = {
+  Overview: Activity,
+  Releases: GitBranch,
   Evidence: Database,
   Policy: ShieldCheck,
   "Supply Chain": LockKeyhole,
@@ -51,12 +41,53 @@ const workspaceIcon: Record<PortalWorkspace, typeof ShieldCheck> = {
   Environment: Network,
 }
 
-export function SidebarNavigation({
-  activeWorkspace,
-  onWorkspaceChange,
+function RouteButton({
+  route,
+  activeRoute,
+  onRouteChange,
 }: {
-  activeWorkspace: PortalWorkspace
-  onWorkspaceChange: (workspace: PortalWorkspace) => void
+  route: (typeof platformRoutes | typeof workspaceRoutes)[number]
+  activeRoute: PortalRoute
+  onRouteChange: (route: PortalRoute) => void
+}) {
+  const Icon = routeIcon[route.id]
+  const active = activeRoute === route.id
+
+  return (
+    <button
+      type="button"
+      onClick={() => onRouteChange(route.id)}
+      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition ${
+        active
+          ? "border-[#35517a] bg-[#14233a] text-slate-50"
+          : "border-transparent text-slate-400 hover:bg-[#0d1623] hover:text-slate-200"
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold">
+            {route.title}
+          </span>
+          <span className={`block truncate text-[11px] ${active ? "text-slate-400" : "text-slate-600"}`}>
+            {route.description}
+          </span>
+        </span>
+      </span>
+
+      {active ? (
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#5d8fd8]" />
+      ) : null}
+    </button>
+  )
+}
+
+export function SidebarNavigation({
+  activeRoute,
+  onRouteChange,
+}: {
+  activeRoute: PortalRoute
+  onRouteChange: (route: PortalRoute) => void
 }) {
   return (
     <aside className="hidden min-h-screen border-r border-[#1a2535] bg-[#080d15] lg:flex lg:flex-col">
@@ -88,38 +119,14 @@ export function SidebarNavigation({
           </p>
 
           <div className="mt-2 space-y-1">
-            {platformItems.map((item, index) => {
-              const Icon = item.icon
-              const active = index === 0
-
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition ${
-                    active
-                      ? "border-[#26354a] bg-[#101a29] text-slate-100"
-                      : "border-transparent text-slate-400 hover:bg-[#0d1623] hover:text-slate-200"
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold">
-                        {item.label}
-                      </span>
-                      <span className="block truncate text-[11px] text-slate-600">
-                        {item.description}
-                      </span>
-                    </span>
-                  </span>
-
-                  {active ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#5d8fd8]" />
-                  ) : null}
-                </button>
-              )
-            })}
+            {platformRoutes.map((route) => (
+              <RouteButton
+                key={route.id}
+                route={route}
+                activeRoute={activeRoute}
+                onRouteChange={onRouteChange}
+              />
+            ))}
           </div>
         </div>
 
@@ -129,33 +136,14 @@ export function SidebarNavigation({
           </p>
 
           <div className="mt-2 space-y-1">
-            {portalWorkspaces.map((workspace) => {
-              const Icon = workspaceIcon[workspace.id]
-              const active = activeWorkspace === workspace.id
-
-              return (
-                <button
-                  key={workspace.id}
-                  type="button"
-                  onClick={() => onWorkspaceChange(workspace.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                    active
-                      ? "border-[#35517a] bg-[#14233a] text-slate-50"
-                      : "border-transparent text-slate-400 hover:bg-[#0d1623] hover:text-slate-200"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
-                      {workspace.title}
-                    </span>
-                    <span className={`block truncate text-[11px] ${active ? "text-slate-400" : "text-slate-600"}`}>
-                      {workspace.description}
-                    </span>
-                  </span>
-                </button>
-              )
-            })}
+            {workspaceRoutes.map((route) => (
+              <RouteButton
+                key={route.id}
+                route={route}
+                activeRoute={activeRoute}
+                onRouteChange={onRouteChange}
+              />
+            ))}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 ﻿export function KeyValueRows({ rows }: { rows: Array<[string, string]> }) {
   return (
-    <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+    <div className="divide-y divide-[#1f2b3d] rounded-xl border border-[#1f2b3d] bg-[#070b12]">
       {rows.map(([key, value]) => (
         <div
           key={key}
@@ -14,7 +14,7 @@
           </span>
           <span
             title={value || "-"}
-            className="min-w-0 break-words font-mono leading-6 text-[#031a41]"
+            className="min-w-0 break-words font-mono leading-6 text-slate-100"
           >
             {value || "-"}
           </span>

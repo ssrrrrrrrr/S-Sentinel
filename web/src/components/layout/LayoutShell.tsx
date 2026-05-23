@@ -9,31 +9,31 @@ import {
   ReleaseContextBar,
   type ReleaseContext,
 } from "@/components/layout/ReleaseContextBar"
-import type { PortalWorkspace } from "@/components/layout/portalWorkspaceConfig"
+import type { PortalRoute } from "@/components/layout/portalRoutes"
 
 export function LayoutShell({
   children,
   hasError,
   latest,
   generatedAt,
-  activeWorkspace,
-  onWorkspaceChange,
+  activeRoute,
+  onRouteChange,
   releaseContext,
   onRefresh,
 }: PropsWithChildren<{
   hasError: boolean
   latest?: LatestReleaseResponse
   generatedAt?: string
-  activeWorkspace: PortalWorkspace
-  onWorkspaceChange: (workspace: PortalWorkspace) => void
+  activeRoute: PortalRoute
+  onRouteChange: (route: PortalRoute) => void
   releaseContext: ReleaseContext
   onRefresh: () => void
 }>) {
   return (
     <div className="min-h-screen bg-[#070b12] text-slate-100 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       <SidebarNavigation
-        activeWorkspace={activeWorkspace}
-        onWorkspaceChange={onWorkspaceChange}
+        activeRoute={activeRoute}
+        onRouteChange={onRouteChange}
       />
 
       <main className="min-w-0">

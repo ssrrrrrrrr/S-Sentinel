@@ -6,18 +6,12 @@ import {
   getResourceKindByTab,
 } from "@/api/releaseResources"
 import { LayoutShell } from "@/components/layout/LayoutShell"
-import { PortalInformationArchitecture } from "@/components/layout/PortalInformationArchitecture"
+import { PortalRouteRenderer } from "@/components/layout/PortalRouteRenderer"
 import { PortalState } from "@/components/layout/PortalState"
-import { StageBanner } from "@/components/layout/StageBanner"
-import { ControlPlaneObjectCards } from "@/components/release/ControlPlaneObjectCards"
-import { ControlPlaneGraph } from "@/components/release/ControlPlaneGraph"
 import {
-  defaultPortalWorkspace,
-  type PortalWorkspace,
-} from "@/components/layout/portalWorkspaceConfig"
-import { PortalWorkspaceRenderer } from "@/components/layout/PortalWorkspaceRenderer"
-import { ReleaseMetricGrid } from "@/components/release/ReleaseMetricGrid"
-import { ReleaseDetailWorkspace } from "@/components/release/ReleaseDetailWorkspace"
+  defaultPortalRoute,
+  type PortalRoute,
+} from "@/components/layout/portalRoutes"
 import type { ReleaseContext } from "@/components/layout/ReleaseContextBar"
 
 const tabs = ["概览", "Evidence", "Intelligence", "Action Plan", "AI Advice", "Timeline", "Runbook", "RCA", "Context"]
@@ -37,7 +31,7 @@ function displayValue(value: unknown, fallback = "unknown") {
 function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("概览")
-  const [activeWorkspace, setActiveWorkspace] = useState<PortalWorkspace>(defaultPortalWorkspace)
+  const [activeRoute, setActiveRoute] = useState<PortalRoute>(defaultPortalRoute)
 
   const releasesQuery = useQuery({
     queryKey: ["releases"],
@@ -98,20 +92,11 @@ function App() {
       hasError={hasError}
       latest={latestQuery.data}
       generatedAt={releasesQuery.data?.generatedAt}
-      activeWorkspace={activeWorkspace}
-      onWorkspaceChange={setActiveWorkspace}
+      activeRoute={activeRoute}
+      onRouteChange={setActiveRoute}
       releaseContext={releaseContext}
       onRefresh={refreshAll}
     >
-      <StageBanner latest={latestQuery.data} />
-
-      <PortalInformationArchitecture
-        latest={latestQuery.data}
-        releaseCount={releases.length}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
       {isLoading ? (
         <PortalState kind="loading" />
       ) : hasError ? (
@@ -119,42 +104,22 @@ function App() {
       ) : !selected || !selectedSummary ? (
         <PortalState kind="empty" />
       ) : (
-        <>
-          <ReleaseMetricGrid selected={selected} />
-
-          <ControlPlaneObjectCards
-            selected={selected}
-            evidenceQuery={environmentEvidenceQuery}
-            onTabChange={setActiveTab}
-          />
-
-          <ControlPlaneGraph
-            selected={selected}
-            evidenceQuery={environmentEvidenceQuery}
-            onTabChange={setActiveTab}
-          />
-
-          <PortalWorkspaceRenderer
-            activeWorkspace={activeWorkspace}
-            selected={selected}
-            evidenceQuery={environmentEvidenceQuery}
-            onTabChange={setActiveTab}
-          />
-
-          <ReleaseDetailWorkspace
-            releases={releases}
-            selected={selected}
-            totalCount={releasesQuery.data?.count ?? releases.length}
-            onSelect={setSelectedId}
-            onRefresh={refreshAll}
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            latest={latestQuery.data}
-            resourceKind={resourceKind}
-            resourceQuery={resourceQuery}
-          />
-        </>
+        <PortalRouteRenderer
+          activeRoute={activeRoute}
+          releases={releases}
+          selected={selected}
+          totalCount={releasesQuery.data?.count ?? releases.length}
+          onSelect={setSelectedId}
+          onRefresh={refreshAll}
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          latest={latestQuery.data}
+          resourceKind={resourceKind}
+          resourceQuery={resourceQuery}
+          evidenceQuery={environmentEvidenceQuery}
+          releaseCount={releases.length}
+        />
       )}
     </LayoutShell>
   )
