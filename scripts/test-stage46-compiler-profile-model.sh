@@ -115,6 +115,30 @@ assert analysis["metadata"]["name"] == "demo-app-error-rate", analysis["metadata
 assert rollout["metadata"]["name"] == "demo-app", rollout["metadata"]
 assert prometheus_rule["metadata"]["name"] == "demo-app-rollout-alerts", prometheus_rule["metadata"]
 
+kustomization = yaml.safe_load((env_dir / "kustomization.yaml").read_text(encoding="utf-8"))
+
+renderer_refs = spec["rendererRefs"]
+assert analysis["metadata"]["annotations"]["ssentinel.io/renderer-ref"] == renderer_refs["analysisTemplateRenderer"], analysis["metadata"]
+assert rollout["metadata"]["annotations"]["ssentinel.io/renderer-ref"] == renderer_refs["rolloutTemplate"], rollout["metadata"]
+assert prometheus_rule["metadata"]["annotations"]["ssentinel.io/renderer-ref"] == renderer_refs["prometheusRuleRenderer"], prometheus_rule["metadata"]
+assert kustomization["metadata"]["annotations"]["ssentinel.io/renderer-ref"] == renderer_refs["environmentOverlayRenderer"], kustomization["metadata"]
+
+assert analysis["metadata"]["annotations"]["ssentinel.io/output-kind"] == "AnalysisTemplate", analysis["metadata"]
+assert rollout["metadata"]["annotations"]["ssentinel.io/output-kind"] == "Rollout", rollout["metadata"]
+assert prometheus_rule["metadata"]["annotations"]["ssentinel.io/output-kind"] == "PrometheusRule", prometheus_rule["metadata"]
+assert kustomization["metadata"]["annotations"]["ssentinel.io/output-kind"] == "Kustomization", kustomization["metadata"]
+
+assert plan["outputs"]["rendererRefs"]["analysisTemplate"] == renderer_refs["analysisTemplateRenderer"], plan["outputs"]
+assert plan["outputs"]["rendererRefs"]["rollout"] == renderer_refs["rolloutTemplate"], plan["outputs"]
+assert plan["outputs"]["rendererRefs"]["prometheusRule"] == renderer_refs["prometheusRuleRenderer"], plan["outputs"]
+assert plan["outputs"]["rendererRefs"]["environmentOverlay"] == renderer_refs["environmentOverlayRenderer"], plan["outputs"]
+
+artifact_renderers = {item["kind"]: item["rendererRef"] for item in plan["outputs"]["artifacts"]}
+assert artifact_renderers["AnalysisTemplate"] == renderer_refs["analysisTemplateRenderer"], artifact_renderers
+assert artifact_renderers["Rollout"] == renderer_refs["rolloutTemplate"], artifact_renderers
+assert artifact_renderers["PrometheusRule"] == renderer_refs["prometheusRuleRenderer"], artifact_renderers
+assert artifact_renderers["Kustomization"] == renderer_refs["environmentOverlayRenderer"], artifact_renderers
+
 prom = plan["slo"]["observability"]["prometheus"]
 assert prom["provider"] == "prometheus", prom
 assert prom["bindingSource"] == "CompilerProfile.spec.metricBinding.prometheus", prom

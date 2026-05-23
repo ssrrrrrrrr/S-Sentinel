@@ -455,6 +455,30 @@ replicas = int(runtime_profile.get("replicas") or 3)
 revision_history_limit = int(runtime_profile.get("revisionHistoryLimit") or 3)
 image_pull_policy = str(runtime_profile.get("imagePullPolicy") or "IfNotPresent")
 
+renderer_refs = compiler_profile_spec.get("rendererRefs") or {}
+rollout_template_renderer = str(renderer_refs.get("rolloutTemplate") or "argo-rollouts-canary-v1")
+analysis_template_renderer = str(renderer_refs.get("analysisTemplateRenderer") or "prometheus-analysis-template-v1")
+prometheus_rule_renderer = str(renderer_refs.get("prometheusRuleRenderer") or "prometheus-rule-v1")
+environment_overlay_renderer = str(renderer_refs.get("environmentOverlayRenderer") or "kustomize-overlay-v1")
+
+renderer_contracts = {
+    "analysisTemplate": analysis_template_renderer,
+    "rollout": rollout_template_renderer,
+    "prometheusRule": prometheus_rule_renderer,
+    "environmentOverlay": environment_overlay_renderer,
+}
+
+def renderer_annotations(renderer_ref: str, output_kind: str) -> dict[str, str]:
+    data = {
+        "ssentinel.io/generated-by": "config-compiler",
+        "ssentinel.io/env": env_name,
+        "ssentinel.io/renderer-ref": renderer_ref,
+        "ssentinel.io/output-kind": output_kind,
+    }
+    if compiler_profile_ref:
+        data["ssentinel.io/compiler-profile"] = str(config_name(compiler_profile_doc))
+    return data
+
 compiler_profile_guardrails = dict(compiler_profile_spec.get("guardrails") or {})
 compiler_profile_guardrails.update({
     "profileModelOnly": False if compiler_profile_doc else True,
@@ -518,6 +542,7 @@ analysis_yaml = {
             "ssentinel.io/generated-by": "config-compiler",
             "ssentinel.io/env": env_name,
         },
+        "annotations": renderer_annotations(analysis_template_renderer, "AnalysisTemplate"),
     },
     "spec": {
         "metrics": metrics,
@@ -557,6 +582,7 @@ rollout_yaml = {
             "ssentinel.io/generated-by": "config-compiler",
             "ssentinel.io/env": env_name,
         },
+        "annotations": renderer_annotations(rollout_template_renderer, "Rollout"),
     },
     "spec": {
         "replicas": replicas,
@@ -700,6 +726,7 @@ prometheusrule_yaml = {
             "ssentinel.io/generated-by": "config-compiler",
             "ssentinel.io/env": env_name,
         },
+        "annotations": renderer_annotations(prometheus_rule_renderer, "PrometheusRule"),
     },
     "spec": {
         "groups": [
@@ -714,6 +741,10 @@ prometheusrule_yaml = {
 kustomization_yaml = {
     "apiVersion": "kustomize.config.k8s.io/v1beta1",
     "kind": "Kustomization",
+    "metadata": {
+        "name": f"{service}-{env_name}-compiled",
+        "annotations": renderer_annotations(environment_overlay_renderer, "Kustomization"),
+    },
     "resources": [
         "analysis.yaml",
         "prometheusrule.yaml",
@@ -846,6 +877,29 @@ rendered_release_plan = {
         "prometheusRule": "prometheusrule.yaml",
         "kustomization": "kustomization.yaml",
         "renderedReleasePlan": "rendered-release-plan.json",
+        "rendererRefs": renderer_contracts,
+        "artifacts": [
+            {
+                "kind": "AnalysisTemplate",
+                "path": "analysis.yaml",
+                "rendererRef": analysis_template_renderer,
+            },
+            {
+                "kind": "Rollout",
+                "path": "rollout.yaml",
+                "rendererRef": rollout_template_renderer,
+            },
+            {
+                "kind": "PrometheusRule",
+                "path": "prometheusrule.yaml",
+                "rendererRef": prometheus_rule_renderer,
+            },
+            {
+                "kind": "Kustomization",
+                "path": "kustomization.yaml",
+                "rendererRef": environment_overlay_renderer,
+            },
+        ],
     },
     "guardrails": {
         "doesNotApplyKubernetes": True,
