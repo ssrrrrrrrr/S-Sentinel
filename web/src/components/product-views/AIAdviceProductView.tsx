@@ -90,7 +90,7 @@ function AdvisorConclusionPanel({
         <div className={`rounded-xl border bg-white/80 p-4 text-sm shadow-sm ${
           isPass ? "border-emerald-100" : "border-rose-100"
         }`}>
-          <p className="text-slate-500">AI Advice 视图职责</p>
+          <p className="text-slate-500">Advisor Trace 视图职责</p>
           <p className="mt-2 max-w-xs text-slate-700">
             这里重点展示 AI / 规则如何解释这次发布，以及给人看的处理建议。
           </p>
@@ -340,7 +340,7 @@ export function AIAdviceProductView({ body }: { body: string }) {
     <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="text-base font-semibold text-[#031a41]">AI Advice 建议报告视图</h4>
+          <h4 className="text-base font-semibold text-[#031a41]">Advisor Trace 建议报告视图</h4>
           <p className="mt-1 text-sm text-slate-600">
             重点回答：AI / 规则如何解释本次发布、给出了什么人工建议，以及当前建议是否处于只读安全边界内。
           </p>
@@ -442,12 +442,13 @@ export function AIAdviceProductView({ body }: { body: string }) {
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         <div className="flex items-center gap-2 font-semibold text-[#031a41]">
           <FileText className="h-4 w-4" />
-          AI Advice 视图边界
+          Advisor Trace 视图边界
         </div>
         <p className="mt-2 leading-6">
-          AI Advice 是给人工阅读的解释报告。它不会执行发布动作；真正的判断证据请看 Evidence，安全动作建议请看 Action Plan，历史模式请看 Intelligence。
+          Advisor Trace 是给人工阅读的解释报告。它不会执行发布动作；真正的判断证据请看 Evidence，安全动作建议请看 Action Plan，历史模式请看 Intelligence。
         </p>
       </div>
     </div>
   )
 }
+

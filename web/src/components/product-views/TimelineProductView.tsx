@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock3, FileText, GitBranch, ShieldCheck } from "lucide-react"
+﻿import { AlertTriangle, CheckCircle2, Clock3, FileText, GitBranch, ShieldCheck } from "lucide-react"
 import type { ReleaseIndexItem } from "@/types/release"
 
 type TimelineArtifact = {
@@ -93,7 +93,7 @@ const fallbackStageOrder = [
   {
     kind: "aiAdvice",
     stage: "ai_advice_generated",
-    title: "AI Advice",
+    title: "Advisor Trace",
     description: "将策略、智能分析和建议追加到人工报告。",
   },
 ]
@@ -309,3 +309,4 @@ export function TimelineProductView({
     </div>
   )
 }
+

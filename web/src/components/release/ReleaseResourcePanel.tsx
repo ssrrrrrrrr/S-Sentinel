@@ -51,7 +51,7 @@ export function ReleaseResourcePanel({
           <div>
             <div className="flex items-center gap-2 font-semibold text-slate-100">
               <Activity className="h-4 w-4 text-[#5d8fd8]" />
-              {activeTab === "AI Advice" ? "Advisor Trace" : activeTab}
+              {activeTab === "Advisor Trace" ? "Advisor Trace" : activeTab}
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
               正在读取 <span className="font-mono text-slate-200">/api/releases/{selected.releaseId}/{resourceKind}</span>
@@ -101,7 +101,7 @@ export function ReleaseResourcePanel({
               <IntelligenceProductView body={resourceQuery.data.body} />
             ) : null}
 
-            {activeTab === "AI Advice" && isMarkdownContent(resourceQuery.data.contentType) ? (
+            {activeTab === "Advisor Trace" && isMarkdownContent(resourceQuery.data.contentType) ? (
               <AIAdviceProductView body={resourceQuery.data.body} />
             ) : null}
 
@@ -147,3 +147,4 @@ export function ReleaseResourcePanel({
     </div>
   )
 }
+

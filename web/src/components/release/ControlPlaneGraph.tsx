@@ -287,7 +287,7 @@ export function ControlPlaneGraph({
       subtitle: "AdvisorRun / PlanRun / Trace",
       value: agentTraceId !== "-" ? agentTraceId : agentRunId,
       status: refs.agentRun?.priority ?? selected.summary.riskLevel,
-      tab: "AI Advice",
+      tab: "Advisor Trace",
       icon: Activity,
       fields: [
         ["agentRunId", agentRunId],
@@ -382,5 +382,6 @@ export function ControlPlaneGraph({
     </section>
   )
 }
+
 
 

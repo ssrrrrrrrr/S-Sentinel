@@ -46,7 +46,7 @@ const portalLanes: PortalLane[] = [
   {
     title: "Advisor Trace",
     subtitle: "展示只读建议、AgentTrace、规划结果和调查线索。",
-    tabs: ["AI Advice", "Intelligence", "RCA"],
+    tabs: ["Advisor Trace", "Intelligence", "RCA"],
     signal: "advisor → trace → explanation",
     objects: ["agentRunId", "agentTraceId", "traceId"],
     icon: Activity,
@@ -164,4 +164,5 @@ export function PortalInformationArchitecture({
     </Panel>
   )
 }
+
 

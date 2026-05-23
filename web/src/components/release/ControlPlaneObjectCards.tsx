@@ -353,7 +353,7 @@ export function ControlPlaneObjectCards({
       resourceKey: advisor?.key,
       artifactRef: artifacts.agentRun ?? artifacts.planRun ?? artifacts.aiDecision,
       icon: Activity,
-      focusTab: "AI Advice",
+      focusTab: "Advisor Trace",
       statusValue: agentRun?.priority ?? summary.riskLevel,
       details: [
         ["planRunId", valueOrDash(evidencePayload?.planRunId ?? planRun?.planRunId)],
@@ -441,5 +441,6 @@ export function ControlPlaneObjectCards({
     </section>
   )
 }
+
 
 

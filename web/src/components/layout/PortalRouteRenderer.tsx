@@ -148,6 +148,7 @@ export function PortalRouteRenderer({
         return "Evidence"
       case "Context":
         return "Environment"
+      case "Advisor Trace":
       case "AI Advice":
       case "Intelligence":
         return "Agent Trace"
@@ -313,4 +314,6 @@ export function PortalRouteRenderer({
       return null
   }
 }
+
+
 

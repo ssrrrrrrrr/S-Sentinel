@@ -515,7 +515,7 @@ export function EvidenceStorePanel({
         </button>
         <button
           type="button"
-          onClick={() => onTabChange("AI Advice")}
+          onClick={() => onTabChange("Advisor Trace")}
           className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-[#35517a] hover:text-[#5d8fd8]"
         >
           查看 Advisor Trace
@@ -524,4 +524,5 @@ export function EvidenceStorePanel({
     </section>
   )
 }
+
 

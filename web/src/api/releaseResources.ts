@@ -26,6 +26,7 @@ const resourcePathByTab: Record<string, ReleaseResourceKind> = {
   Intelligence: "intelligence",
   Runbook: "runbook",
   RCA: "rca",
+  "Advisor Trace": "advice",
   "AI Advice": "advice",
   Context: "context",
 }
@@ -74,3 +75,5 @@ export async function fetchReleaseResource(
     body,
   }
 }
+
+

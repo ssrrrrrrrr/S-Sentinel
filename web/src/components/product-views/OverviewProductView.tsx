@@ -79,10 +79,10 @@ function buildFocusTab({
   if (normalize(releaseResult).includes("FAIL")) {
     if (repeatedRiskPattern === "true") return "Intelligence → Evidence → Action Plan"
     if (normalize(finalAction).includes("STOP")) return "Evidence → Action Plan"
-    return "Evidence → AI Advice"
+    return "Evidence → Advisor Trace"
   }
 
-  return "Context → Intelligence → AI Advice"
+  return "Context → Intelligence → Advisor Trace"
 }
 
 function ReleaseHeroPanel({
@@ -158,7 +158,7 @@ function TabGuidePanel({
     : [
         ["Context", "先看发布对象和变更上下文，确认本次到底发布了什么。"],
         ["Intelligence", "再看历史智能，确认是否存在潜在重复风险。"],
-        ["AI Advice", "最后看 Advisor 报告，用于归档和人工阅读。"],
+        ["Advisor Trace", "最后看 Advisor 报告，用于归档和人工阅读。"],
       ]
 
   return (
@@ -425,10 +425,11 @@ export function OverviewProductView({
           Overview 视图边界
         </div>
         <p className="mt-2 leading-6">
-          Overview 只做发布总览和导航收口，不展开完整证据、变更上下文、历史风险或执行命令。详细判断请分别查看 Evidence、Context、Intelligence、AI Advice 和 Action Plan。
+          Overview 只做发布总览和导航收口，不展开完整证据、变更上下文、历史风险或执行命令。详细判断请分别查看 Evidence、Context、Intelligence、Advisor Trace 和 Action Plan。
         </p>
       </div>
     </div>
   )
 }
+
 

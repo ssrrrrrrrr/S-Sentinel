@@ -14,7 +14,7 @@ import {
 } from "@/components/layout/portalRoutes"
 import type { ReleaseContext } from "@/components/layout/ReleaseContextBar"
 
-const tabs = ["概览", "Evidence", "Intelligence", "Action Plan", "AI Advice", "Timeline", "Runbook", "RCA", "Context"]
+const tabs = ["概览", "Evidence", "Intelligence", "Action Plan", "Advisor Trace", "Timeline", "Runbook", "RCA", "Context"]
 
 function displayValue(value: unknown, fallback = "unknown") {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -127,4 +127,5 @@ function App() {
 }
 
 export default App
+
 

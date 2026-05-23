@@ -347,7 +347,7 @@ export function PolicyExplanationPanel({
             策略裁决解释与安全边界
           </h3>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
-            直接从 release evidence 聚合 Policy Guard、AI action、Supply Chain 和 Execution Request 字段，
+            直接从 release evidence 聚合 Policy Guard、Advisor recommendation、Supply Chain 和 Execution Request 字段，
             解释本次发布为什么允许、阻断、需要人工审批或保持只读。
           </p>
         </div>
@@ -438,5 +438,6 @@ export function PolicyExplanationPanel({
     </section>
   )
 }
+
 
 
