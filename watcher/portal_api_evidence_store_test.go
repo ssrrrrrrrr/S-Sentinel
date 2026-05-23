@@ -375,7 +375,7 @@ func TestEvidenceStorePythonRuntimeEnvOverride(t *testing.T) {
 
 	api := &portalAPI{}
 
-	got := api.evidenceStorePythonBin()
+	got := api.evidenceService().PythonBin()
 	if got != "custom-python" {
 		t.Fatalf("expected python runtime override custom-python, got %s", got)
 	}

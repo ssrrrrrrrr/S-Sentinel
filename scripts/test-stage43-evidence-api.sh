@@ -95,6 +95,21 @@ PY
 echo "===== python compile ====="
 "$PYTHON_BIN" -m py_compile scripts/evidence-store.py
 
+echo "===== watcher evidence service boundary ====="
+(
+  cd watcher
+  go test ./...
+)
+
+grep -q "type EvidenceService" watcher/evidence_service.go
+grep -q "type EvidenceRuntime" watcher/evidence_service.go
+grep -q "NewCLIEvidenceRepository" watcher/evidence_repository.go
+
+if grep -q "runEvidenceStoreCommand" watcher/portal_api.go; then
+  echo "portal_api.go still owns EvidenceStore CLI runtime"
+  exit 1
+fi
+
 # Legacy CLI compatibility.
 run_json init-db "$PYTHON_BIN" scripts/evidence-store.py init-db --db "$db"
 assert_schema init-db evidence.store.init/v1alpha1

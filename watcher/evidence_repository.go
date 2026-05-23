@@ -90,12 +90,12 @@ func (err *EvidenceRepositoryError) Unwrap() error {
 }
 
 type CLIEvidenceRepository struct {
-	api *portalAPI
+	runtime EvidenceRuntime
 }
 
-func (api *portalAPI) evidenceRepository() EvidenceRepository {
+func NewCLIEvidenceRepository(runtime EvidenceRuntime) *CLIEvidenceRepository {
 	return &CLIEvidenceRepository{
-		api: api,
+		runtime: runtime,
 	}
 }
 
@@ -233,7 +233,7 @@ func (repo *CLIEvidenceRepository) GetGraph(r *http.Request, query EvidenceGraph
 }
 
 func (repo *CLIEvidenceRepository) query(r *http.Request, args ...string) (*EvidenceRepositoryResponse, error) {
-	dbFile, err := repo.api.ensureEvidenceStoreDBReady()
+	dbFile, err := repo.runtime.EnsureDBReady()
 	if err != nil {
 		return nil, &EvidenceRepositoryError{
 			StatusCode: http.StatusConflict,
@@ -251,7 +251,7 @@ func (repo *CLIEvidenceRepository) query(r *http.Request, args ...string) (*Evid
 
 	commandArgs := append([]string{args[0], "--db", dbFile}, args[1:]...)
 
-	output, err := repo.api.runEvidenceStoreCommand(r, commandArgs...)
+	output, err := repo.runtime.Run(r.Context(), commandArgs...)
 	if err != nil {
 		return nil, &EvidenceRepositoryError{
 			StatusCode: http.StatusInternalServerError,
@@ -263,6 +263,6 @@ func (repo *CLIEvidenceRepository) query(r *http.Request, args ...string) (*Evid
 	return &EvidenceRepositoryResponse{
 		Body:   output,
 		DBFile: dbFile,
-		Mode:   "sqlite-adapter",
+		Mode:   repo.runtime.Mode(),
 	}, nil
 }

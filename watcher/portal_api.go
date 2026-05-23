@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -249,76 +246,7 @@ func (api *portalAPI) handleEvidenceStoreStatus(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	dbFile := api.evidenceStoreDBFile()
-	scriptFile := api.evidenceStoreScriptFile()
-	refreshStateFile := api.evidenceStoreRefreshStateFile()
-
-	body := map[string]interface{}{
-		"schemaVersion":    "evidence.store.status/v1alpha1",
-		"generatedAt":      time.Now().Format(time.RFC3339),
-		"mode":             "sqlite-adapter",
-		"readOnly":         true,
-		"willExecute":      false,
-		"repoDir":          api.cfg.RepoDir,
-		"reportDir":        api.reportDir,
-		"dbFile":           dbFile,
-		"scriptFile":       scriptFile,
-		"pythonRuntime":    api.evidenceStorePythonBin(),
-		"refreshStateFile": refreshStateFile,
-		"ready":            false,
-	}
-
-	if refreshState, ok, err := api.readEvidenceStoreRefreshState(); err != nil {
-		body["refreshStateError"] = err.Error()
-	} else if ok {
-		body["lastRefresh"] = refreshState
-
-		if importResult, ok := refreshState["importResult"].(map[string]interface{}); ok {
-			body["lastImportResult"] = importResult
-		}
-
-		if generatedAt, ok := refreshState["generatedAt"].(string); ok {
-			body["lastRefreshAt"] = generatedAt
-		}
-	}
-
-	if info, err := os.Stat(api.reportDir); err == nil {
-		body["reportDirExists"] = true
-		body["reportDirModifiedAt"] = info.ModTime().Format(time.RFC3339)
-	} else {
-		body["reportDirExists"] = false
-		body["reportDirError"] = err.Error()
-	}
-
-	if info, err := os.Stat(scriptFile); err == nil {
-		body["scriptExists"] = true
-		body["scriptModifiedAt"] = info.ModTime().Format(time.RFC3339)
-	} else {
-		body["scriptExists"] = false
-		body["scriptError"] = err.Error()
-	}
-
-	if info, err := os.Stat(dbFile); err == nil {
-		body["dbExists"] = true
-		body["dbSizeBytes"] = info.Size()
-		body["dbModifiedAt"] = info.ModTime().Format(time.RFC3339)
-
-		output, queryErr := api.runEvidenceStoreCommand(r, "list-releases", "--db", dbFile, "--limit", "500")
-		if queryErr != nil {
-			body["queryError"] = queryErr.Error()
-		} else {
-			listResult := decodeEvidenceStoreJSON(output)
-			body["releaseList"] = listResult
-			body["latestRelease"] = latestEvidenceStoreRelease(listResult)
-			body["ready"] = true
-		}
-	} else {
-		body["dbExists"] = false
-		body["dbError"] = err.Error()
-		body["hint"] = "Call POST /api/evidence-store/refresh to initialize and import the SQLite index."
-	}
-
-	writePortalJSON(w, http.StatusOK, body)
+	writePortalJSON(w, http.StatusOK, api.evidenceService().Status(r.Context()))
 }
 
 func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.Request) {
@@ -334,50 +262,10 @@ func (api *portalAPI) handleEvidenceStoreRefresh(w http.ResponseWriter, r *http.
 		return
 	}
 
-	dbFile := api.evidenceStoreDBFile()
-
-	initOutput, err := api.runEvidenceStoreCommand(r, "init-db", "--db", dbFile)
+	refreshResult, err := api.evidenceService().Refresh(r.Context())
 	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to initialize evidence store", err)
+		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to refresh evidence store", err)
 		return
-	}
-
-	importOutput, err := api.runEvidenceStoreCommand(r, "import-dir", "--db", dbFile, "--report-dir", api.reportDir)
-	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to import evidence store", err)
-		return
-	}
-
-	listOutput, err := api.runEvidenceStoreCommand(r, "list-releases", "--db", dbFile, "--limit", "1")
-	if err != nil {
-		api.writeEvidenceStoreError(w, http.StatusInternalServerError, "failed to list evidence store releases", err)
-		return
-	}
-
-	generatedAt := time.Now().Format(time.RFC3339)
-	initResult := decodeEvidenceStoreJSON(initOutput)
-	importResult := decodeEvidenceStoreJSON(importOutput)
-	listResult := decodeEvidenceStoreJSON(listOutput)
-	latestRelease := latestEvidenceStoreRelease(listResult)
-
-	refreshResult := map[string]interface{}{
-		"schemaVersion":    "evidence.store.refresh/v1alpha1",
-		"generatedAt":      generatedAt,
-		"mode":             "sqlite-adapter",
-		"readOnly":         true,
-		"willExecute":      false,
-		"repoDir":          api.cfg.RepoDir,
-		"reportDir":        api.reportDir,
-		"dbFile":           dbFile,
-		"refreshStateFile": api.evidenceStoreRefreshStateFile(),
-		"initResult":       initResult,
-		"importResult":     importResult,
-		"releaseList":      listResult,
-		"latestRelease":    latestRelease,
-	}
-
-	if err := api.writeEvidenceStoreRefreshState(refreshResult); err != nil {
-		refreshResult["refreshStateError"] = err.Error()
 	}
 
 	writePortalJSON(w, http.StatusOK, refreshResult)
@@ -573,119 +461,6 @@ func (api *portalAPI) writeEvidenceRepositoryResponse(
 	w.Header().Set("X-S-Sentinel-Evidence-Store-DB", response.DBFile)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(response.Body)
-}
-
-func (api *portalAPI) ensureEvidenceStoreDBReady() (string, error) {
-	dbFile := api.evidenceStoreDBFile()
-
-	if _, err := os.Stat(dbFile); err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("evidence store db is not initialized: %s; call POST /api/evidence-store/refresh first", dbFile)
-		}
-
-		return "", fmt.Errorf("failed to inspect evidence store db: %s: %w", dbFile, err)
-	}
-
-	return dbFile, nil
-}
-
-func (api *portalAPI) runEvidenceStoreCommand(r *http.Request, args ...string) ([]byte, error) {
-	scriptFile := api.evidenceStoreScriptFile()
-	if _, err := os.Stat(scriptFile); err != nil {
-		return nil, fmt.Errorf("evidence store script unavailable: %s: %w", scriptFile, err)
-	}
-
-	commandArgs := append([]string{scriptFile}, args...)
-	cmd := exec.CommandContext(r.Context(), api.evidenceStorePythonBin(), commandArgs...)
-	cmd.Dir = api.cfg.RepoDir
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return stdout.Bytes(), fmt.Errorf("evidence store command failed: %w: %s", err, strings.TrimSpace(stderr.String()))
-	}
-
-	return stdout.Bytes(), nil
-}
-
-func (api *portalAPI) evidenceStoreScriptFile() string {
-	if scriptFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_SCRIPT")); scriptFile != "" {
-		return scriptFile
-	}
-
-	return filepath.Join(api.cfg.RepoDir, "scripts", "evidence-store.py")
-}
-
-func (api *portalAPI) evidenceStorePythonBin() string {
-	if pythonBin := strings.TrimSpace(os.Getenv("S_SENTINEL_PYTHON_BIN")); pythonBin != "" {
-		return pythonBin
-	}
-
-	if _, err := exec.LookPath("python3"); err == nil {
-		return "python3"
-	}
-
-	if _, err := exec.LookPath("python"); err == nil {
-		return "python"
-	}
-
-	return "python3"
-}
-
-func (api *portalAPI) evidenceStoreDBFile() string {
-	if dbFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_DB")); dbFile != "" {
-		return dbFile
-	}
-
-	return filepath.Join(os.TempDir(), "s-sentinel-evidence-store", "portal-evidence-store.db")
-}
-
-func (api *portalAPI) evidenceStoreRefreshStateFile() string {
-	dbFile := api.evidenceStoreDBFile()
-	ext := filepath.Ext(dbFile)
-	if ext == "" {
-		return dbFile + "-refresh.json"
-	}
-
-	return strings.TrimSuffix(dbFile, ext) + "-refresh.json"
-}
-
-func (api *portalAPI) writeEvidenceStoreRefreshState(state map[string]interface{}) error {
-	stateFile := api.evidenceStoreRefreshStateFile()
-
-	if err := os.MkdirAll(filepath.Dir(stateFile), 0755); err != nil {
-		return err
-	}
-
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(stateFile, data, 0644)
-}
-
-func (api *portalAPI) readEvidenceStoreRefreshState() (map[string]interface{}, bool, error) {
-	stateFile := api.evidenceStoreRefreshStateFile()
-
-	data, err := os.ReadFile(stateFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, false, nil
-		}
-
-		return nil, false, err
-	}
-
-	state := map[string]interface{}{}
-	if err := json.Unmarshal(data, &state); err != nil {
-		return nil, false, err
-	}
-
-	return state, true, nil
 }
 
 func (api *portalAPI) writeEvidenceStoreError(w http.ResponseWriter, statusCode int, message string, err error) {
