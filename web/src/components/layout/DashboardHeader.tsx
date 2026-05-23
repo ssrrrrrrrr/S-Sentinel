@@ -12,7 +12,7 @@ export function DashboardHeader({
   generatedAt?: string
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <img
@@ -47,3 +47,4 @@ export function DashboardHeader({
     </header>
   )
 }
+
