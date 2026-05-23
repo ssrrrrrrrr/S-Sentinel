@@ -1,0 +1,296 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://s-sentinel.local/schemas/otel-span-bundle.schema.json",
+  "title": "S Sentinel OTel Span Bundle",
+  "description": "Local OpenTelemetry-style span bundle generated from S Sentinel AgentTrace. This contract is file-only and does not imply external telemetry export.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "traceId",
+    "rootSpanId",
+    "releaseId",
+    "generatedBy",
+    "generatedAt",
+    "source",
+    "resource",
+    "spans",
+    "summary",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "otel.span.bundle/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "OtelSpanBundle"
+    },
+    "traceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rootSpanId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "schemaVersion",
+        "agentTraceId"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "AgentTrace"
+        },
+        "schemaVersion": {
+          "type": "string",
+          "const": "agent.trace/v1alpha1"
+        },
+        "agentTraceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "service",
+        "env"
+      ],
+      "properties": {
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "imageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "spans": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "traceId",
+          "spanId",
+          "parentSpanId",
+          "name",
+          "kind",
+          "startTime",
+          "endTime",
+          "status",
+          "attributes"
+        ],
+        "properties": {
+          "traceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "spanId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parentSpanId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "client",
+              "server",
+              "producer",
+              "consumer"
+            ]
+          },
+          "startTime": {
+            "type": "string",
+            "minLength": 1
+          },
+          "endTime": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "OK",
+                  "ERROR",
+                  "UNSET"
+                ]
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spanCount",
+        "hasRootSpan",
+        "sourceAgentTraceId",
+        "releaseId"
+      ],
+      "properties": {
+        "spanCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hasRootSpan": {
+          "type": "boolean"
+        },
+        "sourceAgentTraceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "spanNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "localFileOnly",
+        "doesNotSendExternalTelemetry",
+        "doesNotCallExternalCollector",
+        "doesNotModifyCluster",
+        "doesNotModifyGitOps",
+        "doesNotCommitOrPush"
+      ],
+      "properties": {
+        "localFileOnly": {
+          "type": "boolean",
+          "const": true
+        },
+        "doesNotSendExternalTelemetry": {
+          "type": "boolean",
+          "const": true
+        },
+        "doesNotCallExternalCollector": {
+          "type": "boolean",
+          "const": true
+        },
+        "doesNotModifyCluster": {
+          "type": "boolean",
+          "const": true
+        },
+        "doesNotModifyGitOps": {
+          "type": "boolean",
+          "const": true
+        },
+        "doesNotCommitOrPush": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}
