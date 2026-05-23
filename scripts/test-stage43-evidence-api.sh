@@ -101,6 +101,12 @@ echo "===== watcher evidence service boundary ====="
   go test ./...
 )
 
+echo "===== watcher cgo-disabled build compatibility ====="
+(
+  cd watcher
+  CGO_ENABLED=0 go test ./...
+)
+
 grep -q "type EvidenceService" watcher/evidence_service.go
 grep -q "type EvidenceRuntime" watcher/evidence_service.go
 grep -q "type EvidenceRuntimeDescriptor" watcher/evidence_service.go
@@ -113,7 +119,7 @@ grep -q "NewCLIEvidenceRepository" watcher/evidence_repository.go
 grep -q "NewNativeSQLiteEvidenceRepository" watcher/evidence_repository_native_sqlite.go
 grep -q "native-sqlite-repository" watcher/evidence_repository_native_sqlite.go
 grep -q "S_SENTINEL_EVIDENCE_REPOSITORY_MODE" watcher/evidence_repository.go
-grep -q "github.com/mattn/go-sqlite3" watcher/evidence_repository_native_sqlite.go
+grep -q "modernc.org/sqlite" watcher/evidence_repository_native_sqlite.go
 grep -q "SupportsNativeSQLite:        true" watcher/evidence_repository_native_sqlite.go
 grep -q "SupportsGetRelease:          true" watcher/evidence_repository_native_sqlite.go
 grep -q "SupportsListArtifacts:       true" watcher/evidence_repository_native_sqlite.go
@@ -139,6 +145,9 @@ grep -q "doesNotModifyCluster" watcher/evidence_service.go
 grep -q "doesNotModifyGitOps" watcher/evidence_service.go
 grep -q "doesNotTriggerRollout" watcher/evidence_service.go
 grep -q "mutatesLocalEvidenceIndex" watcher/evidence_service.go
+grep -q "nativeSQLiteRepository" watcher/evidence_service.go
+grep -q "repositoryDescriptor.SupportsNativeSQLite" watcher/evidence_service.go
+grep -q "repositoryDescriptor.SupportsRemoteAPI" watcher/evidence_service.go
 grep -q "writeEvidenceStoreErrorWithOperation" watcher/portal_api.go
 
 grep -q "controlPlane" docs/release-portal-api.md

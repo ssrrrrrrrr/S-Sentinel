@@ -247,7 +247,7 @@ func createNativeSQLiteTestDB(t *testing.T) string {
 
 	dbFile := filepath.Join(t.TempDir(), "evidence-store.db")
 
-	db, err := sql.Open("sqlite3", dbFile)
+	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
 		t.Fatalf("open sqlite test db: %v", err)
 	}

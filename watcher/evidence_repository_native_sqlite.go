@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type NativeSQLiteEvidenceRepository struct {
@@ -31,7 +31,7 @@ func (repo *NativeSQLiteEvidenceRepository) Descriptor() EvidenceRepositoryDescr
 		Mode:                        "native-sqlite-repository",
 		RuntimeMode:                 runtimeDescriptor.Mode,
 		Backend:                     "sqlite",
-		Adapter:                     "go-sqlite3",
+		Adapter:                     "modernc-sqlite",
 		Storage:                     runtimeDescriptor.Storage,
 		QueryModel:                  "native-sql-readonly",
 		ContractVersion:             "evidence.repository/v1alpha1",
@@ -46,7 +46,7 @@ func (repo *NativeSQLiteEvidenceRepository) Descriptor() EvidenceRepositoryDescr
 		SupportsGraph:               true,
 		SupportsNativeSQLite:        true,
 		SupportsRemoteAPI:           false,
-		Description:                 "Native SQLite repository backed by Go database/sql and github.com/mattn/go-sqlite3.",
+		Description:                 "Native SQLite repository backed by Go database/sql and modernc.org/sqlite.",
 	}
 }
 
@@ -645,7 +645,7 @@ func (repo *NativeSQLiteEvidenceRepository) openReadOnlyDB() (string, *sql.DB, e
 		}
 	}
 
-	db, err := sql.Open("sqlite3", "file:"+dbFile+"?mode=ro&cache=shared")
+	db, err := sql.Open("sqlite", "file:"+dbFile+"?mode=ro&cache=shared")
 	if err != nil {
 		return "", nil, repo.queryError("open sqlite database", err)
 	}

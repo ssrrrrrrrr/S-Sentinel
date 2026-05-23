@@ -121,19 +121,21 @@ func (svc *EvidenceService) runtimePaths() map[string]interface{} {
 }
 
 func (svc *EvidenceService) capabilities() map[string]interface{} {
+	repositoryDescriptor := svc.repository.Descriptor()
+
 	return map[string]interface{}{
 		"readOnly":                  true,
 		"willExecute":               false,
 		"refresh":                   true,
-		"listReleases":              true,
-		"getRelease":                true,
-		"getObject":                 true,
-		"listArtifacts":             true,
-		"search":                    true,
-		"verificationSummary":       true,
-		"graph":                     true,
-		"nativeSQLiteRepository":    false,
-		"remoteEvidenceAPI":         false,
+		"listReleases":              repositoryDescriptor.SupportsListReleases,
+		"getRelease":                repositoryDescriptor.SupportsGetRelease,
+		"getObject":                 repositoryDescriptor.SupportsGetObject,
+		"listArtifacts":             repositoryDescriptor.SupportsListArtifacts,
+		"search":                    repositoryDescriptor.SupportsSearch,
+		"verificationSummary":       repositoryDescriptor.SupportsVerificationSummary,
+		"graph":                     repositoryDescriptor.SupportsGraph,
+		"nativeSQLiteRepository":    repositoryDescriptor.SupportsNativeSQLite,
+		"remoteEvidenceAPI":         repositoryDescriptor.SupportsRemoteAPI,
 		"backgroundRefreshWorker":   false,
 		"localEvidenceIndexRefresh": true,
 		"policyRuntimeConsumer":     true,
