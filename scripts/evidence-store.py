@@ -79,6 +79,14 @@ RESOURCE_SPECS = [
         "id_prefix": "el-",
     },
     {
+        "object_type": "executionPreview",
+        "glob": "execution-preview-*.json",
+        "latest": "execution-preview-latest.json",
+        "prefix": "execution-preview-",
+        "id_key": "executionPreviewId",
+        "id_prefix": "ep-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -231,6 +239,12 @@ def as_dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
 def as_number(value: Any) -> float | None:
     if value is None:
         return None
@@ -339,6 +353,7 @@ def derive_object_id(
         as_dict(data.get("plan")).get("planRunId"),
         as_dict(data.get("executionRequest")).get("executionRequestId"),
         as_dict(data.get("executionEligibility")).get("eligibilityDecisionId"),
+        as_dict(data.get("executionPreview")).get("executionPreviewId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -607,6 +622,27 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["blockingReasons"] = eligibility_decision.get("blockingReasons") or []
         result["approvalReasons"] = eligibility_decision.get("approvalReasons") or []
         result["missingInputs"] = eligibility_decision.get("missingInputs") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "executionPreview":
+        preview = as_dict(data.get("preview"))
+        rollout_plan = as_dict(preview.get("rolloutPlan"))
+
+        result["previewStatus"] = preview.get("previewStatus")
+        result["readyToExecute"] = preview.get("readyToExecute")
+        result["requestedAction"] = pick(
+            preview.get("requestedAction"),
+            result.get("requestedAction"),
+        )
+        result["plannedActionCount"] = len(as_list(preview.get("plannedActions")))
+        result["blockedActionCount"] = len(as_list(preview.get("blockedActions")))
+        result["humanCheckpointCount"] = len(as_list(preview.get("humanCheckpoints")))
+        result["gitopsChangeCount"] = len(as_list(preview.get("gitopsChanges")))
+        result["strategyType"] = rollout_plan.get("strategyType")
+        result["renderedArtifacts"] = rollout_plan.get("renderedArtifacts")
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

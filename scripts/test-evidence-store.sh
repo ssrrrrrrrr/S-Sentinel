@@ -53,6 +53,7 @@ cat > "$FIXTURE_DIR/release-evidence-$RELEASE_ID.json" <<JSON
     "planRun": "plan-run-$RELEASE_ID.json",
     "executionRequest": "execution-request-$RELEASE_ID.json",
     "executionEligibility": "execution-eligibility-$RELEASE_ID.json",
+    "executionPreview": "execution-preview-$RELEASE_ID.json",
     "supplyChainDecision": "supply-chain-decision-$RELEASE_ID.json"
   },
   "agentRunId": "ar-$RELEASE_ID",
@@ -60,6 +61,7 @@ cat > "$FIXTURE_DIR/release-evidence-$RELEASE_ID.json" <<JSON
   "planRunId": "pr-$RELEASE_ID",
   "executionRequestId": "er-$RELEASE_ID",
   "executionEligibilityId": "el-$RELEASE_ID",
+  "executionPreviewId": "ep-$RELEASE_ID",
   "supplyChainDecisionId": "sc-$RELEASE_ID"
 }
 JSON
@@ -376,16 +378,101 @@ cat > "$FIXTURE_DIR/execution-eligibility-$RELEASE_ID.json" <<JSON
 }
 JSON
 
+cat > "$FIXTURE_DIR/execution-preview-$RELEASE_ID.json" <<JSON
+{
+  "schemaVersion": "execution.preview/v1alpha1",
+  "executionPreviewId": "ep-$RELEASE_ID",
+  "generatedBy": "test-evidence-store.sh",
+  "generatedAt": "2026-01-01T00:00:06Z",
+  "mode": "dry_run_execution_preview",
+  "release": {
+    "releaseId": "$RELEASE_ID",
+    "service": "demo-app",
+    "env": "dev",
+    "namespace": "slo-rollout",
+    "policyDecision": "REQUIRE_HUMAN_APPROVAL",
+    "finalAction": "STOP_PROMOTION"
+  },
+  "inputs": {
+    "releaseEvidence": "release-evidence-$RELEASE_ID.json",
+    "executionRequest": "execution-request-$RELEASE_ID.json",
+    "executionEligibility": "execution-eligibility-$RELEASE_ID.json",
+    "actionPlan": "action-plan-$RELEASE_ID.json",
+    "renderedReleasePlan": "build/compiled/dev/rendered-release-plan.json",
+    "environmentConfig": "configs/environments/dev.yaml",
+    "supplyChainDecision": "supply-chain-decision-$RELEASE_ID.json"
+  },
+  "preview": {
+    "previewStatus": "WAITING_APPROVAL",
+    "readyToExecute": false,
+    "requestedAction": "STOP_PROMOTION",
+    "summary": "Execution preview for STOP_PROMOTION is assembled, but human approval is still required.",
+    "targetEnvironment": {
+      "env": "dev",
+      "namespace": "slo-rollout"
+    },
+    "plannedActions": [
+      {
+        "actionId": "preview-cmd-1",
+        "title": "inspect rollout",
+        "category": "command_preview",
+        "dryRunOnly": true,
+        "blocked": false,
+        "requiresApproval": true
+      }
+    ],
+    "blockedActions": [],
+    "humanCheckpoints": [
+      {
+        "checkpointId": "checkpoint-1",
+        "type": "operator_step",
+        "text": "Wait for human approval.",
+        "required": true
+      }
+    ],
+    "gitopsChanges": [
+      {
+        "changeId": "gitops-1",
+        "kind": "Rollout",
+        "path": "rollout.yaml",
+        "rendererRef": "argo-rollouts-canary-v1",
+        "action": "rendered_only",
+        "dryRunOnly": true
+      }
+    ],
+    "rolloutPlan": {
+      "strategyId": "demo-app-canary",
+      "strategyType": "canary",
+      "trafficSteps": [],
+      "renderedArtifacts": 1
+    }
+  },
+  "guardrails": {
+    "readOnly": true,
+    "dryRunOnly": true,
+    "willExecute": false,
+    "doesNotModifyKubernetes": true,
+    "doesNotModifyGitOps": true,
+    "doesNotRollback": true,
+    "doesNotPromote": true,
+    "doesNotPatchResources": true,
+    "doesNotDeleteResources": true,
+    "doesNotBuildImages": true,
+    "doesNotCommitOrPush": true
+  }
+}
+JSON
+
 echo "===== init db ====="
-./scripts/evidence-store.py init-db --db "$DB_FILE"
+"$PYTHON_BIN" ./scripts/evidence-store.py init-db --db "$DB_FILE"
 
 echo
 echo "===== import fixture dir ====="
-./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$FIXTURE_DIR"
+"$PYTHON_BIN" ./scripts/evidence-store.py import-dir --db "$DB_FILE" --report-dir "$FIXTURE_DIR"
 
 echo
 echo "===== query release ====="
-./scripts/evidence-store.py query-release --db "$DB_FILE" --release-id "$RELEASE_ID" > "$QUERY_JSON"
+"$PYTHON_BIN" ./scripts/evidence-store.py query-release --db "$DB_FILE" --release-id "$RELEASE_ID" > "$QUERY_JSON"
 cat "$QUERY_JSON"
 
 echo
@@ -407,6 +494,7 @@ expected = {
     "planRun",
     "executionRequest",
     "executionEligibility",
+    "executionPreview",
     "supplyChainDecision",
 }
 
@@ -417,7 +505,7 @@ assert release["release_result"] == "FAIL_BY_MULTIPLE_SLO", release
 assert release["policy_decision"] == "REQUIRE_HUMAN_APPROVAL", release
 assert release["final_action"] == "STOP_PROMOTION", release
 assert expected.issubset(kinds), kinds
-assert data["objectCount"] == 8, data["objectCount"]
+assert data["objectCount"] == 9, data["objectCount"]
 assert data["artifactCount"] >= 1, data["artifactCount"]
 
 ids = {item["object_type"]: item["object_id"] for item in objects}
@@ -427,6 +515,7 @@ assert ids["agentTrace"].startswith("at-")
 assert ids["planRun"].startswith("pr-")
 assert ids["executionRequest"].startswith("er-")
 assert ids["executionEligibility"].startswith("el-")
+assert ids["executionPreview"].startswith("ep-")
 assert ids["supplyChainDecision"].startswith("sc-")
 
 print("PASS: EvidenceStore query result is valid")
@@ -434,12 +523,12 @@ PY
 
 echo
 echo "===== list releases ====="
-./scripts/evidence-store.py list-releases --db "$DB_FILE" --limit 10 > "$LIST_JSON"
+"$PYTHON_BIN" ./scripts/evidence-store.py list-releases --db "$DB_FILE" --limit 10 > "$LIST_JSON"
 cat "$LIST_JSON"
 
 echo
 echo "===== get object ====="
-./scripts/evidence-store.py get-object \
+"$PYTHON_BIN" ./scripts/evidence-store.py get-object \
   --db "$DB_FILE" \
   --object-type supplyChainDecision \
   --object-id "sc-$RELEASE_ID" \
@@ -460,7 +549,8 @@ assert release_list["schemaVersion"] == "evidence.store.releaseList/v1alpha1"
 assert release_list["count"] >= 1
 item = release_list["items"][0]
 assert item["release_id"] == "20260101-000000", item
-assert item["object_count"] == 8, item
+assert item["object_count"] == 9, item
+assert "executionPreview" in item["object_types"], item["object_types"]
 assert "executionEligibility" in item["object_types"], item["object_types"]
 assert "supplyChainDecision" in item["object_types"], item["object_types"]
 

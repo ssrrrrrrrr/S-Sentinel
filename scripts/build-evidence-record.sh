@@ -34,6 +34,17 @@ if [ -z "$RELEASE_EVIDENCE_FILE" ] || [ ! -f "$RELEASE_EVIDENCE_FILE" ]; then
   exit 1
 fi
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 OUTPUT_DIR="${EVIDENCE_RECORD_OUTPUT_DIR:-$(dirname "$RELEASE_EVIDENCE_FILE")}"
 mkdir -p "$OUTPUT_DIR"
 
@@ -47,7 +58,7 @@ fi
 OUTPUT_JSON="$OUTPUT_DIR/evidence-record-$SUFFIX"
 LATEST_JSON="$OUTPUT_DIR/evidence-record-latest.json"
 
-python3 - "$RELEASE_EVIDENCE_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY'
+"$PYTHON_BIN" - "$RELEASE_EVIDENCE_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY'
 from __future__ import annotations
 
 import json
@@ -320,6 +331,12 @@ execution_eligibility = load_json(execution_eligibility_path)
 execution_eligibility_decision = as_dict(execution_eligibility.get("decision"))
 execution_eligibility_guardrails = as_dict(execution_eligibility.get("guardrails"))
 
+execution_preview_path = resolve_ref(artifacts.get("executionPreview"), evidence_path)
+execution_preview = load_json(execution_preview_path)
+execution_preview_body = as_dict(execution_preview.get("preview"))
+execution_preview_rollout = as_dict(execution_preview_body.get("rolloutPlan"))
+execution_preview_guardrails = as_dict(execution_preview.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -367,6 +384,7 @@ link_map = {
     "planRun": artifacts.get("planRun"),
     "executionRequest": artifacts.get("executionRequest"),
     "executionEligibility": artifacts.get("executionEligibility"),
+    "executionPreview": artifacts.get("executionPreview"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -391,6 +409,7 @@ artifact_defs = [
     ("planRun", link_map["planRun"], False),
     ("executionRequest", link_map["executionRequest"], False),
     ("executionEligibility", link_map["executionEligibility"], False),
+    ("executionPreview", link_map["executionPreview"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -573,6 +592,24 @@ record = {
         "missingInputs": [str(item) for item in as_list(execution_eligibility_decision.get("missingInputs"))],
         "sourceExecutionEligibility": nullable_string(link_map.get("executionEligibility")),
         "guardrails": execution_eligibility_guardrails,
+    },
+    "executionPreview": {
+        "executionPreviewId": nullable_string(execution_preview.get("executionPreviewId")),
+        "mode": nullable_string(execution_preview.get("mode")),
+        "previewStatus": nullable_string(execution_preview_body.get("previewStatus")),
+        "readyToExecute": bool_or_none(execution_preview_body.get("readyToExecute")),
+        "requestedAction": nullable_string(execution_preview_body.get("requestedAction")),
+        "plannedActionCount": len(as_list(execution_preview_body.get("plannedActions"))),
+        "blockedActionCount": len(as_list(execution_preview_body.get("blockedActions"))),
+        "humanCheckpointCount": len(as_list(execution_preview_body.get("humanCheckpoints"))),
+        "gitopsChangeCount": len(as_list(execution_preview_body.get("gitopsChanges"))),
+        "renderedArtifactCount": execution_preview_rollout.get("renderedArtifacts"),
+        "sourceExecutionPreview": nullable_string(link_map.get("executionPreview")),
+        "renderedReleasePlan": nullable_string(first_not_none(
+            as_dict(execution_preview.get("inputs")).get("renderedReleasePlan"),
+            as_dict(decision_refs.get("executionPreview")).get("renderedReleasePlan"),
+        )),
+        "guardrails": execution_preview_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

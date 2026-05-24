@@ -45,11 +45,22 @@ if [ ! -f "$EVIDENCE_FILE" ]; then
   exit 1
 fi
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 EVIDENCE_BASENAME="$(basename "$EVIDENCE_FILE")"
 EVIDENCE_SUFFIX="${EVIDENCE_BASENAME#release-evidence-}"
 OUTPUT_FILE="$REPORT_DIR/release-summary-${EVIDENCE_SUFFIX%.json}.md"
 
-python3 - "$EVIDENCE_FILE" "$OUTPUT_FILE" <<'PY'
+"$PYTHON_BIN" - "$EVIDENCE_FILE" "$OUTPUT_FILE" <<'PY'
 import json
 import sys
 from pathlib import Path

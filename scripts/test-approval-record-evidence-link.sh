@@ -4,6 +4,17 @@ set -euo pipefail
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$BASE_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 TEST_TMP="${1:-/tmp/slo-approval-record-evidence-link-test}"
 rm -rf "$TEST_TMP"
 mkdir -p "$TEST_TMP"
@@ -107,7 +118,7 @@ cat > "$TEST_TMP/execution-request-current.json" <<JSON
 }
 JSON
 
-python3 - "$TEST_TMP/release-evidence-current.json" "$TEST_TMP/execution-request-current.json" <<'PY'
+"$PYTHON_BIN" - "$TEST_TMP/release-evidence-current.json" "$TEST_TMP/execution-request-current.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -170,7 +181,7 @@ cat "$TEST_TMP/approval-link.log"
 grep -q "Approval record linked into release evidence" "$TEST_TMP/approval-link.log"
 grep -q "Execution request updated with approval outcome" "$TEST_TMP/approval-link.log"
 
-python3 - "$TEST_TMP/release-evidence-current.json" "$TEST_TMP/approval-record-current.json" "$TEST_TMP/approval-record-current.md" "$TEST_TMP/execution-request-current.json" <<'PY'
+"$PYTHON_BIN" - "$TEST_TMP/release-evidence-current.json" "$TEST_TMP/approval-record-current.json" "$TEST_TMP/approval-record-current.md" "$TEST_TMP/execution-request-current.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -242,7 +253,7 @@ fi
 
 cat "$TEST_TMP/evidence-record.log"
 
-python3 - "$TEST_TMP/evidence-record-out/evidence-record-latest.json" "$TEST_TMP/approval-record-current.json" <<'PY'
+"$PYTHON_BIN" - "$TEST_TMP/evidence-record-out/evidence-record-latest.json" "$TEST_TMP/approval-record-current.json" <<'PY'
 import json
 import sys
 from pathlib import Path

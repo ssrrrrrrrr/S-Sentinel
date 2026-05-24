@@ -115,6 +115,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/intelligence", api.handleLatestResource("releaseIntelligence"))
 	mux.HandleFunc("/api/releases/latest/approval", api.handleLatestResource("approvalRecord"))
 	mux.HandleFunc("/api/releases/latest/failure-evidence", api.handleLatestResource("failureEvidence"))
+	mux.HandleFunc("/api/releases/latest/preview", api.handleLatestResource("executionPreview"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -171,6 +172,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "approval-record-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest human approval record.",
+		},
+		{
+			Name:         "executionPreview",
+			Endpoint:     "/api/releases/latest/preview",
+			Candidates:   []string{"execution-preview-latest.json"},
+			FallbackGlob: "execution-preview-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest dry-run execution preview.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -768,6 +777,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "releaseIntelligence", "application/json; charset=utf-8", true
 	case "approval":
 		return "approvalRecord", "application/json; charset=utf-8", true
+	case "preview":
+		return "executionPreview", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -803,6 +814,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"actionPlan":           "action-plan",
 		"releaseIntelligence":  "intelligence",
 		"approvalRecord":       "approval",
+		"executionPreview":     "preview",
 		"executionEligibility": "eligibility",
 		"failureEvidence":      "failure-evidence",
 		"aiAdvice":             "advice",
@@ -899,6 +911,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"action-plan-*.json",
 		"release-intelligence-*.json",
 		"approval-record-*.json",
+		"execution-preview-*.json",
 		"execution-eligibility-*.json",
 		"failure-evidence-*.json",
 		"ai-advice-*.md",
@@ -1125,6 +1138,7 @@ func releaseIDFromReportFile(base string) string {
 		"action-plan-",
 		"release-intelligence-",
 		"approval-record-",
+		"execution-preview-",
 		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
@@ -1311,6 +1325,8 @@ func kindFromReportFile(base string) string {
 		return "releaseIntelligence"
 	case strings.HasPrefix(base, "approval-record-"):
 		return "approvalRecord"
+	case strings.HasPrefix(base, "execution-preview-"):
+		return "executionPreview"
 	case strings.HasPrefix(base, "execution-eligibility-"):
 		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):

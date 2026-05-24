@@ -25,7 +25,7 @@ export const releaseTabs: ReleaseTabDefinition[] = [
   },
   {
     id: "Action Plan",
-    resourceKind: "action-plan",
+    resourceKind: "preview",
     targetRoute: "Approval",
   },
   {

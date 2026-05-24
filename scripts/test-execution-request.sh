@@ -4,6 +4,17 @@ set -euo pipefail
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$BASE_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 TEST_TMP="${1:-/tmp/slo-execution-request-test}"
 rm -rf "$TEST_TMP"
 mkdir -p "$TEST_TMP"
@@ -150,9 +161,9 @@ LATEST_EXECUTION_REQUEST="$TEST_TMP/execution-request-latest.json"
 [ -f "$EXECUTION_REQUEST" ] || { echo "FAILED: execution request not generated: $EXECUTION_REQUEST" >&2; exit 1; }
 [ -f "$LATEST_EXECUTION_REQUEST" ] || { echo "FAILED: latest execution request not generated: $LATEST_EXECUTION_REQUEST" >&2; exit 1; }
 
-python3 scripts/validate-release-contracts.py "$EXECUTION_REQUEST"
+"$PYTHON_BIN" scripts/validate-release-contracts.py "$EXECUTION_REQUEST"
 
-python3 - "$EXECUTION_REQUEST" "$PLAN_RUN" <<'PY'
+"$PYTHON_BIN" - "$EXECUTION_REQUEST" "$PLAN_RUN" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -203,7 +214,7 @@ assert request["guardrails"]["doesNotCommitOrPush"] is True, request["guardrails
 print("PASS: execution request content")
 PY
 
-python3 - "$EXECUTION_REQUEST" "$RELEASE_EVIDENCE" <<'PY'
+"$PYTHON_BIN" - "$EXECUTION_REQUEST" "$RELEASE_EVIDENCE" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -247,9 +258,9 @@ fi
 
 [ -f "$EVIDENCE_RECORD" ] || { echo "FAILED: evidence record not generated" >&2; exit 1; }
 
-python3 scripts/validate-release-contracts.py "$EVIDENCE_RECORD"
+"$PYTHON_BIN" scripts/validate-release-contracts.py "$EVIDENCE_RECORD"
 
-python3 - "$EVIDENCE_RECORD" "$EXECUTION_REQUEST" <<'PY'
+"$PYTHON_BIN" - "$EVIDENCE_RECORD" "$EXECUTION_REQUEST" <<'PY'
 import json
 import sys
 from pathlib import Path

@@ -75,6 +75,17 @@ if [ -z "$ACTION_PLAN_FILE" ] || [ ! -f "$ACTION_PLAN_FILE" ]; then
   exit 1
 fi
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 OUTPUT_DIR="${APPROVAL_OUTPUT_DIR:-$(dirname "$ACTION_PLAN_FILE")}"
 mkdir -p "$OUTPUT_DIR"
 
@@ -90,7 +101,7 @@ OUTPUT_MD="$OUTPUT_DIR/approval-record-${SUFFIX%.json}.md"
 LATEST_JSON="$OUTPUT_DIR/approval-record-latest.json"
 LATEST_MD="$OUTPUT_DIR/approval-record-latest.md"
 
-python3 - "$ACTION_PLAN_FILE" "$OUTPUT_JSON" "$OUTPUT_MD" "$LATEST_JSON" "$LATEST_MD" "$APPROVAL_DECISION" "$APPROVAL_REASON" "$APPROVER" <<'CREATE_APPROVAL_RECORD_PY'
+"$PYTHON_BIN" - "$ACTION_PLAN_FILE" "$OUTPUT_JSON" "$OUTPUT_MD" "$LATEST_JSON" "$LATEST_MD" "$APPROVAL_DECISION" "$APPROVAL_REASON" "$APPROVER" <<'CREATE_APPROVAL_RECORD_PY'
 import json
 import os
 import shutil

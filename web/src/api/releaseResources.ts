@@ -4,6 +4,7 @@ export type ReleaseResourceKind =
   | "summary"
   | "evidence"
   | "action-plan"
+  | "preview"
   | "intelligence"
   | "advice"
   | "context"

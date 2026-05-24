@@ -57,6 +57,17 @@ LATEST_JSON="$OUTPUT_DIR/execution-eligibility-latest.json"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 validate_generated_release_contract() {
   local contract_file="${1:-}"
   local helper="${RELEASE_CONTRACT_VALIDATOR_HELPER:-$SCRIPT_DIR/validate-generated-release-contract.sh}"
@@ -72,7 +83,7 @@ validate_generated_release_contract() {
   fi
 }
 
-python3 - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY_EXEC_ELIGIBILITY'
+"$PYTHON_BIN" - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY_EXEC_ELIGIBILITY'
 from __future__ import annotations
 
 import json

@@ -306,6 +306,13 @@
           ],
           "description": "Path to the generated execution eligibility decision JSON."
         },
+        "executionPreview": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated dry-run execution preview JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -827,6 +834,87 @@
           "type": "array"
         },
         "sourceExecutionEligibility": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "executionPreview": {
+      "type": "object",
+      "properties": {
+        "executionPreviewId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "previewStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readyToExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "plannedActionCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "blockedActionCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "humanCheckpointCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "gitopsChangeCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "renderedArtifactCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceExecutionPreview": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "renderedReleasePlan": {
           "type": [
             "string",
             "null"

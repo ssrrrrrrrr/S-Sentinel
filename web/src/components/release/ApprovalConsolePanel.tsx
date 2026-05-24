@@ -72,6 +72,18 @@ type ExecutionEligibilityRef = {
   missingInputs?: string[]
 }
 
+type ExecutionPreviewRef = {
+  executionPreviewId?: string
+  previewStatus?: string
+  readyToExecute?: boolean
+  requestedAction?: string
+  plannedActionCount?: number
+  blockedActionCount?: number
+  humanCheckpointCount?: number
+  gitopsChangeCount?: number
+  renderedReleasePlan?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -116,6 +128,7 @@ type ApprovalEvidencePayload = {
     policyDecision?: PolicyDecisionRef
     executionRequest?: ExecutionRequestRef
     executionEligibility?: ExecutionEligibilityRef
+    executionPreview?: ExecutionPreviewRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -315,6 +328,7 @@ export function ApprovalConsolePanel({
   const policyDecisionRef = refs.policyDecision
   const executionRequest = refs.executionRequest
   const executionEligibility = refs.executionEligibility
+  const executionPreview = refs.executionPreview
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -322,6 +336,7 @@ export function ApprovalConsolePanel({
   const releaseResult = evidence?.releaseResult ?? summary.releaseResult
   const policyDecision = executionRequest?.policyDecision ?? evidence?.policyDecision ?? summary.policyDecision
   const requestedAction =
+    executionPreview?.requestedAction ??
     executionEligibility?.requestedAction ??
     executionRequest?.requestedAction ??
     policyDecisionRef?.requestedAction ??
@@ -375,9 +390,15 @@ export function ApprovalConsolePanel({
   const blockingReasons = supplyChainDecision?.blockingReasons ?? []
   const warningReasons = supplyChainDecision?.warningReasons ?? []
   const readyToExecute =
+    executionPreview?.readyToExecute ??
     executionEligibility?.readyToExecute ??
     executionRequest?.readyToExecute ??
     false
+  const previewStatus = executionPreview?.previewStatus ?? eligibilityStatus
+  const plannedActionCount = executionPreview?.plannedActionCount ?? 0
+  const blockedActionCount = executionPreview?.blockedActionCount ?? 0
+  const humanCheckpointCount = executionPreview?.humanCheckpointCount ?? 0
+  const gitopsChangeCount = executionPreview?.gitopsChangeCount ?? 0
 
   const metrics: ConsoleMetric[] = [
     {
@@ -407,6 +428,13 @@ export function ApprovalConsolePanel({
       hint: `readyToExecute=${boolText(readyToExecute)}`,
       status: eligibilityStatus,
       icon: readyToExecute ? CheckCircle2 : PauseCircle,
+    },
+    {
+      label: "Execution Preview",
+      value: valueOrDash(executionPreview?.executionPreviewId),
+      hint: `plannedActions=${plannedActionCount}`,
+      status: previewStatus,
+      icon: FileCheck2,
     },
     {
       label: "Requested Action",
@@ -470,6 +498,14 @@ export function ApprovalConsolePanel({
         : "willExecute=false，符合只读控制台边界。",
       status: willExecute ? "REQUIRED" : "PASS",
       icon: willExecute ? XCircle : CheckCircle2,
+    },
+    {
+      title: "Dry-run Preview",
+      description: executionPreview?.executionPreviewId
+        ? `Dry-run preview 已生成：${executionPreview.executionPreviewId}，说明受控执行器将会如何处理这次 release。`
+        : "当前 evidence 里还没有 execution preview，对执行影响面仍缺少显式预演对象。",
+      status: executionPreview?.executionPreviewId ? previewStatus : "MISSING",
+      icon: FileCheck2,
     },
   ]
 
@@ -541,6 +577,8 @@ export function ApprovalConsolePanel({
                 ["requestStatus", requestStatus],
                 ["lifecycleStage", lifecycleStage],
                 ["eligibilityStatus", eligibilityStatus],
+                ["executionPreviewId", valueOrDash(executionPreview?.executionPreviewId)],
+                ["previewStatus", valueOrDash(previewStatus)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -567,6 +605,11 @@ export function ApprovalConsolePanel({
                 ["supplyChainDecision", valueOrDash(supplyChainDecision?.decision)],
                 ["supplyChainAllowed", boolText(supplyChainDecision?.allowed)],
                 ["eligibilityDecisionId", valueOrDash(executionEligibility?.eligibilityDecisionId)],
+                ["executionPreviewId", valueOrDash(executionPreview?.executionPreviewId)],
+                ["plannedActionCount", valueOrDash(plannedActionCount)],
+                ["blockedActionCount", valueOrDash(blockedActionCount)],
+                ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
+                ["gitopsChangeCount", valueOrDash(gitopsChangeCount)],
                 ["signedReleaseGateDecision", valueOrDash(executionEligibility?.signedReleaseGateDecision)],
               ]}
             />
@@ -574,7 +617,25 @@ export function ApprovalConsolePanel({
         </div>
       </section>
 
-      <section className="mt-5 grid gap-4 lg:grid-cols-3">
+      <section className="mt-5 grid gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">Execution Preview</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `previewStatus:${valueOrDash(previewStatus)}`,
+                `plannedActions:${plannedActionCount}`,
+                `blockedActions:${blockedActionCount}`,
+                `humanCheckpoints:${humanCheckpointCount}`,
+                `gitopsChanges:${gitopsChangeCount}`,
+                executionPreview?.renderedReleasePlan
+                  ? `renderedPlan:${executionPreview.renderedReleasePlan}`
+                  : "renderedPlan:none",
+              ]}
+            />
+          </div>
+        </div>
+
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">

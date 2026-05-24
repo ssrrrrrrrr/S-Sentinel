@@ -189,6 +189,13 @@
           ],
           "description": "Path to the generated execution eligibility decision JSON."
         },
+        "executionPreview": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated dry-run execution preview JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -609,6 +616,72 @@
             }
           },
           "additionalProperties": true
+        },
+        "executionPreview": {
+          "type": "object",
+          "properties": {
+            "executionPreviewId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "previewStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "readyToExecute": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "requestedAction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "plannedActionCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "blockedActionCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "humanCheckpointCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "gitopsChangeCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "renderedReleasePlan": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -765,6 +838,13 @@
         "null"
       ],
       "description": "Execution eligibility decision id linked to this release evidence bundle."
+    },
+    "executionPreviewId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Dry-run execution preview id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

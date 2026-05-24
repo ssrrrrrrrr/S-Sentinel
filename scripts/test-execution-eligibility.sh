@@ -4,6 +4,17 @@ set -euo pipefail
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$BASE_DIR"
 
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: python runtime not found. Set PYTHON_BIN=/path/to/python." >&2
+    exit 1
+  fi
+fi
+
 TEST_TMP="${1:-/tmp/slo-execution-eligibility-test}"
 rm -rf "$TEST_TMP"
 mkdir -p "$TEST_TMP"
@@ -200,7 +211,7 @@ for case_name in waiting-approval ready-to-execute blocked; do
   cat "$TEST_TMP/$case_name.log"
 done
 
-python3 - "$TEST_TMP" <<'PY'
+"$PYTHON_BIN" - "$TEST_TMP" <<'PY'
 import json
 import os
 import sys
