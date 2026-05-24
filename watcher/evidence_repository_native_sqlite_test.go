@@ -191,6 +191,7 @@ func TestPortalEvidenceAPINativeSQLiteRepositoryIntegration(t *testing.T) {
 	assertPortalSchema(t, searchBody, "evidence.store.search/v1alpha1")
 	assertPortalNestedString(t, searchBody, "controlPlane", "repositoryType", "native-sqlite")
 	assertPortalNumberAtLeast(t, searchBody, "count", 1)
+	assertPortalSearchItemSummaryString(t, searchBody, "signedReleaseGate", "verificationStatus", "input_derived")
 
 	verificationBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
 		t,
@@ -213,6 +214,7 @@ func TestPortalEvidenceAPINativeSQLiteRepositoryIntegration(t *testing.T) {
 	)
 	assertPortalSchema(t, graphBody, "evidence.store.graph/v1alpha1")
 	assertPortalNestedString(t, graphBody, "controlPlane", "repositoryType", "native-sqlite")
+	assertPortalGraphVerificationStatus(t, graphBody, "input_derived")
 	assertPortalNumberAtLeast(t, graphBody, "nodeCount", 4)
 	assertPortalNumberAtLeast(t, graphBody, "edgeCount", 3)
 }
@@ -439,4 +441,61 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	}
 
 	return dbFile
+}
+
+func assertPortalSearchItemSummaryString(t *testing.T, body map[string]interface{}, objectType string, key string, expected string) {
+	t.Helper()
+
+	items, ok := body["items"].([]interface{})
+	if !ok {
+		t.Fatalf("expected items array, got body=%v", body)
+	}
+
+	for _, item := range items {
+		obj, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		gotType, _ := obj["objectType"].(string)
+		if gotType == "" {
+			gotType, _ = obj["object_type"].(string)
+		}
+		if gotType != objectType {
+			continue
+		}
+
+		summary, ok := obj["summary"].(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected summary object for objectType=%s, got item=%v", objectType, obj)
+		}
+
+		got, _ := summary[key].(string)
+		if got != expected {
+			t.Fatalf("expected summary.%s=%s for objectType=%s, got=%s item=%v", key, expected, objectType, got, obj)
+		}
+
+		return
+	}
+
+	t.Fatalf("expected search item objectType=%s in body=%v", objectType, body)
+}
+
+func assertPortalGraphVerificationStatus(t *testing.T, body map[string]interface{}, expected string) {
+	t.Helper()
+
+	verificationSummary, ok := body["verificationSummary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected verificationSummary object, got body=%v", body)
+	}
+
+	latest, ok := verificationSummary["latest"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected verificationSummary.latest object, got verificationSummary=%v", verificationSummary)
+	}
+
+	got, _ := latest["verificationStatus"].(string)
+	if got != expected {
+		t.Fatalf("expected verificationSummary.latest.verificationStatus=%s, got=%s body=%v", expected, got, body)
+	}
 }

@@ -239,6 +239,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 		"/api/evidence/graph?releaseId="+releaseID,
 	)
 	assertPortalSchema(t, graphBody, "evidence.store.graph/v1alpha1")
+	assertPortalGraphVerificationStatus(t, graphBody, "input_derived")
 	assertPortalNumberAtLeast(t, graphBody, "nodeCount", 3)
 	assertPortalNumberAtLeast(t, graphBody, "edgeCount", 2)
 
