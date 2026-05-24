@@ -12,4 +12,4 @@ Current status:
 - Input contract: `policy.input/v1alpha1`
 - Output contract: `release.policy.evaluator/v1alpha1`
 
-Stage45.2 does not execute `opa eval`. The PolicyRuntime adapter only exposes registry metadata and a command preview. Real OPA execution should be enabled in a later stage behind explicit guardrails and regression tests.
+By default, the PolicyRuntime adapter still returns a preview-only result and does not execute `opa eval`. Guarded execution is available only when `S_SENTINEL_POLICY_RUNTIME_EXTERNAL_COMMANDS=1` is set. Tests use a fake `opa` binary to validate the adapter boundary without requiring OPA to be installed on the host.

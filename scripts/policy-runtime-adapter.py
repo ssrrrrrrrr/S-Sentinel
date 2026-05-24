@@ -27,6 +27,26 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def external_policy_commands_enabled() -> bool:
+    return env_flag("S_SENTINEL_POLICY_RUNTIME_EXTERNAL_COMMANDS")
+
+
+def policy_runtime_binary(runtime_name: str) -> str | None:
+    if runtime_name == "opa":
+        configured = os.environ.get("S_SENTINEL_OPA_BIN", "").strip()
+        if configured:
+            return configured if Path(configured).exists() else None
+        return shutil.which("opa")
+
+    capability = POLICY_RUNTIME_REGISTRY.get(runtime_name) or {}
+    required_binary = capability.get("requiredBinary")
+    return shutil.which(str(required_binary)) if required_binary else None
+
+
 POLICY_RUNTIME_REGISTRY: dict[str, dict[str, Any]] = {
     "local-python": {
         "name": "local-python",
@@ -129,15 +149,38 @@ def runtime_names() -> list[str]:
 def runtime_capability(runtime_name: str) -> dict[str, Any]:
     if runtime_name not in POLICY_RUNTIME_REGISTRY:
         raise SystemExit(f"ERROR: unsupported policy runtime: {runtime_name}")
+
     capability = dict(POLICY_RUNTIME_REGISTRY[runtime_name])
+    external_commands_enabled = external_policy_commands_enabled()
+    binary_path = policy_runtime_binary(runtime_name)
+    binary_available = bool(binary_path)
+
+    capability["externalCommandEnabled"] = external_commands_enabled
+    capability["binaryAvailable"] = binary_available
+    capability["binaryPath"] = binary_path
+
+    if runtime_name == "opa" and external_commands_enabled:
+        capability["previewOnly"] = False
+        capability["canEvaluate"] = binary_available
+        capability["phase"] = "active" if binary_available else "unavailable"
+        capability["description"] = (
+            "OPA/Rego policy runtime with explicit external command guardrail enabled."
+            if binary_available
+            else "OPA/Rego policy runtime requested, but opa binary is unavailable."
+        )
+
     capability["guardrails"] = {
         "readOnly": True,
         "willExecute": False,
         "previewOnly": bool(capability.get("previewOnly")),
+        "externalCommandEnabled": external_commands_enabled,
+        "externalCommandBinaryAvailable": binary_available,
         "doesNotModifyKubernetes": True,
         "doesNotModifyGitOps": True,
         "doesNotBuildOrPushImages": True,
-        "doesNotRunExternalCommands": bool(capability.get("previewOnly")),
+        "doesNotRunExternalCommands": not (
+            external_commands_enabled and binary_available and not bool(capability.get("previewOnly"))
+        ),
     }
     return capability
 
@@ -393,6 +436,267 @@ def build_policy_input(
     write_json(output, policy_input)
 
 
+def manual_policy_decision(
+    policy_input: dict[str, Any],
+    runtime_name: str,
+    reason: str,
+    matched_rule: str,
+) -> dict[str, Any]:
+    input_summary = policy_input.get("inputSummary") or {}
+    release_id = policy_input.get("releaseId")
+
+    return {
+        "schemaVersion": "release.policy.evaluator/v1alpha1",
+        "policyDecisionId": f"pd-{matched_rule}-{release_id or runtime_name}",
+        "sourceDecisionFile": policy_input.get("sourceDecisionFile"),
+        "releaseId": release_id,
+        "evidenceId": None,
+        "service": input_summary.get("service"),
+        "env": input_summary.get("env"),
+        "sloId": input_summary.get("sloId"),
+        "strategyId": input_summary.get("strategyId"),
+        "policyDecision": "REQUIRE_HUMAN_APPROVAL",
+        "requestedAction": input_summary.get("requestedAction"),
+        "allowed": False,
+        "finalAction": "MANUAL_REVIEW",
+        "executionMode": "advisory_only",
+        "requiresHumanApproval": True,
+        "reason": reason,
+        "deniedReasons": [],
+        "approvalRequiredReasons": [matched_rule],
+        "matchedRules": [matched_rule],
+        "signedReleaseGate": policy_input.get("signedReleaseGateRef") or {},
+        "inputSummary": input_summary,
+        "safety": {
+            "readOnly": True,
+            "willExecute": False,
+            "previewOnly": False,
+            "doesNotModifyKubernetes": True,
+            "doesNotModifyGitOps": True,
+            "doesNotBuildOrPushImages": True,
+            "doesNotRunExternalCommands": True,
+        },
+        "policyRef": policy_input.get("policyRef") or {},
+    }
+
+
+def opa_eval_command(binary: str, policy_input_file: Path, repo_dir: Path) -> list[str]:
+    capability = POLICY_RUNTIME_REGISTRY["opa"]
+    return [
+        binary,
+        "eval",
+        "--format",
+        "json",
+        "--data",
+        str(repo_dir / str(capability["policyBundleRef"])),
+        "--input",
+        str(policy_input_file),
+        str(capability["entrypoint"]),
+    ]
+
+
+def extract_opa_decision(raw_output: str) -> dict[str, Any]:
+    parsed = json.loads(raw_output)
+    result_items = parsed.get("result") or parsed.get("results") or []
+    if not result_items:
+        raise ValueError("OPA output does not contain result")
+
+    expressions = result_items[0].get("expressions") or []
+    if not expressions:
+        raise ValueError("OPA output does not contain expressions")
+
+    value = expressions[0].get("value")
+    if not isinstance(value, dict):
+        raise ValueError("OPA decision value is not an object")
+
+    if value.get("schemaVersion") != "release.policy.evaluator/v1alpha1":
+        raise ValueError("OPA decision schemaVersion mismatch")
+
+    return value
+
+
+def write_opa_runtime_result(
+    policy_input_file: Path,
+    output: Path,
+    policy_decision: dict[str, Any],
+    capability: dict[str, Any],
+    status: str,
+    mode: str,
+    command: list[str] | None,
+    signed_gate_verification: dict[str, Any],
+    decision_output: Path | None,
+    exit_code: int | None = None,
+    stdout: str | None = None,
+    stderr: str | None = None,
+) -> None:
+    runtime = {
+        **capability,
+        "status": status,
+        "mode": mode,
+        "command": command,
+        "exitCode": exit_code,
+    }
+
+    if stdout:
+        runtime["stdoutPreview"] = stdout.strip()[:2000]
+    if stderr:
+        runtime["stderrPreview"] = stderr.strip()[:2000]
+
+    result = {
+        "schemaVersion": "policy.runtime.result/v1alpha1",
+        "generatedBy": "policy-runtime-adapter.py",
+        "generatedAt": now(),
+        "runtime": runtime,
+        "policyInputRef": str(policy_input_file),
+        "policyDecision": policy_decision,
+        "signedReleaseGate": policy_decision.get("signedReleaseGate") or {},
+        "signedReleaseGateVerification": signed_gate_verification,
+        "summary": {
+            "policyDecision": policy_decision.get("policyDecision"),
+            "finalAction": policy_decision.get("finalAction"),
+            "allowed": policy_decision.get("allowed"),
+            "requiresHumanApproval": policy_decision.get("requiresHumanApproval"),
+            "matchedRules": policy_decision.get("matchedRules") or [],
+            "runtimeStatus": status,
+            "runtimePreviewOnly": bool(capability.get("previewOnly")),
+            "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
+            "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
+            "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
+            "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),
+            "signedReleaseGateExternalVerificationRequested": signed_gate_verification.get("externalVerificationRequested"),
+            "signedReleaseGateExternalVerificationAllowed": signed_gate_verification.get("externalVerificationAllowed"),
+            "signedReleaseGateExternalVerificationExecuted": signed_gate_verification.get("externalVerificationExecuted"),
+            "signedReleaseGateExternalVerificationSucceeded": signed_gate_verification.get("externalVerificationSucceeded"),
+            "signedReleaseGateExternalVerificationSkippedReason": signed_gate_verification.get("externalVerificationSkippedReason"),
+        },
+        "safety": {
+            "readOnly": True,
+            "willExecute": False,
+            "previewOnly": bool(capability.get("previewOnly")),
+            "externalCommandEnabled": bool(capability.get("externalCommandEnabled")),
+            "externalCommandBinaryAvailable": bool(capability.get("binaryAvailable")),
+            "doesNotModifyKubernetes": True,
+            "doesNotModifyGitOps": True,
+            "doesNotBuildOrPushImages": True,
+            "doesNotRunExternalCommands": status != "evaluated",
+        },
+    }
+
+    write_json(output, result)
+    if decision_output is not None:
+        write_json(decision_output, policy_decision)
+
+
+def evaluate_opa_runtime(
+    policy_input_file: Path,
+    output: Path,
+    repo_dir: Path,
+    decision_output: Path | None = None,
+) -> None:
+    if not external_policy_commands_enabled():
+        evaluate_preview_runtime("opa", policy_input_file, output, decision_output)
+        return
+
+    policy_input = load_json(policy_input_file)
+    signed_gate_verification = policy_input.get("signedReleaseGateVerification") or {}
+    capability = runtime_capability("opa")
+    binary = capability.get("binaryPath")
+
+    if not binary:
+        decision = manual_policy_decision(
+            policy_input,
+            "opa",
+            "OPA runtime was explicitly requested, but opa binary is unavailable",
+            "policy_runtime_unavailable",
+        )
+        write_opa_runtime_result(
+            policy_input_file,
+            output,
+            decision,
+            capability,
+            "runtime_unavailable",
+            "external_command",
+            None,
+            signed_gate_verification,
+            decision_output,
+        )
+        return
+
+    command = opa_eval_command(str(binary), policy_input_file, repo_dir)
+    completed = subprocess.run(
+        command,
+        cwd=str(repo_dir),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if completed.returncode != 0:
+        decision = manual_policy_decision(
+            policy_input,
+            "opa",
+            "OPA runtime command failed",
+            "policy_runtime_error",
+        )
+        write_opa_runtime_result(
+            policy_input_file,
+            output,
+            decision,
+            capability,
+            "runtime_error",
+            "external_command",
+            command,
+            signed_gate_verification,
+            decision_output,
+            exit_code=completed.returncode,
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+        )
+        return
+
+    try:
+        decision = extract_opa_decision(completed.stdout)
+    except Exception as err:
+        decision = manual_policy_decision(
+            policy_input,
+            "opa",
+            f"OPA runtime output could not be decoded: {err}",
+            "policy_runtime_invalid_output",
+        )
+        write_opa_runtime_result(
+            policy_input_file,
+            output,
+            decision,
+            capability,
+            "runtime_error",
+            "external_command",
+            command,
+            signed_gate_verification,
+            decision_output,
+            exit_code=completed.returncode,
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+        )
+        return
+
+    write_opa_runtime_result(
+        policy_input_file,
+        output,
+        decision,
+        capability,
+        "evaluated",
+        "external_command",
+        command,
+        signed_gate_verification,
+        decision_output,
+        exit_code=completed.returncode,
+        stdout=completed.stdout,
+        stderr=completed.stderr,
+    )
+
+
 def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path, decision_output: Path | None = None) -> None:
     policy_input = load_json(policy_input_file)
     signed_gate_verification = policy_input.get("signedReleaseGateVerification") or {}
@@ -537,6 +841,13 @@ def main() -> int:
     if args.command == "evaluate":
         if args.runtime == "local-python":
             evaluate_local_python(
+                Path(args.policy_input),
+                Path(args.output),
+                Path(args.repo_dir),
+                Path(args.decision_output) if args.decision_output else None,
+            )
+        elif args.runtime == "opa":
+            evaluate_opa_runtime(
                 Path(args.policy_input),
                 Path(args.output),
                 Path(args.repo_dir),
