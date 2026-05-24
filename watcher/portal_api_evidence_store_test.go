@@ -231,6 +231,7 @@ func TestPortalEvidenceStoreAdapter(t *testing.T) {
 	)
 	assertPortalSchema(t, verificationSummaryBody, "evidence.store.verificationSummary/v1alpha1")
 	assertPortalLatestVerificationMode(t, verificationSummaryBody, "input_derived")
+	assertPortalNestedString(t, verificationSummaryBody, "latest", "verificationStatus", "input_derived")
 
 	graphBody := callPortalEvidenceStoreHandler(
 		t,

@@ -969,6 +969,7 @@ LIMIT ?
 			"importedAt":                        importedAt,
 			"verification":                      verification,
 			"verificationMode":                  firstNonNil(summary["verificationMode"], verification["mode"]),
+			"verificationStatus":                firstNonNil(summary["verificationStatus"], verification["verificationStatus"]),
 			"verificationTool":                  firstNonNil(summary["verificationTool"], verification["tool"]),
 			"verificationToolAvailable":         firstNonNil(summary["verificationToolAvailable"], verification["toolAvailable"]),
 			"signatureVerified":                 firstNonNil(summary["signatureVerified"], verification["signatureVerified"]),

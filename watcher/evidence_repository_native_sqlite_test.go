@@ -202,6 +202,7 @@ func TestPortalEvidenceAPINativeSQLiteRepositoryIntegration(t *testing.T) {
 	assertPortalSchema(t, verificationBody, "evidence.store.verificationSummary/v1alpha1")
 	assertPortalNestedString(t, verificationBody, "controlPlane", "repositoryType", "native-sqlite")
 	assertPortalNumberAtLeast(t, verificationBody, "count", 1)
+	assertPortalNestedString(t, verificationBody, "latest", "verificationStatus", "input_derived")
 
 	graphBody, _ := callPortalEvidenceStoreHandlerWithRecorder(
 		t,
@@ -413,7 +414,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		"signedReleaseGate",
 		"srg-20260101-000000",
 		"signed.release.gate/v1alpha1",
-		`{"objectType":"signedReleaseGate","verificationMode":"input_derived","verificationToolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true,"verification":{"mode":"input_derived","tool":"cosign","toolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true}}`,
+		`{"objectType":"signedReleaseGate","verificationMode":"input_derived","verificationStatus":"input_derived","verificationToolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true,"verification":{"mode":"input_derived","verificationStatus":"input_derived","tool":"cosign","toolAvailable":false,"signatureVerified":false,"sbomPresent":true,"provenancePresent":true,"canRunExternalVerification":false,"doesNotRunExternalCommands":true}}`,
 		`{"schemaVersion":"signed.release.gate/v1alpha1","signedReleaseGateId":"srg-20260101-000000"}`,
 	)
 
