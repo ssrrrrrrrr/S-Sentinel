@@ -87,6 +87,15 @@ RESOURCE_SPECS = [
         "id_prefix": "prr-",
     },
     {
+        "object_type": "policyDecision",
+        "schema_version": "release.policy.evaluator/v1alpha1",
+        "prefix": "policy-decision-",
+        "latest": "policy-decision-latest.json",
+        "glob": "policy-decision-*.json",
+        "id_key": "policyDecisionId",
+        "id_prefix": "pd-",
+    },
+    {
         "object_type": "signedReleaseGate",
         "schema_version": "signed.release.gate/v1alpha1",
         "glob": "signed-release-gate-*.json",
@@ -428,6 +437,12 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     risk = as_dict(data.get("risk"))
     verification_summary = compact_verification_summary(data)
 
+    def pick(*values: Any) -> Any:
+        for value in values:
+            if value is not None and value != "":
+                return value
+        return None
+
     result = {
         "objectType": object_type,
         "schemaVersion": data.get("schemaVersion"),
@@ -467,6 +482,56 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             request.get("willExecute"),
         ),
     }
+
+    if object_type == "policyRuntimeResult":
+        policy_decision = as_dict(data.get("policyDecision"))
+        runtime_summary = as_dict(data.get("summary"))
+        safety = as_dict(data.get("safety"))
+
+        result["policyDecision"] = pick(
+            policy_decision.get("policyDecision"),
+            runtime_summary.get("policyDecision"),
+        )
+        result["finalAction"] = pick(
+            policy_decision.get("finalAction"),
+            runtime_summary.get("finalAction"),
+        )
+        result["allowed"] = pick(
+            policy_decision.get("allowed"),
+            runtime_summary.get("allowed"),
+        )
+        result["requiresHumanApproval"] = pick(
+            policy_decision.get("requiresHumanApproval"),
+            runtime_summary.get("requiresHumanApproval"),
+        )
+        result["requestedAction"] = pick(
+            policy_decision.get("requestedAction"),
+            runtime_summary.get("requestedAction"),
+        )
+        result["matchedRules"] = pick(
+            policy_decision.get("matchedRules"),
+            runtime_summary.get("matchedRules"),
+            [],
+        )
+        result["deniedReasons"] = pick(policy_decision.get("deniedReasons"), [])
+        result["approvalRequiredReasons"] = pick(policy_decision.get("approvalRequiredReasons"), [])
+        result["runtimeStatus"] = runtime_summary.get("runtimeStatus")
+        result["runtimePreviewOnly"] = runtime_summary.get("runtimePreviewOnly")
+        result["runtimeExternalCommandExecuted"] = runtime_summary.get("runtimeExternalCommandExecuted")
+        result["willExecute"] = pick(safety.get("willExecute"), result.get("willExecute"))
+
+    if object_type == "policyDecision":
+        safety = as_dict(data.get("safety"))
+
+        result["policyDecision"] = data.get("policyDecision")
+        result["finalAction"] = data.get("finalAction")
+        result["allowed"] = data.get("allowed")
+        result["requiresHumanApproval"] = data.get("requiresHumanApproval")
+        result["requestedAction"] = data.get("requestedAction")
+        result["matchedRules"] = data.get("matchedRules") or []
+        result["deniedReasons"] = data.get("deniedReasons") or []
+        result["approvalRequiredReasons"] = data.get("approvalRequiredReasons") or []
+        result["willExecute"] = pick(safety.get("willExecute"), result.get("willExecute"))
 
     if verification_summary:
         result["verification"] = verification_summary
