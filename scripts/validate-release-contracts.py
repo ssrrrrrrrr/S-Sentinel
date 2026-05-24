@@ -116,6 +116,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "plan-run.schema.json"
         if schema_version == "execution.request/v1alpha1":
             return "execution-request.schema.json"
+        if schema_version == "execution.eligibility/v1alpha1":
+            return "execution-eligibility.schema.json"
         if schema_version == "supply.chain.decision/v1alpha1":
             return "supply-chain-decision.schema.json"
 
@@ -132,6 +134,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "supply-chain-decision.schema.json"
     if "execution-request" in lower_name:
         return "execution-request.schema.json"
+    if "execution-eligibility" in lower_name:
+        return "execution-eligibility.schema.json"
     if "plan-run" in lower_name:
         return "plan-run.schema.json"
     if "action-plan" in lower_name:
@@ -146,7 +150,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 

@@ -315,6 +315,11 @@ execution_evidence = as_dict(execution_request.get("evidence"))
 execution_evidence_artifacts = as_dict(execution_evidence.get("artifacts"))
 execution_guardrails = as_dict(execution_request.get("guardrails"))
 
+execution_eligibility_path = resolve_ref(artifacts.get("executionEligibility"), evidence_path)
+execution_eligibility = load_json(execution_eligibility_path)
+execution_eligibility_decision = as_dict(execution_eligibility.get("decision"))
+execution_eligibility_guardrails = as_dict(execution_eligibility.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -361,6 +366,7 @@ link_map = {
     "otelSpanBundle": artifacts.get("otelSpanBundle"),
     "planRun": artifacts.get("planRun"),
     "executionRequest": artifacts.get("executionRequest"),
+    "executionEligibility": artifacts.get("executionEligibility"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -384,6 +390,7 @@ artifact_defs = [
     ("otelSpanBundle", link_map["otelSpanBundle"], False),
     ("planRun", link_map["planRun"], False),
     ("executionRequest", link_map["executionRequest"], False),
+    ("executionEligibility", link_map["executionEligibility"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -547,6 +554,25 @@ record = {
             execution_evidence_artifacts.get("approvalRecordReport"),
         )),
         "guardrails": execution_guardrails,
+    },
+    "executionEligibility": {
+        "eligibilityDecisionId": nullable_string(execution_eligibility.get("eligibilityDecisionId")),
+        "mode": nullable_string(execution_eligibility.get("mode")),
+        "finalStatus": nullable_string(execution_eligibility_decision.get("finalStatus")),
+        "readyToExecute": bool_or_none(execution_eligibility_decision.get("readyToExecute")),
+        "requestedAction": nullable_string(as_dict(execution_eligibility.get("executionRequest")).get("requestedAction")),
+        "requestStatus": nullable_string(as_dict(execution_eligibility.get("executionRequest")).get("requestStatus")),
+        "lifecycleStage": nullable_string(as_dict(execution_eligibility.get("executionRequest")).get("lifecycleStage")),
+        "approvalStatus": nullable_string(as_dict(execution_eligibility.get("approval")).get("status")),
+        "approvalDecision": nullable_string(as_dict(execution_eligibility.get("approval")).get("approvalDecision")),
+        "approver": nullable_string(as_dict(execution_eligibility.get("approval")).get("approver")),
+        "supplyChainDecision": nullable_string(as_dict(execution_eligibility.get("supplyChain")).get("decision")),
+        "signedReleaseGateDecision": nullable_string(as_dict(execution_eligibility.get("signedReleaseGate")).get("decision")),
+        "blockingReasons": [str(item) for item in as_list(execution_eligibility_decision.get("blockingReasons"))],
+        "approvalReasons": [str(item) for item in as_list(execution_eligibility_decision.get("approvalReasons"))],
+        "missingInputs": [str(item) for item in as_list(execution_eligibility_decision.get("missingInputs"))],
+        "sourceExecutionEligibility": nullable_string(link_map.get("executionEligibility")),
+        "guardrails": execution_eligibility_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

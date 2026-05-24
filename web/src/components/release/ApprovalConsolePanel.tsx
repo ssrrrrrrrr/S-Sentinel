@@ -55,6 +55,23 @@ type ExecutionRequestRef = {
   willExecute?: boolean
 }
 
+type ExecutionEligibilityRef = {
+  eligibilityDecisionId?: string
+  finalStatus?: string
+  readyToExecute?: boolean
+  requestedAction?: string
+  requestStatus?: string
+  lifecycleStage?: string
+  approvalStatus?: string
+  approvalDecision?: string
+  approver?: string
+  supplyChainDecision?: string
+  signedReleaseGateDecision?: string
+  blockingReasons?: string[]
+  approvalReasons?: string[]
+  missingInputs?: string[]
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -98,6 +115,7 @@ type ApprovalEvidencePayload = {
   decisionRefs?: {
     policyDecision?: PolicyDecisionRef
     executionRequest?: ExecutionRequestRef
+    executionEligibility?: ExecutionEligibilityRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -296,6 +314,7 @@ export function ApprovalConsolePanel({
   const refs = evidence?.decisionRefs ?? {}
   const policyDecisionRef = refs.policyDecision
   const executionRequest = refs.executionRequest
+  const executionEligibility = refs.executionEligibility
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -303,6 +322,7 @@ export function ApprovalConsolePanel({
   const releaseResult = evidence?.releaseResult ?? summary.releaseResult
   const policyDecision = executionRequest?.policyDecision ?? evidence?.policyDecision ?? summary.policyDecision
   const requestedAction =
+    executionEligibility?.requestedAction ??
     executionRequest?.requestedAction ??
     policyDecisionRef?.requestedAction ??
     agentRun?.recommendedAction ??
@@ -314,7 +334,10 @@ export function ApprovalConsolePanel({
     supplyChainDecision?.requiresHumanApproval ??
     evidence?.requiresHumanApproval ??
     summary.requiresHumanApproval
-  const approvalStatus = executionRequest?.approvalStatus ?? (requiresHumanApproval ? "PENDING" : "NOT_REQUIRED")
+  const approvalStatus =
+    executionEligibility?.approvalStatus ??
+    executionRequest?.approvalStatus ??
+    (requiresHumanApproval ? "PENDING" : "NOT_REQUIRED")
   const approved = executionRequest?.approved
   const willExecute =
     executionRequest?.willExecute ??
@@ -323,11 +346,14 @@ export function ApprovalConsolePanel({
     supplyChainDecision?.willExecute ??
     false
   const requestStatus =
+    executionEligibility?.requestStatus ??
     executionRequest?.requestStatus ??
     (requiresHumanApproval ? "WAITING_FOR_APPROVAL" : "NO_HUMAN_GATE")
   const lifecycleStage =
+    executionEligibility?.lifecycleStage ??
     executionRequest?.lifecycleStage ??
     (requiresHumanApproval ? "WAITING_APPROVAL" : "POLICY_CHECKED")
+  const eligibilityStatus = executionEligibility?.finalStatus ?? lifecycleStage
   const executionRequestId =
     evidence?.executionRequestId ??
     executionRequest?.executionRequestId ??
@@ -348,14 +374,17 @@ export function ApprovalConsolePanel({
     []
   const blockingReasons = supplyChainDecision?.blockingReasons ?? []
   const warningReasons = supplyChainDecision?.warningReasons ?? []
-  const readyToExecute = executionRequest?.readyToExecute ?? false
+  const readyToExecute =
+    executionEligibility?.readyToExecute ??
+    executionRequest?.readyToExecute ??
+    false
 
   const metrics: ConsoleMetric[] = [
     {
       label: "Execution Request",
       value: executionRequestId,
       hint: `requestStatus=${requestStatus}`,
-      status: lifecycleStage,
+      status: eligibilityStatus,
       icon: ClipboardCheck,
     },
     {
@@ -374,9 +403,9 @@ export function ApprovalConsolePanel({
     },
     {
       label: "Lifecycle Stage",
-      value: lifecycleStage,
+      value: eligibilityStatus,
       hint: `readyToExecute=${boolText(readyToExecute)}`,
-      status: lifecycleStage,
+      status: eligibilityStatus,
       icon: readyToExecute ? CheckCircle2 : PauseCircle,
     },
     {
@@ -415,7 +444,7 @@ export function ApprovalConsolePanel({
         executionRequestId === "-"
           ? "当前 evidence 没有显式 executionRequestId，控制台以 release summary / policy fallback 展示。"
           : `执行申请对象已关联：${executionRequestId}。`,
-      status: executionRequestId === "-" ? "MISSING" : requestStatus,
+      status: executionRequestId === "-" ? "MISSING" : eligibilityStatus,
       icon: ClipboardCheck,
     },
     {
@@ -431,7 +460,7 @@ export function ApprovalConsolePanel({
       description: approved
         ? "审批状态显示为 approved，但执行仍需要受控执行器和审计证据。"
         : "当前未看到 approved=true，不能进入执行阶段。",
-      status: approved ? "APPROVED" : approvalStatus,
+      status: executionEligibility?.finalStatus ?? (approved ? "APPROVED" : approvalStatus),
       icon: approved ? UserCheck : PauseCircle,
     },
     {
@@ -511,10 +540,11 @@ export function ApprovalConsolePanel({
                 ["requestedAction", requestedAction],
                 ["requestStatus", requestStatus],
                 ["lifecycleStage", lifecycleStage],
+                ["eligibilityStatus", eligibilityStatus],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
-                ["approvalDecision", valueOrDash(executionRequest?.approvalDecision)],
-                ["approver", valueOrDash(executionRequest?.approver)],
+                ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
+                ["approver", valueOrDash(executionEligibility?.approver ?? executionRequest?.approver)],
                 ["approved", boolText(approved)],
                 ["readyToExecute", boolText(readyToExecute)],
                 ["willExecute", boolText(willExecute)],
@@ -536,6 +566,8 @@ export function ApprovalConsolePanel({
                 ["safeToRetry", boolText(evidence?.safeToRetry ?? summary.safeToRetry)],
                 ["supplyChainDecision", valueOrDash(supplyChainDecision?.decision)],
                 ["supplyChainAllowed", boolText(supplyChainDecision?.allowed)],
+                ["eligibilityDecisionId", valueOrDash(executionEligibility?.eligibilityDecisionId)],
+                ["signedReleaseGateDecision", valueOrDash(executionEligibility?.signedReleaseGateDecision)],
               ]}
             />
           </div>
@@ -553,14 +585,36 @@ export function ApprovalConsolePanel({
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Blocking Reasons</h4>
           <div className="mt-3">
-            <RuleChipsPanel rules={blockingReasons.length > 0 ? blockingReasons : ["none"]} />
+            <RuleChipsPanel
+              rules={
+                executionEligibility?.blockingReasons && executionEligibility.blockingReasons.length > 0
+                  ? executionEligibility.blockingReasons
+                  : blockingReasons.length > 0
+                    ? blockingReasons
+                    : ["none"]
+              }
+            />
           </div>
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
-          <h4 className="text-sm font-semibold text-slate-100">Warning Reasons</h4>
+          <h4 className="text-sm font-semibold text-slate-100">Approval / Missing Inputs</h4>
           <div className="mt-3">
-            <RuleChipsPanel rules={warningReasons.length > 0 ? warningReasons : ["none"]} />
+            <RuleChipsPanel
+              rules={
+                [
+                  ...(executionEligibility?.approvalReasons ?? []),
+                  ...(executionEligibility?.missingInputs ?? []),
+                  ...warningReasons,
+                ].length > 0
+                  ? [
+                      ...(executionEligibility?.approvalReasons ?? []),
+                      ...(executionEligibility?.missingInputs ?? []),
+                      ...warningReasons,
+                    ]
+                  : ["none"]
+              }
+            />
           </div>
         </div>
       </section>

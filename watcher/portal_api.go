@@ -768,6 +768,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "releaseIntelligence", "application/json; charset=utf-8", true
 	case "approval":
 		return "approvalRecord", "application/json; charset=utf-8", true
+	case "eligibility":
+		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
 		return "failureEvidence", "application/json; charset=utf-8", true
 	case "advice":
@@ -795,20 +797,21 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 	}
 
 	resourceByKind := map[string]string{
-		"releaseEvidence":     "evidence",
-		"evidenceRecord":      "evidence-record",
-		"releaseSummary":      "summary",
-		"actionPlan":          "action-plan",
-		"releaseIntelligence": "intelligence",
-		"approvalRecord":      "approval",
-		"failureEvidence":     "failure-evidence",
-		"aiAdvice":            "advice",
-		"aiDecision":          "ai-decision",
-		"policyDecision":      "policy-decision",
-		"releaseContext":      "context",
-		"releaseTimeline":     "timeline",
-		"runbook":             "runbook",
-		"rca":                 "rca",
+		"releaseEvidence":      "evidence",
+		"evidenceRecord":       "evidence-record",
+		"releaseSummary":       "summary",
+		"actionPlan":           "action-plan",
+		"releaseIntelligence":  "intelligence",
+		"approvalRecord":       "approval",
+		"executionEligibility": "eligibility",
+		"failureEvidence":      "failure-evidence",
+		"aiAdvice":             "advice",
+		"aiDecision":           "ai-decision",
+		"policyDecision":       "policy-decision",
+		"releaseContext":       "context",
+		"releaseTimeline":      "timeline",
+		"runbook":              "runbook",
+		"rca":                  "rca",
 	}
 
 	names := []string{}
@@ -896,6 +899,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"action-plan-*.json",
 		"release-intelligence-*.json",
 		"approval-record-*.json",
+		"execution-eligibility-*.json",
 		"failure-evidence-*.json",
 		"ai-advice-*.md",
 		"ai-decision-*.json",
@@ -1121,6 +1125,7 @@ func releaseIDFromReportFile(base string) string {
 		"action-plan-",
 		"release-intelligence-",
 		"approval-record-",
+		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
 		"ai-decision-",
@@ -1306,6 +1311,8 @@ func kindFromReportFile(base string) string {
 		return "releaseIntelligence"
 	case strings.HasPrefix(base, "approval-record-"):
 		return "approvalRecord"
+	case strings.HasPrefix(base, "execution-eligibility-"):
+		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):
 		return "failureEvidence"
 	case strings.HasPrefix(base, "ai-advice-"):

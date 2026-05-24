@@ -71,6 +71,14 @@ RESOURCE_SPECS = [
         "id_prefix": "er-",
     },
     {
+        "object_type": "executionEligibility",
+        "glob": "execution-eligibility-*.json",
+        "latest": "execution-eligibility-latest.json",
+        "prefix": "execution-eligibility-",
+        "id_key": "eligibilityDecisionId",
+        "id_prefix": "el-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -330,6 +338,7 @@ def derive_object_id(
         as_dict(data.get("agent")).get("agentRunId"),
         as_dict(data.get("plan")).get("planRunId"),
         as_dict(data.get("executionRequest")).get("executionRequestId"),
+        as_dict(data.get("executionEligibility")).get("eligibilityDecisionId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -379,6 +388,7 @@ def extract_release_fields(data: dict[str, Any], release_id: str) -> dict[str, A
         ),
         "final_action": first_scalar(
             data.get("finalAction"),
+            release.get("finalAction"),
             release.get("recommendedAction"),
             recommendation.get("recommendedAction"),
         ),
@@ -570,6 +580,37 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["deniedReasons"] = data.get("deniedReasons") or []
         result["approvalRequiredReasons"] = data.get("approvalRequiredReasons") or []
         result["willExecute"] = pick(safety.get("willExecute"), result.get("willExecute"))
+
+    if object_type == "executionEligibility":
+        eligibility_decision = as_dict(data.get("decision"))
+        eligibility_request = as_dict(data.get("executionRequest"))
+        eligibility_approval = as_dict(data.get("approval"))
+        eligibility_supply_chain = as_dict(data.get("supplyChain"))
+        eligibility_signed_gate = as_dict(data.get("signedReleaseGate"))
+
+        result["finalStatus"] = eligibility_decision.get("finalStatus")
+        result["readyToExecute"] = eligibility_decision.get("readyToExecute")
+        result["requestedAction"] = pick(
+            eligibility_request.get("requestedAction"),
+            result.get("requestedAction"),
+        )
+        result["requestStatus"] = pick(
+            eligibility_request.get("requestStatus"),
+            result.get("requestStatus"),
+        )
+        result["lifecycleStage"] = eligibility_request.get("lifecycleStage")
+        result["approvalStatus"] = eligibility_approval.get("status")
+        result["approvalDecision"] = eligibility_approval.get("approvalDecision")
+        result["approver"] = eligibility_approval.get("approver")
+        result["supplyChainDecision"] = eligibility_supply_chain.get("decision")
+        result["signedReleaseGateDecision"] = eligibility_signed_gate.get("decision")
+        result["blockingReasons"] = eligibility_decision.get("blockingReasons") or []
+        result["approvalReasons"] = eligibility_decision.get("approvalReasons") or []
+        result["missingInputs"] = eligibility_decision.get("missingInputs") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
 
     if verification_summary:
         result["verification"] = verification_summary
