@@ -405,6 +405,37 @@ def extract_release_fields(data: dict[str, Any], release_id: str) -> dict[str, A
 
 
 
+def normalized_verification_status(verification: dict[str, Any], results: dict[str, Any] | None = None) -> str | None:
+    results = as_dict(results if results is not None else verification.get("results"))
+
+    explicit = verification.get("verificationStatus") or results.get("verificationStatus")
+    if explicit not in (None, ""):
+        return str(explicit)
+
+    mode = verification.get("mode")
+    external_allowed = bool(results.get("externalVerificationAllowed"))
+    external_executed = bool(results.get("externalVerificationExecuted"))
+    external_succeeded = results.get("externalVerificationSucceeded")
+    skipped_reason = results.get("externalVerificationSkippedReason")
+    tool_available = bool(verification.get("toolAvailable"))
+
+    if mode == "input_derived":
+        return "input_derived"
+    if mode == "admission":
+        return "admission_placeholder"
+    if mode != "external_command":
+        return None
+
+    if external_executed and external_succeeded is True:
+        return "external_verification_passed"
+    if external_executed and external_succeeded is False:
+        return "external_verification_failed"
+    if skipped_reason == "external_command_not_enabled" or not external_allowed:
+        return "external_command_disabled"
+    if skipped_reason == "tool_not_available" or not tool_available:
+        return "external_tool_unavailable"
+    return "external_verification_unavailable"
+
 def compact_verification_summary(data: dict[str, Any]) -> dict[str, Any]:
     verification = as_dict(data.get("verification"))
     if not verification:
@@ -412,9 +443,11 @@ def compact_verification_summary(data: dict[str, Any]) -> dict[str, Any]:
 
     results = as_dict(verification.get("results"))
     guardrails = as_dict(verification.get("guardrails"))
+    status = normalized_verification_status(verification, results)
 
     return {
         "schemaVersion": verification.get("schemaVersion"),
+        "verificationStatus": status,
         "mode": verification.get("mode"),
         "tool": verification.get("tool"),
         "toolBinary": verification.get("toolBinary"),
@@ -423,6 +456,11 @@ def compact_verification_summary(data: dict[str, Any]) -> dict[str, Any]:
         "sbomPresent": results.get("sbomPresent"),
         "provenancePresent": results.get("provenancePresent"),
         "slsaLevelPresent": results.get("slsaLevelPresent"),
+        "externalVerificationRequested": results.get("externalVerificationRequested"),
+        "externalVerificationAllowed": results.get("externalVerificationAllowed"),
+        "externalVerificationExecuted": results.get("externalVerificationExecuted"),
+        "externalVerificationSucceeded": results.get("externalVerificationSucceeded"),
+        "externalVerificationSkippedReason": results.get("externalVerificationSkippedReason"),
         "canRunExternalVerification": guardrails.get("canRunExternalVerification"),
         "doesNotRunExternalCommands": guardrails.get("doesNotRunExternalCommands"),
     }
@@ -1254,6 +1292,7 @@ def query_verification_summary(
             "importedAt": row["imported_at"],
             "verification": verification,
             "verificationMode": verification.get("mode"),
+            "verificationStatus": verification.get("verificationStatus"),
             "verificationTool": verification.get("tool"),
             "verificationToolAvailable": verification.get("toolAvailable"),
             "signatureVerified": verification.get("signatureVerified"),

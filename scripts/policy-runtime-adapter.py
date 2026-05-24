@@ -283,6 +283,7 @@ def evaluate_preview_runtime(
             "runtimePreviewOnly": True,
             "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
             "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationStatus": signed_gate_verification.get("verificationStatus"),
             "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
             "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
             "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),
@@ -310,6 +311,40 @@ def evaluate_preview_runtime(
 
 
 
+def normalized_verification_status(verification: dict[str, Any], results: dict[str, Any] | None = None) -> str | None:
+    if results is None:
+        results = verification.get("results")
+    if not isinstance(results, dict):
+        results = {}
+
+    explicit = verification.get("verificationStatus") or results.get("verificationStatus")
+    if explicit not in (None, ""):
+        return str(explicit)
+
+    mode = verification.get("mode")
+    external_allowed = bool(results.get("externalVerificationAllowed"))
+    external_executed = bool(results.get("externalVerificationExecuted"))
+    external_succeeded = results.get("externalVerificationSucceeded")
+    skipped_reason = results.get("externalVerificationSkippedReason")
+    tool_available = bool(verification.get("toolAvailable"))
+
+    if mode == "input_derived":
+        return "input_derived"
+    if mode == "admission":
+        return "admission_placeholder"
+    if mode != "external_command":
+        return None
+
+    if external_executed and external_succeeded is True:
+        return "external_verification_passed"
+    if external_executed and external_succeeded is False:
+        return "external_verification_failed"
+    if skipped_reason == "external_command_not_enabled" or not external_allowed:
+        return "external_command_disabled"
+    if skipped_reason == "tool_not_available" or not tool_available:
+        return "external_tool_unavailable"
+    return "external_verification_unavailable"
+
 def signed_gate_verification_summary(signed_gate: dict[str, Any]) -> dict[str, Any]:
     verification = signed_gate.get("verification") or {}
     if not isinstance(verification, dict) or not verification:
@@ -320,6 +355,7 @@ def signed_gate_verification_summary(signed_gate: dict[str, Any]) -> dict[str, A
 
     return {
         "schemaVersion": verification.get("schemaVersion"),
+        "verificationStatus": normalized_verification_status(verification, results),
         "mode": verification.get("mode"),
         "tool": verification.get("tool"),
         "toolBinary": verification.get("toolBinary"),
@@ -416,6 +452,7 @@ def build_policy_input(
             "signedReleaseGateAllowed": signed_gate_decision.get("allowed"),
             "signedReleaseGateRequiresHumanApproval": signed_gate_decision.get("requiresHumanApproval"),
             "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationStatus": signed_gate_verification.get("verificationStatus"),
             "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
             "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
             "signedReleaseGateSBOMPresent": signed_gate_verification.get("sbomPresent"),
@@ -565,6 +602,7 @@ def write_opa_runtime_result(
             "runtimeExternalCommandExecuted": external_command_executed,
             "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
             "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationStatus": signed_gate_verification.get("verificationStatus"),
             "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
             "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
             "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),
@@ -779,6 +817,7 @@ def evaluate_local_python(policy_input_file: Path, output: Path, repo_dir: Path,
             "matchedRules": policy_decision.get("matchedRules") or [],
             "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
             "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
+            "signedReleaseGateVerificationStatus": signed_gate_verification.get("verificationStatus"),
             "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
             "signedReleaseGateSignatureVerified": signed_gate_verification.get("signatureVerified"),
             "signedReleaseGateCanRunExternalVerification": signed_gate_verification.get("canRunExternalVerification"),

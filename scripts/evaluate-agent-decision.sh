@@ -247,9 +247,45 @@ signed_gate_verification_results = as_dict(signed_gate_verification.get("results
 signed_gate_verification_guardrails = as_dict(signed_gate_verification.get("guardrails"))
 signed_gate_verification_summary: dict[str, Any] = {}
 
+def normalized_signed_gate_verification_status(
+    verification: dict[str, Any],
+    results: dict[str, Any],
+) -> str | None:
+    explicit = verification.get("verificationStatus") or results.get("verificationStatus")
+    if explicit not in (None, ""):
+        return str(explicit)
+
+    mode = verification.get("mode")
+    external_allowed = bool(results.get("externalVerificationAllowed"))
+    external_executed = bool(results.get("externalVerificationExecuted"))
+    external_succeeded = results.get("externalVerificationSucceeded")
+    skipped_reason = results.get("externalVerificationSkippedReason")
+    tool_available = bool(verification.get("toolAvailable"))
+
+    if mode == "input_derived":
+        return "input_derived"
+    if mode == "admission":
+        return "admission_placeholder"
+    if mode != "external_command":
+        return None
+
+    if external_executed and external_succeeded is True:
+        return "external_verification_passed"
+    if external_executed and external_succeeded is False:
+        return "external_verification_failed"
+    if skipped_reason == "external_command_not_enabled" or not external_allowed:
+        return "external_command_disabled"
+    if skipped_reason == "tool_not_available" or not tool_available:
+        return "external_tool_unavailable"
+    return "external_verification_unavailable"
+
 if signed_gate_verification:
     signed_gate_verification_summary = {
         "schemaVersion": signed_gate_verification.get("schemaVersion"),
+        "verificationStatus": normalized_signed_gate_verification_status(
+            signed_gate_verification,
+            signed_gate_verification_results,
+        ),
         "mode": signed_gate_verification.get("mode"),
         "tool": signed_gate_verification.get("tool"),
         "toolBinary": signed_gate_verification.get("toolBinary"),
@@ -551,6 +587,7 @@ policy_output = {
         "signedReleaseGateDecision": signed_gate_decision,
         "signedReleaseGateAllowed": signed_gate_allowed_bool,
         "signedReleaseGateVerificationMode": signed_gate_verification_summary.get("mode"),
+        "signedReleaseGateVerificationStatus": signed_gate_verification_summary.get("verificationStatus"),
         "signedReleaseGateVerificationToolAvailable": signed_gate_verification_summary.get("toolAvailable"),
         "signedReleaseGateSignatureVerified": signed_gate_verification_summary.get("signatureVerified"),
         "signedReleaseGateSBOMPresent": signed_gate_verification_summary.get("sbomPresent"),

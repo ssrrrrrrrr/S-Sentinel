@@ -246,6 +246,7 @@ external_verification_skipped_reason = nullable_string(verification_results.get(
 if verification_mode == "external_command":
     external_evidence = {
         "mode": verification.get("mode"),
+        "verificationStatus": verification.get("verificationStatus") or verification_results.get("verificationStatus"),
         "tool": verification.get("tool"),
         "toolBinary": verification.get("toolBinary"),
         "toolAvailable": verification.get("toolAvailable"),

@@ -134,6 +134,8 @@ assert gate["attestations"]["cosign"]["verified"] is False, gate
 verification = gate["verification"]
 assert verification["schemaVersion"] == "signed.release.gate.verification/v1alpha1", verification
 assert verification["mode"] == "external_command", verification
+assert verification["verificationStatus"] == "external_command_disabled", verification
+assert verification["results"]["verificationStatus"] == "external_command_disabled", verification
 assert verification["tool"] == "cosign", verification
 assert verification["toolBinary"] == "/tmp/ssentinel-missing-cosign", verification
 assert verification["toolAvailable"] is False, verification
@@ -194,6 +196,7 @@ assert import_result["byType"]["signedReleaseGate"] == 1, import_result
 assert obj["schemaVersion"] == "evidence.store.object/v1alpha1", obj
 assert obj["object"]["object_type"] == "signedReleaseGate", obj
 assert obj["object"]["object_id"] == "srg-20260101-000000", obj
+assert obj["object"]["summary"]["verification"]["verificationStatus"] == "external_command_disabled", obj
 
 print("PASS: signed release gate is linked and indexed")
 PY_ASSERT_LINK

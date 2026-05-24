@@ -208,6 +208,7 @@ assert policy_input["inputSummary"]["releaseResult"] == "FAIL_BY_MULTIPLE_SLO", 
 assert policy_input["inputSummary"]["requestedAction"] == "STOP_PROMOTION", policy_input
 assert policy_input["inputSummary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", policy_input
 assert policy_input["inputSummary"]["signedReleaseGateVerificationMode"] == "external_command", policy_input
+assert policy_input["inputSummary"]["signedReleaseGateVerificationStatus"] == "external_command_disabled", policy_input
 assert policy_input["inputSummary"]["signedReleaseGateVerificationToolAvailable"] is False, policy_input
 assert policy_input["inputSummary"]["signedReleaseGateSignatureVerified"] is False, policy_input
 assert policy_input["inputSummary"]["signedReleaseGateSBOMPresent"] is False, policy_input
@@ -216,6 +217,7 @@ assert policy_input["inputSummary"]["signedReleaseGateCanRunExternalVerification
 assert policy_input["signedReleaseGateRef"]["loaded"] is True, policy_input
 assert policy_input["signedReleaseGateRef"]["verification"]["mode"] == "external_command", policy_input
 assert policy_input["signedReleaseGateVerification"]["mode"] == "external_command", policy_input
+assert policy_input["signedReleaseGateVerification"]["verificationStatus"] == "external_command_disabled", policy_input
 assert policy_input["signedReleaseGateVerification"]["signatureVerified"] is False, policy_input
 assert policy_input["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, policy_input
 assert policy_input["signedReleaseGateVerification"]["externalVerificationRequested"] is True, policy_input
@@ -233,10 +235,13 @@ assert result["policyDecision"]["allowed"] is True, result
 assert result["summary"]["requiresHumanApproval"] is True, result
 assert result["summary"]["signedReleaseGateDecision"] == "REQUIRE_HUMAN_APPROVAL", result
 assert result["summary"]["signedReleaseGateVerificationMode"] == "external_command", result
+assert result["summary"]["signedReleaseGateVerificationStatus"] == "external_command_disabled", result
+assert result["policyDecision"]["inputSummary"]["signedReleaseGateVerificationStatus"] == "external_command_disabled", result
 assert result["summary"]["signedReleaseGateVerificationToolAvailable"] is False, result
 assert result["summary"]["signedReleaseGateSignatureVerified"] is False, result
 assert result["summary"]["signedReleaseGateCanRunExternalVerification"] is False, result
 assert result["signedReleaseGateVerification"]["mode"] == "external_command", result
+assert result["signedReleaseGateVerification"]["verificationStatus"] == "external_command_disabled", result
 assert result["signedReleaseGateVerification"]["signatureVerified"] is False, result
 assert result["signedReleaseGateVerification"]["canRunExternalVerification"] is False, result
 assert result["signedReleaseGateVerification"]["doesNotRunExternalCommands"] is True, result
