@@ -115,6 +115,10 @@ for item in [input_derived, external, external_unavailable, external_enabled, ad
     assert item["results"]["provenancePresent"] is True, item
     assert item["results"]["slsaLevelPresent"] is True, item
     assert item["results"]["verificationStatus"] == item["verificationStatus"], item
+    assert item["verificationPlan"]["schemaVersion"] == "signed.release.gate.verificationPlan/v1alpha1", item
+    assert item["verificationPlan"]["mode"] == item["mode"], item
+    assert item["verificationPlan"]["subject"]["image"] == item["subject"]["image"], item
+    assert item["verificationPlan"]["subject"]["imageDigest"] == item["subject"]["imageDigest"], item
     assert item["guardrails"]["readOnly"] is True, item
 
 assert input_derived["mode"] == "input_derived", input_derived

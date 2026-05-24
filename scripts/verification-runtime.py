@@ -162,6 +162,16 @@ def build_verification(
     return {
         "schemaVersion": "signed.release.gate.verification/v1alpha1",
         "verificationStatus": status,
+        "verificationPlan": {
+            "schemaVersion": "signed.release.gate.verificationPlan/v1alpha1",
+            "profile": "admission_policy_placeholder" if mode == "admission" else "cosign_image_signature",
+            "mode": mode,
+            "subject": {
+                "image": image_ref,
+                "imageDigest": image_digest,
+                "verificationSubject": verification_subject,
+            },
+        },
         "mode": mode,
         "tool": tool,
         "toolBinary": tool_binary,
