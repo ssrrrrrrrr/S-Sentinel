@@ -54,6 +54,31 @@ def truncate_text(value: str, limit: int = 4000) -> str:
     return value[:limit] + "\n...[truncated]"
 
 
+def verification_status(
+    mode: str,
+    allow_external_command: bool,
+    tool_available: bool,
+    external_executed: bool,
+    external_succeeded: bool | None,
+) -> str:
+    if mode == "input_derived":
+        return "input_derived"
+    if mode == "admission":
+        return "admission_placeholder"
+    if mode != "external_command":
+        return "unknown"
+
+    if external_executed and external_succeeded is True:
+        return "external_verification_passed"
+    if external_executed and external_succeeded is False:
+        return "external_verification_failed"
+    if not allow_external_command:
+        return "external_command_disabled"
+    if not tool_available:
+        return "external_tool_unavailable"
+    return "external_verification_unavailable"
+
+
 def build_verification(
     supply_chain_decision: Path,
     mode: str,
@@ -126,8 +151,17 @@ def build_verification(
     else:
         skipped_reason = "mode_does_not_execute_external_command"
 
+    status = verification_status(
+        mode=mode,
+        allow_external_command=allow_external_command,
+        tool_available=tool_available,
+        external_executed=external_executed,
+        external_succeeded=external_succeeded,
+    )
+
     return {
         "schemaVersion": "signed.release.gate.verification/v1alpha1",
+        "verificationStatus": status,
         "mode": mode,
         "tool": tool,
         "toolBinary": tool_binary,
@@ -154,6 +188,7 @@ def build_verification(
             "externalVerificationExecuted": external_executed,
             "externalVerificationSucceeded": external_succeeded,
             "externalVerificationSkippedReason": skipped_reason,
+            "verificationStatus": status,
         },
         "source": {
             "supplyChainDecision": str(supply_chain_decision),

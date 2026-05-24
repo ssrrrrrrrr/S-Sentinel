@@ -125,6 +125,7 @@ assert pass_gate["risk"]["riskLevel"] == "low", pass_gate
 assert pass_checks["external_verification_succeeded"]["status"] == "PASS", pass_checks
 assert pass_gate["verification"]["results"]["externalVerificationExecuted"] is True, pass_gate
 assert pass_gate["verification"]["results"]["externalVerificationSucceeded"] is True, pass_gate
+assert pass_gate["verification"]["verificationStatus"] == "external_verification_passed", pass_gate
 assert pass_gate["verification"]["command"] == [fake_pass, "verify", "registry.local/demo-app@sha256:111"], pass_gate
 assert pass_gate["verification"]["exitCode"] == 0, pass_gate
 
@@ -135,6 +136,7 @@ assert fail_gate["risk"]["riskLevel"] in {"high", "critical"}, fail_gate
 assert fail_checks["external_verification_failed"]["status"] == "FAIL", fail_checks
 assert fail_gate["verification"]["results"]["externalVerificationExecuted"] is True, fail_gate
 assert fail_gate["verification"]["results"]["externalVerificationSucceeded"] is False, fail_gate
+assert fail_gate["verification"]["verificationStatus"] == "external_verification_failed", fail_gate
 assert fail_gate["verification"]["command"] == [fake_fail, "verify", "registry.local/demo-app@sha256:111"], fail_gate
 assert fail_gate["verification"]["exitCode"] == 7, fail_gate
 assert "External verification command failed" in fail_gate["decision"]["blockingReasons"], fail_gate
