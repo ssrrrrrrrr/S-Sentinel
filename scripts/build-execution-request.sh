@@ -148,6 +148,23 @@ def derive_request_status(
 
     return "PENDING_APPROVAL"
 
+def derive_lifecycle_stage(
+    request_status: str,
+    requires_human_approval: bool,
+    allowed_to_request: bool,
+) -> str:
+    if request_status == "NO_ACTION_REQUESTED":
+        return "NO_ACTION_REQUESTED"
+    if request_status == "BLOCKED_BY_POLICY":
+        return "BLOCKED_BY_POLICY"
+    if request_status == "NEEDS_MORE_EVIDENCE":
+        return "NEEDS_MORE_EVIDENCE"
+    if requires_human_approval:
+        return "WAITING_APPROVAL"
+    if allowed_to_request:
+        return "READY_TO_EXECUTE"
+    return "POLICY_CHECKED"
+
 plan_run = load_json(plan_run_path)
 
 release = as_dict(plan_run.get("release"))
@@ -198,6 +215,13 @@ request_status = derive_request_status(
 )
 
 allowed_to_request = not blocking_reasons and request_status != "BLOCKED_BY_POLICY"
+lifecycle_stage = derive_lifecycle_stage(
+    request_status,
+    requires_human_approval,
+    allowed_to_request,
+)
+approval_status = "NOT_APPROVED" if requires_human_approval else "NOT_REQUIRED"
+ready_to_execute = lifecycle_stage == "READY_TO_EXECUTE"
 
 execution_request_id = "er-" + release_id
 
@@ -225,6 +249,7 @@ execution_request = {
         "requestedAction": requested_action,
         "requestReason": candidate.get("reason") or plan.get("summary") or "Generated from read-only plan run.",
         "requestStatus": request_status,
+        "lifecycleStage": lifecycle_stage,
         "candidateActionCount": len(candidate_actions),
         "candidateActions": candidate_actions,
         "willExecute": False,
@@ -241,9 +266,13 @@ execution_request = {
     },
     "approval": {
         "required": requires_human_approval,
-        "status": "NOT_APPROVED",
+        "status": approval_status,
         "approved": False,
+        "approvalDecision": None,
         "approver": None,
+        "reason": None,
+        "updatedAt": None,
+        "readyToExecute": ready_to_execute,
         "willExecuteAfterApproval": False,
     },
     "evidence": {
@@ -252,6 +281,8 @@ execution_request = {
         "releaseEvidence": inputs.get("releaseEvidence"),
         "releaseIntelligence": inputs.get("releaseIntelligence"),
         "releaseMemory": inputs.get("releaseMemory"),
+        "approvalRecord": None,
+        "approvalRecordReport": None,
         "retrievedEvidenceCount": retrieval_summary.get("retrievedEvidenceCount"),
         "artifacts": as_dict(inputs.get("artifacts")),
     },
@@ -283,7 +314,10 @@ print(json.dumps({
     "releaseResult": release_result,
     "requestedAction": requested_action,
     "requestStatus": request_status,
+    "lifecycleStage": lifecycle_stage,
     "requiresHumanApproval": requires_human_approval,
+    "approvalStatus": approval_status,
+    "readyToExecute": ready_to_execute,
     "mode": execution_request["mode"],
     "willExecute": execution_request["guardrails"]["willExecute"],
 }, ensure_ascii=False, indent=2))
@@ -341,10 +375,13 @@ decision_refs["executionRequest"] = {
     "mode": execution_request.get("mode"),
     "requestedAction": request.get("requestedAction"),
     "requestStatus": request.get("requestStatus"),
+    "lifecycleStage": request.get("lifecycleStage"),
     "policyDecision": policy_binding.get("policyDecision"),
     "requiresHumanApproval": policy_binding.get("requiresHumanApproval"),
     "approvalStatus": approval.get("status"),
     "approved": approval.get("approved"),
+    "approvalDecision": approval.get("approvalDecision"),
+    "readyToExecute": approval.get("readyToExecute"),
     "willExecute": execution_request.get("guardrails", {}).get("willExecute"),
     "guardrails": execution_request.get("guardrails") or {},
 }

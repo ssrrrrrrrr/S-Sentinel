@@ -44,10 +44,14 @@ type ExecutionRequestRef = {
   mode?: string
   requestedAction?: string
   requestStatus?: string
+  lifecycleStage?: string
   policyDecision?: string
   requiresHumanApproval?: boolean
   approvalStatus?: string
   approved?: boolean
+  approvalDecision?: string
+  approver?: string
+  readyToExecute?: boolean
   willExecute?: boolean
 }
 
@@ -321,6 +325,9 @@ export function ApprovalConsolePanel({
   const requestStatus =
     executionRequest?.requestStatus ??
     (requiresHumanApproval ? "WAITING_FOR_APPROVAL" : "NO_HUMAN_GATE")
+  const lifecycleStage =
+    executionRequest?.lifecycleStage ??
+    (requiresHumanApproval ? "WAITING_APPROVAL" : "POLICY_CHECKED")
   const executionRequestId =
     evidence?.executionRequestId ??
     executionRequest?.executionRequestId ??
@@ -341,13 +348,14 @@ export function ApprovalConsolePanel({
     []
   const blockingReasons = supplyChainDecision?.blockingReasons ?? []
   const warningReasons = supplyChainDecision?.warningReasons ?? []
+  const readyToExecute = executionRequest?.readyToExecute ?? false
 
   const metrics: ConsoleMetric[] = [
     {
       label: "Execution Request",
       value: executionRequestId,
       hint: `requestStatus=${requestStatus}`,
-      status: requestStatus,
+      status: lifecycleStage,
       icon: ClipboardCheck,
     },
     {
@@ -363,6 +371,13 @@ export function ApprovalConsolePanel({
       hint: `approved=${boolText(approved)}`,
       status: approvalStatus,
       icon: approved ? UserCheck : PauseCircle,
+    },
+    {
+      label: "Lifecycle Stage",
+      value: lifecycleStage,
+      hint: `readyToExecute=${boolText(readyToExecute)}`,
+      status: lifecycleStage,
+      icon: readyToExecute ? CheckCircle2 : PauseCircle,
     },
     {
       label: "Requested Action",
@@ -495,9 +510,13 @@ export function ApprovalConsolePanel({
                 ["mode", valueOrDash(executionMode)],
                 ["requestedAction", requestedAction],
                 ["requestStatus", requestStatus],
+                ["lifecycleStage", lifecycleStage],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
+                ["approvalDecision", valueOrDash(executionRequest?.approvalDecision)],
+                ["approver", valueOrDash(executionRequest?.approver)],
                 ["approved", boolText(approved)],
+                ["readyToExecute", boolText(readyToExecute)],
                 ["willExecute", boolText(willExecute)],
               ]}
             />

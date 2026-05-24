@@ -645,6 +645,12 @@
             "null"
           ]
         },
+        "lifecycleStage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "requestedBy": {
           "type": [
             "string",
@@ -675,6 +681,30 @@
             "null"
           ]
         },
+        "approvalDecision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approver": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readyToExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "willExecute": {
           "type": [
             "boolean",
@@ -682,6 +712,18 @@
           ]
         },
         "sourceExecutionRequest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalRecord": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalRecordReport": {
           "type": [
             "string",
             "null"
