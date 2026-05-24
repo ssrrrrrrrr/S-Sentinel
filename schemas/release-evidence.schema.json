@@ -338,6 +338,12 @@
                 "null"
               ]
             },
+            "lifecycleStage": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "policyDecision": {
               "type": [
                 "string",
@@ -359,6 +365,42 @@
             "approved": {
               "type": [
                 "boolean",
+                "null"
+              ]
+            },
+            "approvalDecision": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "approvalReason": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "approver": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "readyToExecute": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "approvalRecord": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "approvalRecordReport": {
+              "type": [
+                "string",
                 "null"
               ]
             },

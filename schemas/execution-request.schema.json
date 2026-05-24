@@ -115,6 +115,7 @@
         "requestedAction",
         "requestReason",
         "requestStatus",
+        "lifecycleStage",
         "willExecute"
       ],
       "properties": {
@@ -135,6 +136,19 @@
             "NO_ACTION_REQUESTED",
             "BLOCKED_BY_POLICY",
             "NEEDS_MORE_EVIDENCE"
+          ]
+        },
+        "lifecycleStage": {
+          "type": "string",
+          "enum": [
+            "POLICY_CHECKED",
+            "WAITING_APPROVAL",
+            "READY_TO_EXECUTE",
+            "NO_ACTION_REQUESTED",
+            "BLOCKED_BY_POLICY",
+            "NEEDS_MORE_EVIDENCE",
+            "REJECTED",
+            "DEFERRED"
           ]
         },
         "candidateActionCount": {
@@ -201,6 +215,7 @@
         "required",
         "status",
         "approved",
+        "readyToExecute",
         "willExecuteAfterApproval"
       ],
       "properties": {
@@ -208,16 +223,52 @@
           "type": "boolean"
         },
         "status": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "NOT_REQUIRED",
+            "NOT_APPROVED",
+            "APPROVED",
+            "REJECTED",
+            "DEFERRED",
+            "NEEDS_MORE_EVIDENCE"
+          ]
         },
         "approved": {
           "type": "boolean"
+        },
+        "approvalDecision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "APPROVED",
+            "REJECTED",
+            "DEFERRED",
+            "NEEDS_MORE_EVIDENCE",
+            null
+          ]
         },
         "approver": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "updatedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readyToExecute": {
+          "type": "boolean"
         },
         "willExecuteAfterApproval": {
           "type": "boolean"
@@ -247,6 +298,18 @@
           ]
         },
         "releaseIntelligence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalRecord": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalRecordReport": {
           "type": [
             "string",
             "null"

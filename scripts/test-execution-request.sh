@@ -168,6 +168,7 @@ assert request["sourcePlanRunId"] == "pr-20260521-320100", request
 assert request["request"]["requestedBy"] == "test-agent-planner", request["request"]
 assert request["request"]["requestedAction"] == "STOP_PROMOTION", request["request"]
 assert request["request"]["requestStatus"] == "PENDING_APPROVAL", request["request"]
+assert request["request"]["lifecycleStage"] == "WAITING_APPROVAL", request["request"]
 assert request["request"]["candidateActionCount"] == 2, request["request"]
 assert request["request"]["willExecute"] is False, request["request"]
 
@@ -181,6 +182,8 @@ assert request["policyBinding"]["willExecute"] is False, request["policyBinding"
 assert request["approval"]["required"] is True, request["approval"]
 assert request["approval"]["status"] == "NOT_APPROVED", request["approval"]
 assert request["approval"]["approved"] is False, request["approval"]
+assert request["approval"]["approvalDecision"] is None, request["approval"]
+assert request["approval"]["readyToExecute"] is False, request["approval"]
 assert request["approval"]["willExecuteAfterApproval"] is False, request["approval"]
 
 assert request["evidence"]["planRun"] == str(plan_run_path), request["evidence"]
@@ -214,8 +217,10 @@ assert evidence["decisionRefs"]["executionRequest"]["executionRequestId"] == req
 assert evidence["decisionRefs"]["executionRequest"]["sourcePlanRunId"] == request["sourcePlanRunId"], evidence["decisionRefs"]["executionRequest"]
 assert evidence["decisionRefs"]["executionRequest"]["requestedAction"] == "STOP_PROMOTION", evidence["decisionRefs"]["executionRequest"]
 assert evidence["decisionRefs"]["executionRequest"]["requestStatus"] == "PENDING_APPROVAL", evidence["decisionRefs"]["executionRequest"]
+assert evidence["decisionRefs"]["executionRequest"]["lifecycleStage"] == "WAITING_APPROVAL", evidence["decisionRefs"]["executionRequest"]
 assert evidence["decisionRefs"]["executionRequest"]["requiresHumanApproval"] is True, evidence["decisionRefs"]["executionRequest"]
 assert evidence["decisionRefs"]["executionRequest"]["approved"] is False, evidence["decisionRefs"]["executionRequest"]
+assert evidence["decisionRefs"]["executionRequest"]["readyToExecute"] is False, evidence["decisionRefs"]["executionRequest"]
 assert evidence["decisionRefs"]["executionRequest"]["willExecute"] is False, evidence["decisionRefs"]["executionRequest"]
 
 print("PASS: release evidence includes policy-bound execution request link")
@@ -257,11 +262,14 @@ assert record["executionRequest"]["mode"] == "request_only", record["executionRe
 assert record["executionRequest"]["sourcePlanRunId"] == "pr-20260521-320100", record["executionRequest"]
 assert record["executionRequest"]["requestedAction"] == "STOP_PROMOTION", record["executionRequest"]
 assert record["executionRequest"]["requestStatus"] == "PENDING_APPROVAL", record["executionRequest"]
+assert record["executionRequest"]["lifecycleStage"] == "WAITING_APPROVAL", record["executionRequest"]
 assert record["executionRequest"]["requestedBy"] == "test-agent-planner", record["executionRequest"]
 assert record["executionRequest"]["policyDecision"] == "REQUIRE_HUMAN_APPROVAL", record["executionRequest"]
 assert record["executionRequest"]["requiresHumanApproval"] is True, record["executionRequest"]
 assert record["executionRequest"]["approvalStatus"] == "NOT_APPROVED", record["executionRequest"]
 assert record["executionRequest"]["approved"] is False, record["executionRequest"]
+assert record["executionRequest"]["approvalDecision"] is None, record["executionRequest"]
+assert record["executionRequest"]["readyToExecute"] is False, record["executionRequest"]
 assert record["executionRequest"]["willExecute"] is False, record["executionRequest"]
 assert record["executionRequest"]["sourceExecutionRequest"] == str(execution_request_path), record["executionRequest"]
 assert record["links"]["executionRequest"] == str(execution_request_path), record["links"]

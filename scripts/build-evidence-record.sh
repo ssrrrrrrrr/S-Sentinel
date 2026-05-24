@@ -311,6 +311,8 @@ execution_request = load_json(execution_request_path)
 execution_request_body = as_dict(execution_request.get("request"))
 execution_policy_binding = as_dict(execution_request.get("policyBinding"))
 execution_approval = as_dict(execution_request.get("approval"))
+execution_evidence = as_dict(execution_request.get("evidence"))
+execution_evidence_artifacts = as_dict(execution_evidence.get("artifacts"))
 execution_guardrails = as_dict(execution_request.get("guardrails"))
 
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
@@ -520,17 +522,30 @@ record = {
         "sourcePlanRunId": nullable_string(execution_request.get("sourcePlanRunId")),
         "requestedAction": nullable_string(execution_request_body.get("requestedAction")),
         "requestStatus": nullable_string(execution_request_body.get("requestStatus")),
+        "lifecycleStage": nullable_string(execution_request_body.get("lifecycleStage")),
         "requestedBy": nullable_string(execution_request_body.get("requestedBy")),
         "policyDecision": nullable_string(execution_policy_binding.get("policyDecision")),
         "requiresHumanApproval": bool_or_none(execution_policy_binding.get("requiresHumanApproval")),
         "approvalStatus": nullable_string(execution_approval.get("status")),
         "approved": bool_or_none(execution_approval.get("approved")),
+        "approvalDecision": nullable_string(execution_approval.get("approvalDecision")),
+        "approvalReason": nullable_string(execution_approval.get("reason")),
+        "approver": nullable_string(execution_approval.get("approver")),
+        "readyToExecute": bool_or_none(execution_approval.get("readyToExecute")),
         "willExecute": bool_or_none(first_not_none(
             execution_request_body.get("willExecute"),
             execution_policy_binding.get("willExecute"),
             execution_guardrails.get("willExecute"),
         )),
         "sourceExecutionRequest": nullable_string(link_map.get("executionRequest")),
+        "approvalRecord": nullable_string(first_not_none(
+            execution_evidence.get("approvalRecord"),
+            execution_evidence_artifacts.get("approvalRecord"),
+        )),
+        "approvalRecordReport": nullable_string(first_not_none(
+            execution_evidence.get("approvalRecordReport"),
+            execution_evidence_artifacts.get("approvalRecordReport"),
+        )),
         "guardrails": execution_guardrails,
     },
     "supplyChain": {
