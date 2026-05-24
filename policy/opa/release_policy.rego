@@ -1,10 +1,10 @@
 package ssentinel.release
 
-# Preview-only OPA/Rego policy contract for S Sentinel.
+# OPA/Rego policy contract for S Sentinel.
 #
-# This file documents the future OPA entrypoint and output shape.
-# Stage45.2 does not execute opa eval. The policy-runtime-adapter.py
-# still returns a preview-only result for the opa runtime.
+# By default the policy-runtime adapter keeps OPA in preview-only mode.
+# Real opa eval is only used when S_SENTINEL_POLICY_RUNTIME_EXTERNAL_COMMANDS=1
+# is set. Tests use a fake opa binary so local machines do not need OPA installed.
 
 default allow = false
 
@@ -15,7 +15,7 @@ decision := {
   "finalAction": "MANUAL_REVIEW",
   "executionMode": "advisory_only",
   "requiresHumanApproval": true,
-  "reason": "OPA runtime is registered as preview-only",
+  "reason": "OPA runtime is guarded by the PolicyRuntime adapter",
   "matchedRules": ["policy_runtime_preview_only"],
   "approvalRequiredReasons": ["policy_runtime_preview_only"],
 } {

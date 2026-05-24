@@ -529,12 +529,15 @@ def write_opa_runtime_result(
     stdout: str | None = None,
     stderr: str | None = None,
 ) -> None:
+    external_command_executed = command is not None and exit_code is not None
+
     runtime = {
         **capability,
         "status": status,
         "mode": mode,
         "command": command,
         "exitCode": exit_code,
+        "externalCommandExecuted": external_command_executed,
     }
 
     if stdout:
@@ -559,6 +562,7 @@ def write_opa_runtime_result(
             "matchedRules": policy_decision.get("matchedRules") or [],
             "runtimeStatus": status,
             "runtimePreviewOnly": bool(capability.get("previewOnly")),
+            "runtimeExternalCommandExecuted": external_command_executed,
             "signedReleaseGateDecision": (policy_decision.get("signedReleaseGate") or {}).get("decision"),
             "signedReleaseGateVerificationMode": signed_gate_verification.get("mode"),
             "signedReleaseGateVerificationToolAvailable": signed_gate_verification.get("toolAvailable"),
@@ -576,10 +580,11 @@ def write_opa_runtime_result(
             "previewOnly": bool(capability.get("previewOnly")),
             "externalCommandEnabled": bool(capability.get("externalCommandEnabled")),
             "externalCommandBinaryAvailable": bool(capability.get("binaryAvailable")),
+            "externalCommandExecuted": external_command_executed,
             "doesNotModifyKubernetes": True,
             "doesNotModifyGitOps": True,
             "doesNotBuildOrPushImages": True,
-            "doesNotRunExternalCommands": status != "evaluated",
+            "doesNotRunExternalCommands": not external_command_executed,
         },
     }
 
