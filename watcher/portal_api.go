@@ -124,6 +124,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-proposal", api.handleLatestResource("gitopsPatchProposal"))
 	mux.HandleFunc("/api/releases/latest/gitops-bundle", api.handleLatestResource("gitopsPRBundle"))
 	mux.HandleFunc("/api/releases/latest/gitops-handoff", api.handleLatestResource("gitopsHandoffBundle"))
+	mux.HandleFunc("/api/releases/latest/gitops-adapter", api.handleLatestResource("gitopsAdapterRequest"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -220,6 +221,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-handoff-bundle-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest materialized GitOps handoff bundle.",
+		},
+		{
+			Name:         "gitopsAdapterRequest",
+			Endpoint:     "/api/releases/latest/gitops-adapter",
+			Candidates:   []string{"gitops-adapter-request-latest.json"},
+			FallbackGlob: "gitops-adapter-request-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest adapter-ready GitOps request.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -900,6 +909,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsPRBundle", "application/json; charset=utf-8", true
 	case "gitops-handoff":
 		return "gitopsHandoffBundle", "application/json; charset=utf-8", true
+	case "gitops-adapter":
+		return "gitopsAdapterRequest", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -940,6 +951,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"gitopsPatchProposal":  "gitops-proposal",
 		"gitopsPRBundle":       "gitops-bundle",
 		"gitopsHandoffBundle":  "gitops-handoff",
+		"gitopsAdapterRequest": "gitops-adapter",
 		"executionEligibility": "eligibility",
 		"failureEvidence":      "failure-evidence",
 		"aiAdvice":             "advice",
@@ -1041,6 +1053,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"gitops-patch-proposal-*.json",
 		"gitops-pr-bundle-*.json",
 		"gitops-handoff-bundle-*.json",
+		"gitops-adapter-request-*.json",
 		"execution-eligibility-*.json",
 		"failure-evidence-*.json",
 		"ai-advice-*.md",
@@ -1272,6 +1285,7 @@ func releaseIDFromReportFile(base string) string {
 		"gitops-patch-proposal-",
 		"gitops-pr-bundle-",
 		"gitops-handoff-bundle-",
+		"gitops-adapter-request-",
 		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
@@ -1468,6 +1482,8 @@ func kindFromReportFile(base string) string {
 		return "gitopsPRBundle"
 	case strings.HasPrefix(base, "gitops-handoff-bundle-"):
 		return "gitopsHandoffBundle"
+	case strings.HasPrefix(base, "gitops-adapter-request-"):
+		return "gitopsAdapterRequest"
 	case strings.HasPrefix(base, "execution-eligibility-"):
 		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):

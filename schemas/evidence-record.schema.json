@@ -341,6 +341,13 @@
           ],
           "description": "Path to the generated materialized GitOps handoff bundle JSON."
         },
+        "gitopsAdapterRequest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated adapter-ready GitOps request JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1195,6 +1202,63 @@
           ]
         },
         "sourceGitopsHandoffBundle": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterRequest": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterRequestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "adapterType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "handoffFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterRequest": {
           "type": [
             "string",
             "null"

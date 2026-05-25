@@ -224,6 +224,13 @@
           ],
           "description": "Path to the generated materialized GitOps handoff bundle JSON."
         },
+        "gitopsAdapterRequest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated adapter-ready GitOps request JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -932,6 +939,54 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterRequest": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterRequestId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "adapterType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "handoffFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1123,6 +1178,13 @@
         "null"
       ],
       "description": "Materialized GitOps handoff bundle id linked to this release evidence bundle."
+    },
+    "gitopsAdapterRequestId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Adapter-ready GitOps request id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

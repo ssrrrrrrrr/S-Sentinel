@@ -119,6 +119,14 @@ RESOURCE_SPECS = [
         "id_prefix": "hb-",
     },
     {
+        "object_type": "gitopsAdapterRequest",
+        "glob": "gitops-adapter-request-*.json",
+        "latest": "gitops-adapter-request-latest.json",
+        "prefix": "gitops-adapter-request-",
+        "id_key": "gitopsAdapterRequestId",
+        "id_prefix": "ga-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -390,6 +398,7 @@ def derive_object_id(
         as_dict(data.get("gitopsPatchProposal")).get("gitopsPatchProposalId"),
         as_dict(data.get("gitopsPRBundle")).get("gitopsPRBundleId"),
         as_dict(data.get("gitopsHandoffBundle")).get("gitopsHandoffBundleId"),
+        as_dict(data.get("gitopsAdapterRequest")).get("gitopsAdapterRequestId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -541,6 +550,8 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     bundle = as_dict(data.get("bundle"))
     bundle_pr = as_dict(bundle.get("pullRequest"))
     handoff = as_dict(data.get("handoff"))
+    request_body = as_dict(data.get("request"))
+    delivery = as_dict(request_body.get("delivery"))
     verification_summary = compact_verification_summary(data)
 
     def pick(*values: Any) -> Any:
@@ -743,6 +754,17 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["materializedFileCount"] = len(as_list(handoff.get("materializedFiles")))
         result["patchEntryCount"] = handoff.get("patchEntryCount")
         result["handoffChecklistCount"] = handoff.get("handoffChecklistCount")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterRequest":
+        result["requestStatus"] = request_body.get("requestStatus")
+        result["adapterType"] = request_body.get("adapterType")
+        result["requestedOperation"] = request_body.get("requestedOperation")
+        result["branchName"] = delivery.get("branchName")
+        result["handoffFileCount"] = len(as_list(request_body.get("handoffFiles")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

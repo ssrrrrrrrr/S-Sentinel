@@ -9,6 +9,7 @@ export type ReleaseResourceKind =
   | "gitops-proposal"
   | "gitops-bundle"
   | "gitops-handoff"
+  | "gitops-adapter"
   | "intelligence"
   | "advice"
   | "context"

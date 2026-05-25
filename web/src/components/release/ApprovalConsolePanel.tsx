@@ -125,6 +125,15 @@ type GitopsHandoffBundleRef = {
   handoffChecklistCount?: number
 }
 
+type GitopsAdapterRequestRef = {
+  gitopsAdapterRequestId?: string
+  requestStatus?: string
+  adapterType?: string
+  requestedOperation?: string
+  branchName?: string
+  handoffFileCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -174,6 +183,7 @@ type ApprovalEvidencePayload = {
     gitopsPatchProposal?: GitopsPatchProposalRef
     gitopsPRBundle?: GitopsPRBundleRef
     gitopsHandoffBundle?: GitopsHandoffBundleRef
+    gitopsAdapterRequest?: GitopsAdapterRequestRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -378,6 +388,7 @@ export function ApprovalConsolePanel({
   const gitopsPatchProposal = refs.gitopsPatchProposal
   const gitopsPRBundle = refs.gitopsPRBundle
   const gitopsHandoffBundle = refs.gitopsHandoffBundle
+  const gitopsAdapterRequest = refs.gitopsAdapterRequest
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -458,6 +469,7 @@ export function ApprovalConsolePanel({
   const gitopsBundlePatchEntryCount = gitopsPRBundle?.patchEntryCount ?? gitopsPatchCount
   const gitopsHandoffStatus = gitopsHandoffBundle?.handoffStatus ?? gitopsBundleStatus
   const gitopsHandoffFileCount = gitopsHandoffBundle?.materializedFileCount ?? 0
+  const gitopsAdapterStatus = gitopsAdapterRequest?.requestStatus ?? gitopsHandoffStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -521,6 +533,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsHandoffBundle?.gitopsHandoffBundleId),
       hint: `files=${gitopsHandoffFileCount}`,
       status: gitopsHandoffStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Adapter",
+      value: valueOrDash(gitopsAdapterRequest?.gitopsAdapterRequestId),
+      hint: `adapter=${valueOrDash(gitopsAdapterRequest?.adapterType)}`,
+      status: gitopsAdapterStatus,
       icon: FileCheck2,
     },
     {
@@ -626,6 +645,14 @@ export function ApprovalConsolePanel({
       status: gitopsHandoffBundle?.gitopsHandoffBundleId ? gitopsHandoffStatus : "MISSING",
       icon: FileCheck2,
     },
+    {
+      title: "GitOps Adapter Request",
+      description: gitopsAdapterRequest?.gitopsAdapterRequestId
+        ? `GitOps adapter request 已生成：${gitopsAdapterRequest.gitopsAdapterRequestId}，它把 handoff 包收口成了未来 adapter 可直接消费的标准输入。`
+        : "当前 evidence 里还没有 adapter-ready request，后续真实 GitOps adapter 还缺少稳定输入对象。",
+      status: gitopsAdapterRequest?.gitopsAdapterRequestId ? gitopsAdapterStatus : "MISSING",
+      icon: FileCheck2,
+    },
   ]
 
   return (
@@ -710,6 +737,9 @@ export function ApprovalConsolePanel({
                 ["gitopsHandoffBundleId", valueOrDash(gitopsHandoffBundle?.gitopsHandoffBundleId)],
                 ["gitopsHandoffStatus", valueOrDash(gitopsHandoffStatus)],
                 ["gitopsHandoffDir", valueOrDash(gitopsHandoffBundle?.bundleDir)],
+                ["gitopsAdapterRequestId", valueOrDash(gitopsAdapterRequest?.gitopsAdapterRequestId)],
+                ["gitopsAdapterStatus", valueOrDash(gitopsAdapterStatus)],
+                ["gitopsAdapterType", valueOrDash(gitopsAdapterRequest?.adapterType)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -755,6 +785,10 @@ export function ApprovalConsolePanel({
                 ["gitopsHandoffStatus", valueOrDash(gitopsHandoffStatus)],
                 ["gitopsHandoffDir", valueOrDash(gitopsHandoffBundle?.bundleDir)],
                 ["gitopsHandoffFileCount", valueOrDash(gitopsHandoffFileCount)],
+                ["gitopsAdapterRequestId", valueOrDash(gitopsAdapterRequest?.gitopsAdapterRequestId)],
+                ["gitopsAdapterStatus", valueOrDash(gitopsAdapterStatus)],
+                ["gitopsAdapterType", valueOrDash(gitopsAdapterRequest?.adapterType)],
+                ["gitopsRequestedOperation", valueOrDash(gitopsAdapterRequest?.requestedOperation)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -856,6 +890,23 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Adapter</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `requestStatus:${valueOrDash(gitopsAdapterStatus)}`,
+                `adapterType:${valueOrDash(gitopsAdapterRequest?.adapterType)}`,
+                `operation:${valueOrDash(gitopsAdapterRequest?.requestedOperation)}`,
+                gitopsAdapterRequest?.branchName
+                  ? `branch:${gitopsAdapterRequest.branchName}`
+                  : "branch:none",
+                `handoffFiles:${valueOrDash(gitopsAdapterRequest?.handoffFileCount ?? gitopsHandoffFileCount)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -916,6 +967,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Proposal")}>查看 GitOps Proposal</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Bundle")}>查看 GitOps Bundle</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff")}>查看 GitOps Handoff</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Adapter")}>查看 GitOps Adapter</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

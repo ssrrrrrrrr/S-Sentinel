@@ -128,6 +128,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "gitops-pr-bundle.schema.json"
         if schema_version == "gitops.handoff.bundle/v1alpha1":
             return "gitops-handoff-bundle.schema.json"
+        if schema_version == "gitops.adapter.request/v1alpha1":
+            return "gitops-adapter-request.schema.json"
         if schema_version == "supply.chain.decision/v1alpha1":
             return "supply-chain-decision.schema.json"
 
@@ -156,6 +158,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "gitops-pr-bundle.schema.json"
     if "gitops-handoff-bundle" in lower_name:
         return "gitops-handoff-bundle.schema.json"
+    if "gitops-adapter-request" in lower_name:
+        return "gitops-adapter-request.schema.json"
     if "plan-run" in lower_name:
         return "plan-run.schema.json"
     if "action-plan" in lower_name:
@@ -170,7 +174,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, gitops-adapter-request, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 
