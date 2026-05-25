@@ -369,6 +369,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff readiness run JSON."
         },
+        "gitopsAdapterPickup": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup state JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1451,6 +1458,75 @@
           ]
         },
         "sourceGitopsAdapterRun": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterPickup": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterPickupId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pickupStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "nextCheckpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextActor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterPickup": {
           "type": [
             "string",
             "null"

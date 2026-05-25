@@ -51,6 +51,7 @@ ADAPTER_REQUEST_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-request.sh" "$INPUT_
 ADAPTER_RESULT_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-result.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_DELIVERY_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-delivery.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_RUN_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-run.sh" "$INPUT_FILE" | tail -n 1)"
+ADAPTER_PICKUP_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-pickup.sh" "$INPUT_FILE" | tail -n 1)"
 RECORD_OUTPUT="$("$SCRIPT_DIR/build-evidence-record.sh" "$INPUT_FILE" | tail -n 1)"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -97,6 +98,7 @@ print(json.dumps({
         "gitopsAdapterResult": artifacts.get("gitopsAdapterResult"),
         "gitopsAdapterDelivery": artifacts.get("gitopsAdapterDelivery"),
         "gitopsAdapterRun": artifacts.get("gitopsAdapterRun"),
+        "gitopsAdapterPickup": artifacts.get("gitopsAdapterPickup"),
     },
     "guardrails": {
         "readOnly": False,

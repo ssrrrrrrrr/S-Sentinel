@@ -151,6 +151,14 @@ RESOURCE_SPECS = [
         "id_prefix": "grun-",
     },
     {
+        "object_type": "gitopsAdapterPickup",
+        "glob": "gitops-adapter-pickup-*.json",
+        "latest": "gitops-adapter-pickup-latest.json",
+        "prefix": "gitops-adapter-pickup-",
+        "id_key": "gitopsAdapterPickupId",
+        "id_prefix": "gpick-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -426,6 +434,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterResult")).get("gitopsAdapterResultId"),
         as_dict(data.get("gitopsAdapterDelivery")).get("gitopsAdapterDeliveryId"),
         as_dict(data.get("gitopsAdapterRun")).get("gitopsAdapterRunId"),
+        as_dict(data.get("gitopsAdapterPickup")).get("gitopsAdapterPickupId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -842,6 +851,20 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             adapter.get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterPickup":
+        pickup = as_dict(data.get("pickup"))
+        result["pickupStatus"] = pickup.get("pickupStatus")
+        result["requestedOperation"] = pickup.get("requestedOperation")
+        result["branchName"] = pickup.get("branchName")
+        result["workspaceDir"] = pickup.get("workspaceDir")
+        result["workspaceFileCount"] = len(as_list(pickup.get("files")))
+        result["nextCheckpoint"] = pickup.get("nextCheckpoint")
+        result["nextActor"] = pickup.get("nextActor")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),
         )
 

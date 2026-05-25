@@ -13,6 +13,7 @@ export type ReleaseResourceKind =
   | "gitops-delivery"
   | "gitops-workspace"
   | "gitops-run"
+  | "gitops-pickup"
   | "intelligence"
   | "advice"
   | "context"

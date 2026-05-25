@@ -252,6 +252,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff readiness run JSON."
         },
+        "gitopsAdapterPickup": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup state JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1146,6 +1153,60 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterPickup": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterPickupId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pickupStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "nextCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1365,6 +1426,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter handoff readiness run id linked to this release evidence bundle."
+    },
+    "gitopsAdapterPickupId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter pickup state id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

@@ -383,6 +383,11 @@ gitops_adapter_run_adapter = as_dict(gitops_adapter_run.get("adapter"))
 gitops_adapter_run_body = as_dict(gitops_adapter_run.get("run"))
 gitops_adapter_run_guardrails = as_dict(gitops_adapter_run.get("guardrails"))
 
+gitops_adapter_pickup_path = resolve_ref(artifacts.get("gitopsAdapterPickup"), evidence_path)
+gitops_adapter_pickup = load_json(gitops_adapter_pickup_path)
+gitops_adapter_pickup_body = as_dict(gitops_adapter_pickup.get("pickup"))
+gitops_adapter_pickup_guardrails = as_dict(gitops_adapter_pickup.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -439,6 +444,7 @@ link_map = {
     "gitopsAdapterResult": artifacts.get("gitopsAdapterResult"),
     "gitopsAdapterDelivery": artifacts.get("gitopsAdapterDelivery"),
     "gitopsAdapterRun": artifacts.get("gitopsAdapterRun"),
+    "gitopsAdapterPickup": artifacts.get("gitopsAdapterPickup"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -472,6 +478,7 @@ artifact_defs = [
     ("gitopsAdapterResult", link_map["gitopsAdapterResult"], False),
     ("gitopsAdapterDelivery", link_map["gitopsAdapterDelivery"], False),
     ("gitopsAdapterRun", link_map["gitopsAdapterRun"], False),
+    ("gitopsAdapterPickup", link_map["gitopsAdapterPickup"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -764,6 +771,19 @@ record = {
         "workspaceFileCount": len(as_list(gitops_adapter_run_body.get("workspaceFiles"))),
         "sourceGitopsAdapterRun": nullable_string(link_map.get("gitopsAdapterRun")),
         "guardrails": gitops_adapter_run_guardrails if gitops_adapter_run_guardrails else gitops_adapter_run_adapter,
+    },
+    "gitopsAdapterPickup": {
+        "gitopsAdapterPickupId": nullable_string(gitops_adapter_pickup.get("gitopsAdapterPickupId")),
+        "mode": nullable_string(gitops_adapter_pickup.get("mode")),
+        "pickupStatus": nullable_string(gitops_adapter_pickup_body.get("pickupStatus")),
+        "branchName": nullable_string(gitops_adapter_pickup_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_pickup_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_pickup_body.get("workspaceDir")),
+        "workspaceFileCount": len(as_list(gitops_adapter_pickup_body.get("files"))),
+        "nextCheckpoint": nullable_string(gitops_adapter_pickup_body.get("nextCheckpoint")),
+        "nextActor": nullable_string(gitops_adapter_pickup_body.get("nextActor")),
+        "sourceGitopsAdapterPickup": nullable_string(link_map.get("gitopsAdapterPickup")),
+        "guardrails": gitops_adapter_pickup_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

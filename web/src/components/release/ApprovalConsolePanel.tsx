@@ -161,6 +161,16 @@ type GitopsAdapterRunRef = {
   workspaceFileCount?: number
 }
 
+type GitopsAdapterPickupRef = {
+  gitopsAdapterPickupId?: string
+  pickupStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceFileCount?: number
+  nextCheckpoint?: string
+  nextActor?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -214,6 +224,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterResult?: GitopsAdapterResultRef
     gitopsAdapterDelivery?: GitopsAdapterDeliveryRef
     gitopsAdapterRun?: GitopsAdapterRunRef
+    gitopsAdapterPickup?: GitopsAdapterPickupRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -422,6 +433,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterResult = refs.gitopsAdapterResult
   const gitopsAdapterDelivery = refs.gitopsAdapterDelivery
   const gitopsAdapterRun = refs.gitopsAdapterRun
+  const gitopsAdapterPickup = refs.gitopsAdapterPickup
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -509,6 +521,8 @@ export function ApprovalConsolePanel({
   const gitopsWorkspaceFileCount = gitopsAdapterDelivery?.copiedFileCount ?? gitopsDeliveryFileCount
   const gitopsRunStatus = gitopsAdapterRun?.runStatus ?? gitopsWorkspaceStatus
   const gitopsRunFileCount = gitopsAdapterRun?.workspaceFileCount ?? gitopsWorkspaceFileCount
+  const gitopsPickupStatus = gitopsAdapterPickup?.pickupStatus ?? gitopsRunStatus
+  const gitopsPickupFileCount = gitopsAdapterPickup?.workspaceFileCount ?? gitopsRunFileCount
 
   const metrics: ConsoleMetric[] = [
     {
@@ -600,6 +614,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsAdapterRun?.gitopsAdapterRunId),
       hint: `workspaceFiles=${gitopsRunFileCount}`,
       status: gitopsRunStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Pickup",
+      value: valueOrDash(gitopsAdapterPickup?.gitopsAdapterPickupId),
+      hint: `workspaceFiles=${gitopsPickupFileCount}`,
+      status: gitopsPickupStatus,
       icon: FileCheck2,
     },
     {
@@ -825,6 +846,10 @@ export function ApprovalConsolePanel({
                 ["gitopsAdapterRunId", valueOrDash(gitopsAdapterRun?.gitopsAdapterRunId)],
                 ["gitopsRunStatus", valueOrDash(gitopsRunStatus)],
                 ["gitopsRunWorkspaceDir", valueOrDash(gitopsAdapterRun?.workspaceDir)],
+                ["gitopsAdapterPickupId", valueOrDash(gitopsAdapterPickup?.gitopsAdapterPickupId)],
+                ["gitopsPickupStatus", valueOrDash(gitopsPickupStatus)],
+                ["gitopsPickupCheckpoint", valueOrDash(gitopsAdapterPickup?.nextCheckpoint)],
+                ["gitopsPickupActor", valueOrDash(gitopsAdapterPickup?.nextActor)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -886,6 +911,11 @@ export function ApprovalConsolePanel({
                 ["gitopsRunStatus", valueOrDash(gitopsRunStatus)],
                 ["gitopsRunWorkspaceDir", valueOrDash(gitopsAdapterRun?.workspaceDir)],
                 ["gitopsRunFileCount", valueOrDash(gitopsRunFileCount)],
+                ["gitopsAdapterPickupId", valueOrDash(gitopsAdapterPickup?.gitopsAdapterPickupId)],
+                ["gitopsPickupStatus", valueOrDash(gitopsPickupStatus)],
+                ["gitopsPickupCheckpoint", valueOrDash(gitopsAdapterPickup?.nextCheckpoint)],
+                ["gitopsPickupActor", valueOrDash(gitopsAdapterPickup?.nextActor)],
+                ["gitopsPickupFileCount", valueOrDash(gitopsPickupFileCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1059,6 +1089,27 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Pickup</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `pickupStatus:${valueOrDash(gitopsPickupStatus)}`,
+                gitopsAdapterPickup?.branchName
+                  ? `branch:${gitopsAdapterPickup.branchName}`
+                  : "branch:none",
+                `workspaceFiles:${valueOrDash(gitopsPickupFileCount)}`,
+                gitopsAdapterPickup?.nextCheckpoint
+                  ? `nextCheckpoint:${gitopsAdapterPickup.nextCheckpoint}`
+                  : "nextCheckpoint:none",
+                gitopsAdapterPickup?.nextActor
+                  ? `nextActor:${gitopsAdapterPickup.nextActor}`
+                  : "nextActor:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1123,6 +1174,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Delivery")}>查看 GitOps Delivery</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Workspace")}>查看 GitOps Workspace</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Run")}>查看 GitOps Run</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Pickup")}>查看 GitOps Pickup</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
