@@ -126,6 +126,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-handoff", api.handleLatestResource("gitopsHandoffBundle"))
 	mux.HandleFunc("/api/releases/latest/gitops-adapter", api.handleLatestResource("gitopsAdapterRequest"))
 	mux.HandleFunc("/api/releases/latest/gitops-delivery", api.handleLatestResource("gitopsAdapterResult"))
+	mux.HandleFunc("/api/releases/latest/gitops-workspace", api.handleLatestResource("gitopsAdapterDelivery"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -238,6 +239,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-adapter-result-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest local-only GitOps adapter delivery receipt.",
+		},
+		{
+			Name:         "gitopsAdapterDelivery",
+			Endpoint:     "/api/releases/latest/gitops-workspace",
+			Candidates:   []string{"gitops-adapter-delivery-latest.json"},
+			FallbackGlob: "gitops-adapter-delivery-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest local-only GitOps adapter delivery workspace.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -922,6 +931,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterRequest", "application/json; charset=utf-8", true
 	case "gitops-delivery":
 		return "gitopsAdapterResult", "application/json; charset=utf-8", true
+	case "gitops-workspace":
+		return "gitopsAdapterDelivery", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -951,28 +962,29 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 	}
 
 	resourceByKind := map[string]string{
-		"releaseEvidence":      "evidence",
-		"evidenceRecord":       "evidence-record",
-		"releaseSummary":       "summary",
-		"actionPlan":           "action-plan",
-		"releaseIntelligence":  "intelligence",
-		"approvalRecord":       "approval",
-		"executionPreview":     "preview",
-		"executionResult":      "execution-result",
-		"gitopsPatchProposal":  "gitops-proposal",
-		"gitopsPRBundle":       "gitops-bundle",
-		"gitopsHandoffBundle":  "gitops-handoff",
-		"gitopsAdapterRequest": "gitops-adapter",
-		"gitopsAdapterResult":  "gitops-delivery",
-		"executionEligibility": "eligibility",
-		"failureEvidence":      "failure-evidence",
-		"aiAdvice":             "advice",
-		"aiDecision":           "ai-decision",
-		"policyDecision":       "policy-decision",
-		"releaseContext":       "context",
-		"releaseTimeline":      "timeline",
-		"runbook":              "runbook",
-		"rca":                  "rca",
+		"releaseEvidence":       "evidence",
+		"evidenceRecord":        "evidence-record",
+		"releaseSummary":        "summary",
+		"actionPlan":            "action-plan",
+		"releaseIntelligence":   "intelligence",
+		"approvalRecord":        "approval",
+		"executionPreview":      "preview",
+		"executionResult":       "execution-result",
+		"gitopsPatchProposal":   "gitops-proposal",
+		"gitopsPRBundle":        "gitops-bundle",
+		"gitopsHandoffBundle":   "gitops-handoff",
+		"gitopsAdapterRequest":  "gitops-adapter",
+		"gitopsAdapterResult":   "gitops-delivery",
+		"gitopsAdapterDelivery": "gitops-workspace",
+		"executionEligibility":  "eligibility",
+		"failureEvidence":       "failure-evidence",
+		"aiAdvice":              "advice",
+		"aiDecision":            "ai-decision",
+		"policyDecision":        "policy-decision",
+		"releaseContext":        "context",
+		"releaseTimeline":       "timeline",
+		"runbook":               "runbook",
+		"rca":                   "rca",
 	}
 
 	names := []string{}
@@ -1067,6 +1079,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"gitops-handoff-bundle-*.json",
 		"gitops-adapter-request-*.json",
 		"gitops-adapter-result-*.json",
+		"gitops-adapter-delivery-*.json",
 		"execution-eligibility-*.json",
 		"failure-evidence-*.json",
 		"ai-advice-*.md",
@@ -1300,6 +1313,7 @@ func releaseIDFromReportFile(base string) string {
 		"gitops-handoff-bundle-",
 		"gitops-adapter-request-",
 		"gitops-adapter-result-",
+		"gitops-adapter-delivery-",
 		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
@@ -1500,6 +1514,8 @@ func kindFromReportFile(base string) string {
 		return "gitopsAdapterRequest"
 	case strings.HasPrefix(base, "gitops-adapter-result-"):
 		return "gitopsAdapterResult"
+	case strings.HasPrefix(base, "gitops-adapter-delivery-"):
+		return "gitopsAdapterDelivery"
 	case strings.HasPrefix(base, "execution-eligibility-"):
 		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):

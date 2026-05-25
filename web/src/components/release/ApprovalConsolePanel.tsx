@@ -143,6 +143,15 @@ type GitopsAdapterResultRef = {
   outputFileCount?: number
 }
 
+type GitopsAdapterDeliveryRef = {
+  gitopsAdapterDeliveryId?: string
+  deliveryStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  copiedFileCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -194,6 +203,7 @@ type ApprovalEvidencePayload = {
     gitopsHandoffBundle?: GitopsHandoffBundleRef
     gitopsAdapterRequest?: GitopsAdapterRequestRef
     gitopsAdapterResult?: GitopsAdapterResultRef
+    gitopsAdapterDelivery?: GitopsAdapterDeliveryRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -400,6 +410,7 @@ export function ApprovalConsolePanel({
   const gitopsHandoffBundle = refs.gitopsHandoffBundle
   const gitopsAdapterRequest = refs.gitopsAdapterRequest
   const gitopsAdapterResult = refs.gitopsAdapterResult
+  const gitopsAdapterDelivery = refs.gitopsAdapterDelivery
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -483,6 +494,8 @@ export function ApprovalConsolePanel({
   const gitopsAdapterStatus = gitopsAdapterRequest?.requestStatus ?? gitopsHandoffStatus
   const gitopsDeliveryStatus = gitopsAdapterResult?.deliveryStatus ?? gitopsAdapterStatus
   const gitopsDeliveryFileCount = gitopsAdapterResult?.outputFileCount ?? gitopsHandoffFileCount
+  const gitopsWorkspaceStatus = gitopsAdapterDelivery?.deliveryStatus ?? gitopsDeliveryStatus
+  const gitopsWorkspaceFileCount = gitopsAdapterDelivery?.copiedFileCount ?? gitopsDeliveryFileCount
 
   const metrics: ConsoleMetric[] = [
     {
@@ -560,6 +573,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsAdapterResult?.gitopsAdapterResultId),
       hint: `files=${gitopsDeliveryFileCount}`,
       status: gitopsDeliveryStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Workspace",
+      value: valueOrDash(gitopsAdapterDelivery?.gitopsAdapterDeliveryId),
+      hint: `copiedFiles=${gitopsWorkspaceFileCount}`,
+      status: gitopsWorkspaceStatus,
       icon: FileCheck2,
     },
     {
@@ -681,6 +701,14 @@ export function ApprovalConsolePanel({
       status: gitopsAdapterResult?.gitopsAdapterResultId ? gitopsDeliveryStatus : "MISSING",
       icon: FileCheck2,
     },
+    {
+      title: "GitOps Delivery Workspace",
+      description: gitopsAdapterDelivery?.gitopsAdapterDeliveryId
+        ? `GitOps workspace 已生成：${gitopsAdapterDelivery.gitopsAdapterDeliveryId}，说明 adapter 已经准备好本地 pickup 目录，后续可以由人工或受控 adapter 接手。`
+        : "当前 evidence 里还没有 delivery workspace，说明 adapter 还没有把 handoff 文件整理成可接手的本地工作区。",
+      status: gitopsAdapterDelivery?.gitopsAdapterDeliveryId ? gitopsWorkspaceStatus : "MISSING",
+      icon: FileCheck2,
+    },
   ]
 
   return (
@@ -771,6 +799,9 @@ export function ApprovalConsolePanel({
                 ["gitopsAdapterResultId", valueOrDash(gitopsAdapterResult?.gitopsAdapterResultId)],
                 ["gitopsDeliveryStatus", valueOrDash(gitopsDeliveryStatus)],
                 ["gitopsDeliveryAdapterType", valueOrDash(gitopsAdapterResult?.adapterType)],
+                ["gitopsAdapterDeliveryId", valueOrDash(gitopsAdapterDelivery?.gitopsAdapterDeliveryId)],
+                ["gitopsWorkspaceStatus", valueOrDash(gitopsWorkspaceStatus)],
+                ["gitopsWorkspaceDir", valueOrDash(gitopsAdapterDelivery?.workspaceDir)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -824,6 +855,10 @@ export function ApprovalConsolePanel({
                 ["gitopsDeliveryStatus", valueOrDash(gitopsDeliveryStatus)],
                 ["gitopsDeliveryBranch", valueOrDash(gitopsAdapterResult?.branchName)],
                 ["gitopsDeliveryFileCount", valueOrDash(gitopsDeliveryFileCount)],
+                ["gitopsAdapterDeliveryId", valueOrDash(gitopsAdapterDelivery?.gitopsAdapterDeliveryId)],
+                ["gitopsWorkspaceStatus", valueOrDash(gitopsWorkspaceStatus)],
+                ["gitopsWorkspaceDir", valueOrDash(gitopsAdapterDelivery?.workspaceDir)],
+                ["gitopsWorkspaceFileCount", valueOrDash(gitopsWorkspaceFileCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -959,6 +994,25 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Workspace</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `workspaceStatus:${valueOrDash(gitopsWorkspaceStatus)}`,
+                gitopsAdapterDelivery?.workspaceDir
+                  ? `workspaceDir:${gitopsAdapterDelivery.workspaceDir}`
+                  : "workspaceDir:none",
+                gitopsAdapterDelivery?.branchName
+                  ? `branch:${gitopsAdapterDelivery.branchName}`
+                  : "branch:none",
+                `copiedFiles:${valueOrDash(gitopsWorkspaceFileCount)}`,
+                `operation:${valueOrDash(gitopsAdapterDelivery?.requestedOperation ?? gitopsAdapterResult?.requestedOperation)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1021,6 +1075,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Handoff")}>查看 GitOps Handoff</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Adapter")}>查看 GitOps Adapter</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Delivery")}>查看 GitOps Delivery</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Workspace")}>查看 GitOps Workspace</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

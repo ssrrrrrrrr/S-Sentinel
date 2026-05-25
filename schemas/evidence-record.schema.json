@@ -355,6 +355,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter delivery receipt JSON."
         },
+        "gitopsAdapterDelivery": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter delivery workspace JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1323,6 +1330,63 @@
           ]
         },
         "sourceGitopsAdapterResult": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterDelivery": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterDeliveryId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deliveryStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "copiedFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterDelivery": {
           "type": [
             "string",
             "null"

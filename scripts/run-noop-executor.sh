@@ -49,6 +49,7 @@ BUNDLE_OUTPUT="$("$SCRIPT_DIR/build-gitops-pr-bundle.sh" "$INPUT_FILE" | tail -n
 HANDOFF_OUTPUT="$("$SCRIPT_DIR/build-gitops-handoff-bundle.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_REQUEST_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-request.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_RESULT_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-result.sh" "$INPUT_FILE" | tail -n 1)"
+ADAPTER_DELIVERY_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-delivery.sh" "$INPUT_FILE" | tail -n 1)"
 RECORD_OUTPUT="$("$SCRIPT_DIR/build-evidence-record.sh" "$INPUT_FILE" | tail -n 1)"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -93,6 +94,7 @@ print(json.dumps({
         "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
         "gitopsAdapterRequest": artifacts.get("gitopsAdapterRequest"),
         "gitopsAdapterResult": artifacts.get("gitopsAdapterResult"),
+        "gitopsAdapterDelivery": artifacts.get("gitopsAdapterDelivery"),
     },
     "guardrails": {
         "readOnly": False,

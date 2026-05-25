@@ -266,7 +266,7 @@ cat "$TMP_DIR/noop.log"
 
 echo
 echo "===== assert noop executor ====="
-"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/execution-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-patch-proposal-$RELEASE_ID.json" "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" "$REPORT_DIR/evidence-record-$RELEASE_ID.json" <<'PY'
+"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/execution-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-patch-proposal-$RELEASE_ID.json" "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-delivery-$RELEASE_ID.json" "$REPORT_DIR/evidence-record-$RELEASE_ID.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -278,7 +278,8 @@ bundle = json.loads(Path(sys.argv[4]).read_text(encoding="utf-8"))
 handoff = json.loads(Path(sys.argv[5]).read_text(encoding="utf-8"))
 adapter_request = json.loads(Path(sys.argv[6]).read_text(encoding="utf-8"))
 adapter_result = json.loads(Path(sys.argv[7]).read_text(encoding="utf-8"))
-record = json.loads(Path(sys.argv[8]).read_text(encoding="utf-8"))
+adapter_delivery = json.loads(Path(sys.argv[8]).read_text(encoding="utf-8"))
+record = json.loads(Path(sys.argv[9]).read_text(encoding="utf-8"))
 
 assert result["schemaVersion"] == "execution.result/v1alpha1"
 assert result["executionResultId"] == "xr-20260101-040404"
@@ -293,12 +294,15 @@ assert adapter_request["schemaVersion"] == "gitops.adapter.request/v1alpha1"
 assert adapter_request["gitopsAdapterRequestId"] == "ga-20260101-040404"
 assert adapter_result["schemaVersion"] == "gitops.adapter.result/v1alpha1"
 assert adapter_result["gitopsAdapterResultId"] == "gar-20260101-040404"
+assert adapter_delivery["schemaVersion"] == "gitops.adapter.delivery/v1alpha1"
+assert adapter_delivery["gitopsAdapterDeliveryId"] == "gad-20260101-040404"
 assert evidence["decisionRefs"]["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
 assert evidence["decisionRefs"]["gitopsPatchProposal"]["proposalStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsPRBundle"]["bundleStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsHandoffBundle"]["handoffStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsAdapterRequest"]["requestStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsAdapterResult"]["deliveryStatus"] == "WAITING_APPROVAL"
+assert evidence["decisionRefs"]["gitopsAdapterDelivery"]["deliveryStatus"] == "WAITING_APPROVAL"
 assert record["executionResult"]["executionResultId"] == "xr-20260101-040404"
 assert record["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
 assert record["gitopsPatchProposal"]["gitopsPatchProposalId"] == "gp-20260101-040404"
@@ -311,8 +315,10 @@ assert record["gitopsAdapterRequest"]["gitopsAdapterRequestId"] == "ga-20260101-
 assert record["gitopsAdapterRequest"]["requestStatus"] == "WAITING_APPROVAL"
 assert record["gitopsAdapterResult"]["gitopsAdapterResultId"] == "gar-20260101-040404"
 assert record["gitopsAdapterResult"]["deliveryStatus"] == "WAITING_APPROVAL"
+assert record["gitopsAdapterDelivery"]["gitopsAdapterDeliveryId"] == "gad-20260101-040404"
+assert record["gitopsAdapterDelivery"]["deliveryStatus"] == "WAITING_APPROVAL"
 
-print("PASS: noop executor generated execution result, gitops proposal, gitops bundle, gitops handoff, gitops adapter request, gitops adapter result, and evidence record")
+print("PASS: noop executor generated execution result, gitops proposal, gitops bundle, gitops handoff, gitops adapter request, gitops adapter result, gitops adapter delivery, and evidence record")
 PY
 
 echo
@@ -326,6 +332,7 @@ echo "===== validate contracts ====="
   "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" \
+  "$REPORT_DIR/gitops-adapter-delivery-$RELEASE_ID.json" \
   "$REPORT_DIR/evidence-record-$RELEASE_ID.json"
 
 echo

@@ -135,6 +135,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gar-",
     },
     {
+        "object_type": "gitopsAdapterDelivery",
+        "glob": "gitops-adapter-delivery-*.json",
+        "latest": "gitops-adapter-delivery-latest.json",
+        "prefix": "gitops-adapter-delivery-",
+        "id_key": "gitopsAdapterDeliveryId",
+        "id_prefix": "gad-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -408,6 +416,7 @@ def derive_object_id(
         as_dict(data.get("gitopsHandoffBundle")).get("gitopsHandoffBundleId"),
         as_dict(data.get("gitopsAdapterRequest")).get("gitopsAdapterRequestId"),
         as_dict(data.get("gitopsAdapterResult")).get("gitopsAdapterResultId"),
+        as_dict(data.get("gitopsAdapterDelivery")).get("gitopsAdapterDeliveryId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -788,6 +797,21 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["requestedOperation"] = delivery_result.get("requestedOperation")
         result["branchName"] = receipt.get("branchName")
         result["outputFileCount"] = len(as_list(delivery_result.get("outputFiles")))
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            adapter.get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterDelivery":
+        delivery_workspace = as_dict(data.get("delivery"))
+        adapter = as_dict(data.get("adapter"))
+        result["deliveryStatus"] = delivery_workspace.get("deliveryStatus")
+        result["adapterType"] = adapter.get("adapterType")
+        result["requestedOperation"] = delivery_workspace.get("requestedOperation")
+        result["branchName"] = delivery_workspace.get("branchName")
+        result["workspaceDir"] = delivery_workspace.get("workspaceDir")
+        result["outputFileCount"] = len(as_list(delivery_workspace.get("copiedFiles")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             adapter.get("willExecute"),

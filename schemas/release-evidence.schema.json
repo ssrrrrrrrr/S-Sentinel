@@ -238,6 +238,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter delivery receipt JSON."
         },
+        "gitopsAdapterDelivery": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter delivery workspace JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1042,6 +1049,48 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterDelivery": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterDeliveryId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "deliveryStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "copiedFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1247,6 +1296,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter delivery receipt id linked to this release evidence bundle."
+    },
+    "gitopsAdapterDeliveryId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter delivery workspace id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

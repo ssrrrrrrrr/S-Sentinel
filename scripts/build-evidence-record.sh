@@ -371,6 +371,12 @@ gitops_adapter_result_adapter = as_dict(gitops_adapter_result.get("adapter"))
 gitops_adapter_result_delivery = as_dict(gitops_adapter_result.get("delivery"))
 gitops_adapter_result_guardrails = as_dict(gitops_adapter_result.get("guardrails"))
 
+gitops_adapter_delivery_path = resolve_ref(artifacts.get("gitopsAdapterDelivery"), evidence_path)
+gitops_adapter_delivery = load_json(gitops_adapter_delivery_path)
+gitops_adapter_delivery_adapter = as_dict(gitops_adapter_delivery.get("adapter"))
+gitops_adapter_delivery_body = as_dict(gitops_adapter_delivery.get("delivery"))
+gitops_adapter_delivery_guardrails = as_dict(gitops_adapter_delivery.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -425,6 +431,7 @@ link_map = {
     "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
     "gitopsAdapterRequest": artifacts.get("gitopsAdapterRequest"),
     "gitopsAdapterResult": artifacts.get("gitopsAdapterResult"),
+    "gitopsAdapterDelivery": artifacts.get("gitopsAdapterDelivery"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -456,6 +463,7 @@ artifact_defs = [
     ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
     ("gitopsAdapterRequest", link_map["gitopsAdapterRequest"], False),
     ("gitopsAdapterResult", link_map["gitopsAdapterResult"], False),
+    ("gitopsAdapterDelivery", link_map["gitopsAdapterDelivery"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -726,6 +734,17 @@ record = {
         "outputFileCount": len(as_list(gitops_adapter_result_delivery.get("outputFiles"))),
         "sourceGitopsAdapterResult": nullable_string(link_map.get("gitopsAdapterResult")),
         "guardrails": gitops_adapter_result_guardrails,
+    },
+    "gitopsAdapterDelivery": {
+        "gitopsAdapterDeliveryId": nullable_string(gitops_adapter_delivery.get("gitopsAdapterDeliveryId")),
+        "mode": nullable_string(gitops_adapter_delivery.get("mode")),
+        "deliveryStatus": nullable_string(gitops_adapter_delivery_body.get("deliveryStatus")),
+        "branchName": nullable_string(gitops_adapter_delivery_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_delivery_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_delivery_body.get("workspaceDir")),
+        "copiedFileCount": len(as_list(gitops_adapter_delivery_body.get("copiedFiles"))),
+        "sourceGitopsAdapterDelivery": nullable_string(link_map.get("gitopsAdapterDelivery")),
+        "guardrails": gitops_adapter_delivery_guardrails if gitops_adapter_delivery_guardrails else gitops_adapter_delivery_adapter,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),
