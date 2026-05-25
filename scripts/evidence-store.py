@@ -159,6 +159,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gack-",
     },
     {
+        "object_type": "gitopsAdapterHandoffState",
+        "glob": "gitops-adapter-handoff-state-*.json",
+        "latest": "gitops-adapter-handoff-state-latest.json",
+        "prefix": "gitops-adapter-handoff-state-",
+        "id_key": "gitopsAdapterHandoffStateId",
+        "id_prefix": "ghs-",
+    },
+    {
         "object_type": "gitopsAdapterPickup",
         "glob": "gitops-adapter-pickup-*.json",
         "latest": "gitops-adapter-pickup-latest.json",
@@ -444,6 +452,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterRun")).get("gitopsAdapterRunId"),
         as_dict(data.get("gitopsAdapterPickup")).get("gitopsAdapterPickupId"),
         as_dict(data.get("gitopsAdapterPickupAck")).get("gitopsAdapterPickupAckId"),
+        as_dict(data.get("gitopsAdapterHandoffState")).get("gitopsAdapterHandoffStateId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -886,6 +895,23 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["workspaceDir"] = ack.get("workspaceDir")
         result["nextCheckpoint"] = ack.get("nextCheckpoint")
         result["assignedActor"] = ack.get("assignedActor")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterHandoffState":
+        handoff_state = as_dict(data.get("handoffState"))
+        result["stateStatus"] = handoff_state.get("stateStatus")
+        result["ackStatus"] = handoff_state.get("ackStatus")
+        result["pickupStatus"] = handoff_state.get("pickupStatus")
+        result["requestedOperation"] = handoff_state.get("requestedOperation")
+        result["branchName"] = handoff_state.get("branchName")
+        result["workspaceDir"] = handoff_state.get("workspaceDir")
+        result["currentCheckpoint"] = handoff_state.get("currentCheckpoint")
+        result["nextCheckpoint"] = handoff_state.get("nextCheckpoint")
+        result["currentActor"] = handoff_state.get("currentActor")
+        result["nextActor"] = handoff_state.get("nextActor")
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

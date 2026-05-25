@@ -182,6 +182,20 @@ type GitopsAdapterPickupAckRef = {
   assignedActor?: string
 }
 
+type GitopsAdapterHandoffStateRef = {
+  gitopsAdapterHandoffStateId?: string
+  stateStatus?: string
+  ackStatus?: string
+  pickupStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  currentCheckpoint?: string
+  nextCheckpoint?: string
+  currentActor?: string
+  nextActor?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -237,6 +251,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterRun?: GitopsAdapterRunRef
     gitopsAdapterPickup?: GitopsAdapterPickupRef
     gitopsAdapterPickupAck?: GitopsAdapterPickupAckRef
+    gitopsAdapterHandoffState?: GitopsAdapterHandoffStateRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -447,6 +462,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterRun = refs.gitopsAdapterRun
   const gitopsAdapterPickup = refs.gitopsAdapterPickup
   const gitopsAdapterPickupAck = refs.gitopsAdapterPickupAck
+  const gitopsAdapterHandoffState = refs.gitopsAdapterHandoffState
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -537,6 +553,7 @@ export function ApprovalConsolePanel({
   const gitopsPickupStatus = gitopsAdapterPickup?.pickupStatus ?? gitopsRunStatus
   const gitopsPickupFileCount = gitopsAdapterPickup?.workspaceFileCount ?? gitopsRunFileCount
   const gitopsPickupAckStatus = gitopsAdapterPickupAck?.ackStatus ?? gitopsPickupStatus
+  const gitopsHandoffStateStatus = gitopsAdapterHandoffState?.stateStatus ?? gitopsPickupAckStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -643,6 +660,13 @@ export function ApprovalConsolePanel({
       hint: `nextCheckpoint=${valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)}`,
       status: gitopsPickupAckStatus,
       icon: UserCheck,
+    },
+    {
+      label: "GitOps Handoff State",
+      value: valueOrDash(gitopsAdapterHandoffState?.gitopsAdapterHandoffStateId),
+      hint: `nextCheckpoint=${valueOrDash(gitopsAdapterHandoffState?.nextCheckpoint)}`,
+      status: gitopsHandoffStateStatus,
+      icon: Route,
     },
     {
       label: "Requested Action",
@@ -875,6 +899,12 @@ export function ApprovalConsolePanel({
                 ["gitopsPickupAckStatus", valueOrDash(gitopsPickupAckStatus)],
                 ["gitopsPickupAckCheckpoint", valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)],
                 ["gitopsPickupAckActor", valueOrDash(gitopsAdapterPickupAck?.assignedActor)],
+                ["gitopsAdapterHandoffStateId", valueOrDash(gitopsAdapterHandoffState?.gitopsAdapterHandoffStateId)],
+                ["gitopsHandoffStateStatus", valueOrDash(gitopsHandoffStateStatus)],
+                ["gitopsHandoffCurrentCheckpoint", valueOrDash(gitopsAdapterHandoffState?.currentCheckpoint)],
+                ["gitopsHandoffNextCheckpoint", valueOrDash(gitopsAdapterHandoffState?.nextCheckpoint)],
+                ["gitopsHandoffCurrentActor", valueOrDash(gitopsAdapterHandoffState?.currentActor)],
+                ["gitopsHandoffNextActor", valueOrDash(gitopsAdapterHandoffState?.nextActor)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -946,6 +976,13 @@ export function ApprovalConsolePanel({
                 ["gitopsPickupAckCheckpoint", valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)],
                 ["gitopsPickupAckActor", valueOrDash(gitopsAdapterPickupAck?.assignedActor)],
                 ["gitopsPickupAckWorkspaceDir", valueOrDash(gitopsAdapterPickupAck?.workspaceDir)],
+                ["gitopsAdapterHandoffStateId", valueOrDash(gitopsAdapterHandoffState?.gitopsAdapterHandoffStateId)],
+                ["gitopsHandoffStateStatus", valueOrDash(gitopsHandoffStateStatus)],
+                ["gitopsHandoffCurrentCheckpoint", valueOrDash(gitopsAdapterHandoffState?.currentCheckpoint)],
+                ["gitopsHandoffNextCheckpoint", valueOrDash(gitopsAdapterHandoffState?.nextCheckpoint)],
+                ["gitopsHandoffCurrentActor", valueOrDash(gitopsAdapterHandoffState?.currentActor)],
+                ["gitopsHandoffNextActor", valueOrDash(gitopsAdapterHandoffState?.nextActor)],
+                ["gitopsHandoffWorkspaceDir", valueOrDash(gitopsAdapterHandoffState?.workspaceDir)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1163,6 +1200,29 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Handoff State</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `stateStatus:${valueOrDash(gitopsHandoffStateStatus)}`,
+                gitopsAdapterHandoffState?.branchName
+                  ? `branch:${gitopsAdapterHandoffState.branchName}`
+                  : "branch:none",
+                gitopsAdapterHandoffState?.currentCheckpoint
+                  ? `currentCheckpoint:${gitopsAdapterHandoffState.currentCheckpoint}`
+                  : "currentCheckpoint:none",
+                gitopsAdapterHandoffState?.nextCheckpoint
+                  ? `nextCheckpoint:${gitopsAdapterHandoffState.nextCheckpoint}`
+                  : "nextCheckpoint:none",
+                gitopsAdapterHandoffState?.nextActor
+                  ? `nextActor:${gitopsAdapterHandoffState.nextActor}`
+                  : "nextActor:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1229,6 +1289,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Run")}>查看 GitOps Run</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup")}>查看 GitOps Pickup</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup Ack")}>查看 GitOps Pickup Ack</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Handoff State")}>查看 GitOps Handoff State</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

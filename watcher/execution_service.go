@@ -92,21 +92,22 @@ func (svc *ExecutionService) capabilities() map[string]interface{} {
 	descriptor := svc.runtime.Descriptor()
 
 	return map[string]interface{}{
-		"runNoopExecution":        descriptor.SupportsNoopExecution,
-		"autoBuildsPreview":       descriptor.AutoBuildsPreview,
-		"mutatesLocalEvidence":    descriptor.MutatesLocalEvidence,
-		"doesNotModifyCluster":    descriptor.DoesNotModifyCluster,
-		"doesNotModifyGitOps":     descriptor.DoesNotModifyGitOps,
-		"doesNotTriggerRollout":   descriptor.DoesNotTriggerRollout,
-		"executionResultReader":   true,
-		"evidenceRecordEmitter":   true,
-		"gitopsAdapterReceipt":    true,
-		"gitopsDeliveryWorkspace": true,
-		"gitopsAdapterRun":        true,
-		"gitopsAdapterPickup":     true,
-		"gitopsAdapterPickupAck":  true,
-		"futureExecutorAdapter":   false,
-		"approvalAwareExecutor":   true,
+		"runNoopExecution":          descriptor.SupportsNoopExecution,
+		"autoBuildsPreview":         descriptor.AutoBuildsPreview,
+		"mutatesLocalEvidence":      descriptor.MutatesLocalEvidence,
+		"doesNotModifyCluster":      descriptor.DoesNotModifyCluster,
+		"doesNotModifyGitOps":       descriptor.DoesNotModifyGitOps,
+		"doesNotTriggerRollout":     descriptor.DoesNotTriggerRollout,
+		"executionResultReader":     true,
+		"evidenceRecordEmitter":     true,
+		"gitopsAdapterReceipt":      true,
+		"gitopsDeliveryWorkspace":   true,
+		"gitopsAdapterRun":          true,
+		"gitopsAdapterPickup":       true,
+		"gitopsAdapterPickupAck":    true,
+		"gitopsAdapterHandoffState": true,
+		"futureExecutorAdapter":     false,
+		"approvalAwareExecutor":     true,
 	}
 }
 
@@ -154,6 +155,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	latestGitOpsAdapterRunFile, _ := svc.findLatestReportFile("gitops-adapter-run-*.json", "gitops-adapter-run-latest.json")
 	latestGitOpsAdapterPickupFile, _ := svc.findLatestReportFile("gitops-adapter-pickup-*.json", "gitops-adapter-pickup-latest.json")
 	latestGitOpsAdapterPickupAckFile, _ := svc.findLatestReportFile("gitops-adapter-pickup-ack-*.json", "gitops-adapter-pickup-ack-latest.json")
+	latestGitOpsAdapterHandoffStateFile, _ := svc.findLatestReportFile("gitops-adapter-handoff-state-*.json", "gitops-adapter-handoff-state-latest.json")
 	latestEvidenceRecordFile, _ := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json")
 
 	ready := false
@@ -164,34 +166,35 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	}
 
 	body := map[string]interface{}{
-		"schemaVersion":                "execution.noop.status/v1alpha1",
-		"generatedAt":                  time.Now().Format(time.RFC3339),
-		"mode":                         svc.runtime.Descriptor().Mode,
-		"service":                      svc.serviceContract(),
-		"runtime":                      svc.runtime.Descriptor(),
-		"paths":                        svc.runtimePaths(),
-		"capabilities":                 svc.capabilities(),
-		"controlPlane":                 svc.ControlPlaneMetadataForOperation("status", false),
-		"ready":                        ready,
-		"readOnly":                     true,
-		"willExecute":                  false,
-		"doesNotModifyCluster":         true,
-		"doesNotModifyGitOps":          true,
-		"doesNotTriggerRollout":        true,
-		"mutatesLocalEvidenceFiles":    false,
-		"latestReleaseEvidenceFile":    latestReleaseEvidenceFile,
-		"latestExecutionPreviewFile":   latestExecutionPreviewFile,
-		"latestExecutionResultFile":    latestExecutionResultFile,
-		"latestGitOpsProposalFile":     latestGitOpsProposalFile,
-		"latestGitOpsBundleFile":       latestGitOpsBundleFile,
-		"latestGitOpsHandoffFile":      latestGitOpsHandoffFile,
-		"latestGitOpsAdapterRequest":   latestGitOpsAdapterRequestFile,
-		"latestGitOpsAdapterResult":    latestGitOpsAdapterResultFile,
-		"latestGitOpsAdapterDelivery":  latestGitOpsAdapterDeliveryFile,
-		"latestGitOpsAdapterRun":       latestGitOpsAdapterRunFile,
-		"latestGitOpsAdapterPickup":    latestGitOpsAdapterPickupFile,
-		"latestGitOpsAdapterPickupAck": latestGitOpsAdapterPickupAckFile,
-		"latestEvidenceRecordFile":     latestEvidenceRecordFile,
+		"schemaVersion":                   "execution.noop.status/v1alpha1",
+		"generatedAt":                     time.Now().Format(time.RFC3339),
+		"mode":                            svc.runtime.Descriptor().Mode,
+		"service":                         svc.serviceContract(),
+		"runtime":                         svc.runtime.Descriptor(),
+		"paths":                           svc.runtimePaths(),
+		"capabilities":                    svc.capabilities(),
+		"controlPlane":                    svc.ControlPlaneMetadataForOperation("status", false),
+		"ready":                           ready,
+		"readOnly":                        true,
+		"willExecute":                     false,
+		"doesNotModifyCluster":            true,
+		"doesNotModifyGitOps":             true,
+		"doesNotTriggerRollout":           true,
+		"mutatesLocalEvidenceFiles":       false,
+		"latestReleaseEvidenceFile":       latestReleaseEvidenceFile,
+		"latestExecutionPreviewFile":      latestExecutionPreviewFile,
+		"latestExecutionResultFile":       latestExecutionResultFile,
+		"latestGitOpsProposalFile":        latestGitOpsProposalFile,
+		"latestGitOpsBundleFile":          latestGitOpsBundleFile,
+		"latestGitOpsHandoffFile":         latestGitOpsHandoffFile,
+		"latestGitOpsAdapterRequest":      latestGitOpsAdapterRequestFile,
+		"latestGitOpsAdapterResult":       latestGitOpsAdapterResultFile,
+		"latestGitOpsAdapterDelivery":     latestGitOpsAdapterDeliveryFile,
+		"latestGitOpsAdapterRun":          latestGitOpsAdapterRunFile,
+		"latestGitOpsAdapterPickup":       latestGitOpsAdapterPickupFile,
+		"latestGitOpsAdapterPickupAck":    latestGitOpsAdapterPickupAckFile,
+		"latestGitOpsAdapterHandoffState": latestGitOpsAdapterHandoffStateFile,
+		"latestEvidenceRecordFile":        latestEvidenceRecordFile,
 	}
 
 	if latestResult := svc.readJSONFile(latestExecutionResultFile); latestResult != nil {
@@ -272,6 +275,12 @@ func (svc *ExecutionService) Latest(ctx context.Context) (map[string]interface{}
 		body["latestGitOpsAdapterPickupAckFile"] = latestGitOpsAdapterPickupAckFile
 		if latestGitOpsAdapterPickupAck := svc.readJSONFile(latestGitOpsAdapterPickupAckFile); latestGitOpsAdapterPickupAck != nil {
 			body["gitOpsAdapterPickupAck"] = latestGitOpsAdapterPickupAck
+		}
+	}
+	if latestGitOpsAdapterHandoffStateFile, handoffStateErr := svc.findLatestReportFile("gitops-adapter-handoff-state-*.json", "gitops-adapter-handoff-state-latest.json"); handoffStateErr == nil {
+		body["latestGitOpsAdapterHandoffStateFile"] = latestGitOpsAdapterHandoffStateFile
+		if latestGitOpsAdapterHandoffState := svc.readJSONFile(latestGitOpsAdapterHandoffStateFile); latestGitOpsAdapterHandoffState != nil {
+			body["gitOpsAdapterHandoffState"] = latestGitOpsAdapterHandoffState
 		}
 	}
 
@@ -426,6 +435,18 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 			gitOpsAdapterPickupFile = candidate
 		}
 	}
+	gitOpsAdapterHandoffStateFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsAdapterHandoffStateFile = strings.TrimSpace(extractString(artifacts, "gitopsAdapterHandoffState"))
+		}
+	}
+	if gitOpsAdapterHandoffStateFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-adapter-handoff-state-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsAdapterHandoffStateFile = candidate
+		}
+	}
 	if gitOpsAdapterRunFile == "" && releaseEvidenceID != "" {
 		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-adapter-run-"+releaseEvidenceID+".json")
 		if _, statErr := os.Stat(candidate); statErr == nil {
@@ -434,30 +455,31 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 
 	body := map[string]interface{}{
-		"schemaVersion":              "execution.noop.run/v1alpha1",
-		"generatedAt":                time.Now().Format(time.RFC3339),
-		"operation":                  "noop",
-		"runtime":                    svc.runtime.Descriptor(),
-		"controlPlane":               svc.ControlPlaneMetadataForOperation("noop", true),
-		"readOnly":                   false,
-		"willExecute":                false,
-		"doesNotModifyCluster":       true,
-		"doesNotModifyGitOps":        true,
-		"doesNotTriggerRollout":      true,
-		"mutatesLocalEvidenceFiles":  true,
-		"releaseEvidenceFile":        releaseEvidenceFile,
-		"executionResultFile":        executionResultFile,
-		"gitOpsProposalFile":         gitOpsProposalFile,
-		"gitOpsBundleFile":           gitOpsBundleFile,
-		"gitOpsHandoffFile":          gitOpsHandoffFile,
-		"gitOpsAdapterRequestFile":   gitOpsAdapterRequestFile,
-		"gitOpsAdapterResultFile":    gitOpsAdapterResultFile,
-		"gitOpsAdapterDeliveryFile":  gitOpsAdapterDeliveryFile,
-		"gitOpsAdapterRunFile":       gitOpsAdapterRunFile,
-		"gitOpsAdapterPickupFile":    gitOpsAdapterPickupFile,
-		"gitOpsAdapterPickupAckFile": gitOpsAdapterPickupAckFile,
-		"evidenceRecordFile":         evidenceRecordFile,
-		"scriptOutput":               decodeExecutionOutput(output),
+		"schemaVersion":                 "execution.noop.run/v1alpha1",
+		"generatedAt":                   time.Now().Format(time.RFC3339),
+		"operation":                     "noop",
+		"runtime":                       svc.runtime.Descriptor(),
+		"controlPlane":                  svc.ControlPlaneMetadataForOperation("noop", true),
+		"readOnly":                      false,
+		"willExecute":                   false,
+		"doesNotModifyCluster":          true,
+		"doesNotModifyGitOps":           true,
+		"doesNotTriggerRollout":         true,
+		"mutatesLocalEvidenceFiles":     true,
+		"releaseEvidenceFile":           releaseEvidenceFile,
+		"executionResultFile":           executionResultFile,
+		"gitOpsProposalFile":            gitOpsProposalFile,
+		"gitOpsBundleFile":              gitOpsBundleFile,
+		"gitOpsHandoffFile":             gitOpsHandoffFile,
+		"gitOpsAdapterRequestFile":      gitOpsAdapterRequestFile,
+		"gitOpsAdapterResultFile":       gitOpsAdapterResultFile,
+		"gitOpsAdapterDeliveryFile":     gitOpsAdapterDeliveryFile,
+		"gitOpsAdapterRunFile":          gitOpsAdapterRunFile,
+		"gitOpsAdapterPickupFile":       gitOpsAdapterPickupFile,
+		"gitOpsAdapterPickupAckFile":    gitOpsAdapterPickupAckFile,
+		"gitOpsAdapterHandoffStateFile": gitOpsAdapterHandoffStateFile,
+		"evidenceRecordFile":            evidenceRecordFile,
+		"scriptOutput":                  decodeExecutionOutput(output),
 	}
 
 	if releaseEvidence != nil {
@@ -492,6 +514,9 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 	if gitOpsAdapterPickupAck := svc.readJSONFile(gitOpsAdapterPickupAckFile); gitOpsAdapterPickupAck != nil {
 		body["gitOpsAdapterPickupAck"] = gitOpsAdapterPickupAck
+	}
+	if gitOpsAdapterHandoffState := svc.readJSONFile(gitOpsAdapterHandoffStateFile); gitOpsAdapterHandoffState != nil {
+		body["gitOpsAdapterHandoffState"] = gitOpsAdapterHandoffState
 	}
 	if evidenceRecord := svc.readJSONFile(evidenceRecordFile); evidenceRecord != nil {
 		body["evidenceRecord"] = evidenceRecord
