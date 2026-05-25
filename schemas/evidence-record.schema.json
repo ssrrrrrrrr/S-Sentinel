@@ -320,6 +320,13 @@
           ],
           "description": "Path to the generated controlled executor result JSON."
         },
+        "gitopsPatchProposal": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated review-only GitOps patch proposal JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -991,6 +998,69 @@
           ]
         },
         "sourceExecutionPreview": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsPatchProposal": {
+      "type": "object",
+      "properties": {
+        "gitopsPatchProposalId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "proposalStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "overlayPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patchCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "blockedChangeCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "repositoryRoot": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceGitopsPatchProposal": {
           "type": [
             "string",
             "null"

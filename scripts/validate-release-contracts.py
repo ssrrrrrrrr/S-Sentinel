@@ -122,6 +122,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "execution-preview.schema.json"
         if schema_version == "execution.result/v1alpha1":
             return "execution-result.schema.json"
+        if schema_version == "gitops.patch.proposal/v1alpha1":
+            return "gitops-patch-proposal.schema.json"
         if schema_version == "supply.chain.decision/v1alpha1":
             return "supply-chain-decision.schema.json"
 
@@ -144,6 +146,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "execution-preview.schema.json"
     if "execution-result" in lower_name:
         return "execution-result.schema.json"
+    if "gitops-patch-proposal" in lower_name:
+        return "gitops-patch-proposal.schema.json"
     if "plan-run" in lower_name:
         return "plan-run.schema.json"
     if "action-plan" in lower_name:
@@ -158,7 +162,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 

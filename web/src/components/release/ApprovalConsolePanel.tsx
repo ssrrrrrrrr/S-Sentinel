@@ -94,6 +94,17 @@ type ExecutionResultRef = {
   executorAdapter?: string
 }
 
+type GitopsPatchProposalRef = {
+  gitopsPatchProposalId?: string
+  proposalStatus?: string
+  requestedAction?: string
+  overlayPath?: string
+  patchCount?: number
+  blockedChangeCount?: number
+  repositoryRoot?: string
+  outputDir?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -140,6 +151,7 @@ type ApprovalEvidencePayload = {
     executionEligibility?: ExecutionEligibilityRef
     executionPreview?: ExecutionPreviewRef
     executionResult?: ExecutionResultRef
+    gitopsPatchProposal?: GitopsPatchProposalRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -341,6 +353,7 @@ export function ApprovalConsolePanel({
   const executionEligibility = refs.executionEligibility
   const executionPreview = refs.executionPreview
   const executionResult = refs.executionResult
+  const gitopsPatchProposal = refs.gitopsPatchProposal
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -414,6 +427,9 @@ export function ApprovalConsolePanel({
   const executionStatus = executionResult?.executionStatus ?? "NOT_EXECUTED"
   const executedActionCount = executionResult?.executedActionCount ?? 0
   const executorAdapter = executionResult?.executorAdapter ?? "noop-executor"
+  const gitopsProposalStatus = gitopsPatchProposal?.proposalStatus ?? previewStatus
+  const gitopsPatchCount = gitopsPatchProposal?.patchCount ?? gitopsChangeCount
+  const gitopsBlockedChangeCount = gitopsPatchProposal?.blockedChangeCount ?? blockedActionCount
 
   const metrics: ConsoleMetric[] = [
     {
@@ -457,6 +473,13 @@ export function ApprovalConsolePanel({
       hint: `executedActions=${executedActionCount}`,
       status: executionStatus,
       icon: ClipboardCheck,
+    },
+    {
+      label: "GitOps Proposal",
+      value: valueOrDash(gitopsPatchProposal?.gitopsPatchProposalId),
+      hint: `patchCount=${gitopsPatchCount}`,
+      status: gitopsProposalStatus,
+      icon: FileCheck2,
     },
     {
       label: "Requested Action",
@@ -537,6 +560,14 @@ export function ApprovalConsolePanel({
       status: executionResult?.executionResultId ? executionStatus : "MISSING",
       icon: ClipboardCheck,
     },
+    {
+      title: "GitOps Patch Proposal",
+      description: gitopsPatchProposal?.gitopsPatchProposalId
+        ? `GitOps proposal 已生成：${gitopsPatchProposal.gitopsPatchProposalId}，当前只用于 review，不会提交 PR 或修改仓库。`
+        : "当前 evidence 里还没有 GitOps patch proposal，后续 PR / patch adapter 还缺少标准提案对象。",
+      status: gitopsPatchProposal?.gitopsPatchProposalId ? gitopsProposalStatus : "MISSING",
+      icon: FileCheck2,
+    },
   ]
 
   return (
@@ -612,6 +643,9 @@ export function ApprovalConsolePanel({
                 ["executionResultId", valueOrDash(executionResult?.executionResultId)],
                 ["executionStatus", valueOrDash(executionStatus)],
                 ["executorAdapter", valueOrDash(executorAdapter)],
+                ["gitopsPatchProposalId", valueOrDash(gitopsPatchProposal?.gitopsPatchProposalId)],
+                ["gitopsProposalStatus", valueOrDash(gitopsProposalStatus)],
+                ["gitopsOverlayPath", valueOrDash(gitopsPatchProposal?.overlayPath)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -642,6 +676,11 @@ export function ApprovalConsolePanel({
                 ["executionResultId", valueOrDash(executionResult?.executionResultId)],
                 ["executionStatus", valueOrDash(executionStatus)],
                 ["executedActionCount", valueOrDash(executedActionCount)],
+                ["gitopsPatchProposalId", valueOrDash(gitopsPatchProposal?.gitopsPatchProposalId)],
+                ["gitopsProposalStatus", valueOrDash(gitopsProposalStatus)],
+                ["gitopsPatchCount", valueOrDash(gitopsPatchCount)],
+                ["gitopsBlockedChangeCount", valueOrDash(gitopsBlockedChangeCount)],
+                ["gitopsOverlayPath", valueOrDash(gitopsPatchProposal?.overlayPath)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -682,6 +721,25 @@ export function ApprovalConsolePanel({
                 `blockedActions:${executionResult?.blockedActionCount ?? blockedActionCount}`,
                 `readyForExecution:${boolText(executionResult?.readyForExecution)}`,
                 `executor:${valueOrDash(executorAdapter)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Proposal</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `proposalStatus:${valueOrDash(gitopsProposalStatus)}`,
+                `patchCount:${gitopsPatchCount}`,
+                `blockedChanges:${gitopsBlockedChangeCount}`,
+                gitopsPatchProposal?.overlayPath
+                  ? `overlay:${gitopsPatchProposal.overlayPath}`
+                  : "overlay:none",
+                gitopsPatchProposal?.outputDir
+                  ? `outputDir:${gitopsPatchProposal.outputDir}`
+                  : "outputDir:none",
               ]}
             />
           </div>
@@ -745,6 +803,7 @@ export function ApprovalConsolePanel({
       <div className="mt-5 flex flex-wrap gap-2">
         <ActionButton onClick={() => onTabChange("Action Plan")}>查看 Action Plan</ActionButton>
         <ActionButton onClick={() => onTabChange("Execution")}>查看 Execution</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Proposal")}>查看 GitOps Proposal</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

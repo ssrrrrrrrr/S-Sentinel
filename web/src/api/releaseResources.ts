@@ -6,6 +6,7 @@ export type ReleaseResourceKind =
   | "action-plan"
   | "preview"
   | "execution-result"
+  | "gitops-proposal"
   | "intelligence"
   | "advice"
   | "context"

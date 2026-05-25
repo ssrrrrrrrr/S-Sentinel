@@ -56,8 +56,21 @@ export function ReleaseResourcePanel({
         </div>
       ) : null}
 
+      {activeTab === "GitOps Proposal" ? (
+        <div className="rounded-xl border border-[#35517a] bg-[#101a29] p-4">
+          <div className="flex items-center gap-2 font-semibold text-slate-100">
+            <LockKeyhole className="h-4 w-4 text-amber-300" />
+            GitOps Proposal 边界
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            当前阶段只生成 review-only GitOps patch proposal，用来说明后续 PR / patch adapter 应该提交什么，不会修改仓库或创建 PR。
+          </p>
+        </div>
+      ) : null}
+
       {activeTab === "Action Plan" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "Execution" ? <SafetyPanel latest={latest} /> : null}
+      {activeTab === "GitOps Proposal" ? <SafetyPanel latest={latest} /> : null}
 
       <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
         <div className="flex flex-col gap-3 border-b border-[#1a2535] pb-4 md:flex-row md:items-start md:justify-between">

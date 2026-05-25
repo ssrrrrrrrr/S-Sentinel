@@ -44,6 +44,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PREVIEW_OUTPUT="$("$SCRIPT_DIR/build-execution-preview.sh" "$INPUT_FILE" | tail -n 1)"
 RESULT_OUTPUT="$("$SCRIPT_DIR/build-execution-result.sh" "$INPUT_FILE" | tail -n 1)"
+PROPOSAL_OUTPUT="$("$SCRIPT_DIR/build-gitops-patch-proposal.sh" "$INPUT_FILE" | tail -n 1)"
 RECORD_OUTPUT="$("$SCRIPT_DIR/build-evidence-record.sh" "$INPUT_FILE" | tail -n 1)"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -83,6 +84,7 @@ print(json.dumps({
         "releaseEvidence": str(input_path),
         "executionPreview": artifacts.get("executionPreview"),
         "executionResult": artifacts.get("executionResult"),
+        "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     },
     "guardrails": {
         "readOnly": False,

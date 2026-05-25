@@ -203,6 +203,13 @@
           ],
           "description": "Path to the generated controlled executor result JSON."
         },
+        "gitopsPatchProposal": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated review-only GitOps patch proposal JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -743,6 +750,66 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsPatchProposal": {
+          "type": "object",
+          "properties": {
+            "gitopsPatchProposalId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "proposalStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedAction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "overlayPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "blockedChangeCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "repositoryRoot": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "outputDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -913,6 +980,13 @@
         "null"
       ],
       "description": "Controlled executor result id linked to this release evidence bundle."
+    },
+    "gitopsPatchProposalId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Review-only GitOps patch proposal id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

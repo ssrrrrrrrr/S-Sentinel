@@ -95,6 +95,14 @@ RESOURCE_SPECS = [
         "id_prefix": "xr-",
     },
     {
+        "object_type": "gitopsPatchProposal",
+        "glob": "gitops-patch-proposal-*.json",
+        "latest": "gitops-patch-proposal-latest.json",
+        "prefix": "gitops-patch-proposal-",
+        "id_key": "gitopsPatchProposalId",
+        "id_prefix": "gp-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -363,6 +371,7 @@ def derive_object_id(
         as_dict(data.get("executionEligibility")).get("eligibilityDecisionId"),
         as_dict(data.get("executionPreview")).get("executionPreviewId"),
         as_dict(data.get("executionResult")).get("executionResultId"),
+        as_dict(data.get("gitopsPatchProposal")).get("gitopsPatchProposalId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -509,6 +518,8 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     risk = as_dict(data.get("risk"))
     result_body = as_dict(data.get("result"))
     executor = as_dict(data.get("executor"))
+    proposal = as_dict(data.get("proposal"))
+    proposal_repo = as_dict(proposal.get("repository"))
     verification_summary = compact_verification_summary(data)
 
     def pick(*values: Any) -> Any:
@@ -672,6 +683,23 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             executor.get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsPatchProposal":
+        result["proposalStatus"] = proposal.get("proposalStatus")
+        result["requestedAction"] = pick(
+            proposal.get("requestedAction"),
+            result.get("requestedAction"),
+        )
+        result["overlayPath"] = proposal.get("overlayPath")
+        result["patchCount"] = len(as_list(proposal.get("patchSet")))
+        result["blockedChangeCount"] = len(as_list(proposal.get("blockedChanges")))
+        result["repositoryRoot"] = proposal_repo.get("root")
+        result["outputDir"] = proposal_repo.get("outputDir")
+        result["reviewHints"] = proposal.get("reviewHints") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),
         )
 

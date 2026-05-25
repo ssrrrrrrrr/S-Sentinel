@@ -344,6 +344,12 @@ execution_result_executor = as_dict(execution_result.get("executor"))
 execution_result_evidence = as_dict(execution_result_body.get("evidenceArtifacts"))
 execution_result_guardrails = as_dict(execution_result.get("guardrails"))
 
+gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
+gitops_patch_proposal = load_json(gitops_patch_proposal_path)
+gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
+gitops_patch_proposal_repo = as_dict(gitops_patch_proposal_body.get("repository"))
+gitops_patch_proposal_guardrails = as_dict(gitops_patch_proposal.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -393,6 +399,7 @@ link_map = {
     "executionEligibility": artifacts.get("executionEligibility"),
     "executionPreview": artifacts.get("executionPreview"),
     "executionResult": artifacts.get("executionResult"),
+    "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -419,6 +426,7 @@ artifact_defs = [
     ("executionEligibility", link_map["executionEligibility"], False),
     ("executionPreview", link_map["executionPreview"], False),
     ("executionResult", link_map["executionResult"], False),
+    ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -632,6 +640,18 @@ record = {
         "sourceExecutionResult": nullable_string(link_map.get("executionResult")),
         "sourceExecutionPreview": nullable_string(execution_result_evidence.get("sourceExecutionPreview")),
         "guardrails": execution_result_guardrails,
+    },
+    "gitopsPatchProposal": {
+        "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),
+        "mode": nullable_string(gitops_patch_proposal.get("mode")),
+        "proposalStatus": nullable_string(gitops_patch_proposal_body.get("proposalStatus")),
+        "requestedAction": nullable_string(gitops_patch_proposal_body.get("requestedAction")),
+        "overlayPath": nullable_string(gitops_patch_proposal_body.get("overlayPath")),
+        "patchCount": len(as_list(gitops_patch_proposal_body.get("patchSet"))),
+        "blockedChangeCount": len(as_list(gitops_patch_proposal_body.get("blockedChanges"))),
+        "repositoryRoot": nullable_string(gitops_patch_proposal_repo.get("root")),
+        "sourceGitopsPatchProposal": nullable_string(link_map.get("gitopsPatchProposal")),
+        "guardrails": gitops_patch_proposal_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),
