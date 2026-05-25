@@ -46,6 +46,7 @@ PREVIEW_OUTPUT="$("$SCRIPT_DIR/build-execution-preview.sh" "$INPUT_FILE" | tail 
 RESULT_OUTPUT="$("$SCRIPT_DIR/build-execution-result.sh" "$INPUT_FILE" | tail -n 1)"
 PROPOSAL_OUTPUT="$("$SCRIPT_DIR/build-gitops-patch-proposal.sh" "$INPUT_FILE" | tail -n 1)"
 BUNDLE_OUTPUT="$("$SCRIPT_DIR/build-gitops-pr-bundle.sh" "$INPUT_FILE" | tail -n 1)"
+HANDOFF_OUTPUT="$("$SCRIPT_DIR/build-gitops-handoff-bundle.sh" "$INPUT_FILE" | tail -n 1)"
 RECORD_OUTPUT="$("$SCRIPT_DIR/build-evidence-record.sh" "$INPUT_FILE" | tail -n 1)"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -87,6 +88,7 @@ print(json.dumps({
         "executionResult": artifacts.get("executionResult"),
         "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
         "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
+        "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
     },
     "guardrails": {
         "readOnly": False,

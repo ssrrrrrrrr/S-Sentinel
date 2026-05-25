@@ -115,6 +115,16 @@ type GitopsPRBundleRef = {
   handoffChecklistCount?: number
 }
 
+type GitopsHandoffBundleRef = {
+  gitopsHandoffBundleId?: string
+  handoffStatus?: string
+  bundleDir?: string
+  branchName?: string
+  materializedFileCount?: number
+  patchEntryCount?: number
+  handoffChecklistCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -163,6 +173,7 @@ type ApprovalEvidencePayload = {
     executionResult?: ExecutionResultRef
     gitopsPatchProposal?: GitopsPatchProposalRef
     gitopsPRBundle?: GitopsPRBundleRef
+    gitopsHandoffBundle?: GitopsHandoffBundleRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -366,6 +377,7 @@ export function ApprovalConsolePanel({
   const executionResult = refs.executionResult
   const gitopsPatchProposal = refs.gitopsPatchProposal
   const gitopsPRBundle = refs.gitopsPRBundle
+  const gitopsHandoffBundle = refs.gitopsHandoffBundle
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -444,6 +456,8 @@ export function ApprovalConsolePanel({
   const gitopsBlockedChangeCount = gitopsPatchProposal?.blockedChangeCount ?? blockedActionCount
   const gitopsBundleStatus = gitopsPRBundle?.bundleStatus ?? gitopsProposalStatus
   const gitopsBundlePatchEntryCount = gitopsPRBundle?.patchEntryCount ?? gitopsPatchCount
+  const gitopsHandoffStatus = gitopsHandoffBundle?.handoffStatus ?? gitopsBundleStatus
+  const gitopsHandoffFileCount = gitopsHandoffBundle?.materializedFileCount ?? 0
 
   const metrics: ConsoleMetric[] = [
     {
@@ -500,6 +514,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsPRBundle?.gitopsPRBundleId),
       hint: `patchEntries=${gitopsBundlePatchEntryCount}`,
       status: gitopsBundleStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Handoff",
+      value: valueOrDash(gitopsHandoffBundle?.gitopsHandoffBundleId),
+      hint: `files=${gitopsHandoffFileCount}`,
+      status: gitopsHandoffStatus,
       icon: FileCheck2,
     },
     {
@@ -597,6 +618,14 @@ export function ApprovalConsolePanel({
       status: gitopsPRBundle?.gitopsPRBundleId ? gitopsBundleStatus : "MISSING",
       icon: FileCheck2,
     },
+    {
+      title: "GitOps Handoff Bundle",
+      description: gitopsHandoffBundle?.gitopsHandoffBundleId
+        ? `GitOps handoff 已生成：${gitopsHandoffBundle.gitopsHandoffBundleId}，现在已经落地了可交接文件，但依然不会写仓库或调用外部系统。`
+        : "当前 evidence 里还没有 materialized handoff bundle，后续人工接手时还缺少真正的交接材料目录。",
+      status: gitopsHandoffBundle?.gitopsHandoffBundleId ? gitopsHandoffStatus : "MISSING",
+      icon: FileCheck2,
+    },
   ]
 
   return (
@@ -678,6 +707,9 @@ export function ApprovalConsolePanel({
                 ["gitopsPRBundleId", valueOrDash(gitopsPRBundle?.gitopsPRBundleId)],
                 ["gitopsBundleStatus", valueOrDash(gitopsBundleStatus)],
                 ["gitopsBranchName", valueOrDash(gitopsPRBundle?.branchName)],
+                ["gitopsHandoffBundleId", valueOrDash(gitopsHandoffBundle?.gitopsHandoffBundleId)],
+                ["gitopsHandoffStatus", valueOrDash(gitopsHandoffStatus)],
+                ["gitopsHandoffDir", valueOrDash(gitopsHandoffBundle?.bundleDir)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -719,6 +751,10 @@ export function ApprovalConsolePanel({
                 ["gitopsCommitMessage", valueOrDash(gitopsPRBundle?.commitMessage)],
                 ["gitopsPRTitle", valueOrDash(gitopsPRBundle?.pullRequestTitle)],
                 ["gitopsPatchEntryCount", valueOrDash(gitopsBundlePatchEntryCount)],
+                ["gitopsHandoffBundleId", valueOrDash(gitopsHandoffBundle?.gitopsHandoffBundleId)],
+                ["gitopsHandoffStatus", valueOrDash(gitopsHandoffStatus)],
+                ["gitopsHandoffDir", valueOrDash(gitopsHandoffBundle?.bundleDir)],
+                ["gitopsHandoffFileCount", valueOrDash(gitopsHandoffFileCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -803,6 +839,23 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Handoff</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `handoffStatus:${valueOrDash(gitopsHandoffStatus)}`,
+                `files:${gitopsHandoffFileCount}`,
+                `patchEntries:${valueOrDash(gitopsHandoffBundle?.patchEntryCount ?? gitopsBundlePatchEntryCount)}`,
+                gitopsHandoffBundle?.bundleDir
+                  ? `bundleDir:${gitopsHandoffBundle.bundleDir}`
+                  : "bundleDir:none",
+                `checklist:${valueOrDash(gitopsHandoffBundle?.handoffChecklistCount ?? 0)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -862,6 +915,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("Execution")}>查看 Execution</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Proposal")}>查看 GitOps Proposal</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Bundle")}>查看 GitOps Bundle</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Handoff")}>查看 GitOps Handoff</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

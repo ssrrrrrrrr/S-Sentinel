@@ -142,6 +142,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	latestExecutionResultFile, _ := svc.findLatestReportFile("execution-result-*.json", "execution-result-latest.json")
 	latestGitOpsProposalFile, _ := svc.findLatestReportFile("gitops-patch-proposal-*.json", "gitops-patch-proposal-latest.json")
 	latestGitOpsBundleFile, _ := svc.findLatestReportFile("gitops-pr-bundle-*.json", "gitops-pr-bundle-latest.json")
+	latestGitOpsHandoffFile, _ := svc.findLatestReportFile("gitops-handoff-bundle-*.json", "gitops-handoff-bundle-latest.json")
 	latestEvidenceRecordFile, _ := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json")
 
 	ready := false
@@ -172,6 +173,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 		"latestExecutionResultFile":  latestExecutionResultFile,
 		"latestGitOpsProposalFile":   latestGitOpsProposalFile,
 		"latestGitOpsBundleFile":     latestGitOpsBundleFile,
+		"latestGitOpsHandoffFile":    latestGitOpsHandoffFile,
 		"latestEvidenceRecordFile":   latestEvidenceRecordFile,
 	}
 
@@ -218,6 +220,9 @@ func (svc *ExecutionService) Latest(ctx context.Context) (map[string]interface{}
 	}
 	if latestGitOpsBundleFile, bundleErr := svc.findLatestReportFile("gitops-pr-bundle-*.json", "gitops-pr-bundle-latest.json"); bundleErr == nil {
 		body["latestGitOpsBundleFile"] = latestGitOpsBundleFile
+	}
+	if latestGitOpsHandoffFile, handoffErr := svc.findLatestReportFile("gitops-handoff-bundle-*.json", "gitops-handoff-bundle-latest.json"); handoffErr == nil {
+		body["latestGitOpsHandoffFile"] = latestGitOpsHandoffFile
 	}
 
 	return body, nil
@@ -287,6 +292,19 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		}
 	}
 
+	gitOpsHandoffFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsHandoffFile = strings.TrimSpace(extractString(artifacts, "gitopsHandoffBundle"))
+		}
+	}
+	if gitOpsHandoffFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-handoff-bundle-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsHandoffFile = candidate
+		}
+	}
+
 	body := map[string]interface{}{
 		"schemaVersion":             "execution.noop.run/v1alpha1",
 		"generatedAt":               time.Now().Format(time.RFC3339),
@@ -303,6 +321,7 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		"executionResultFile":       executionResultFile,
 		"gitOpsProposalFile":        gitOpsProposalFile,
 		"gitOpsBundleFile":          gitOpsBundleFile,
+		"gitOpsHandoffFile":         gitOpsHandoffFile,
 		"evidenceRecordFile":        evidenceRecordFile,
 		"scriptOutput":              decodeExecutionOutput(output),
 	}
@@ -318,6 +337,9 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 	if gitOpsBundle := svc.readJSONFile(gitOpsBundleFile); gitOpsBundle != nil {
 		body["gitOpsBundle"] = gitOpsBundle
+	}
+	if gitOpsHandoff := svc.readJSONFile(gitOpsHandoffFile); gitOpsHandoff != nil {
+		body["gitOpsHandoff"] = gitOpsHandoff
 	}
 	if evidenceRecord := svc.readJSONFile(evidenceRecordFile); evidenceRecord != nil {
 		body["evidenceRecord"] = evidenceRecord

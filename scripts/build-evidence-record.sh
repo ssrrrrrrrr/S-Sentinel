@@ -355,6 +355,11 @@ gitops_pr_bundle = load_json(gitops_pr_bundle_path)
 gitops_pr_bundle_body = as_dict(gitops_pr_bundle.get("bundle"))
 gitops_pr_bundle_guardrails = as_dict(gitops_pr_bundle.get("guardrails"))
 
+gitops_handoff_bundle_path = resolve_ref(artifacts.get("gitopsHandoffBundle"), evidence_path)
+gitops_handoff_bundle = load_json(gitops_handoff_bundle_path)
+gitops_handoff_body = as_dict(gitops_handoff_bundle.get("handoff"))
+gitops_handoff_guardrails = as_dict(gitops_handoff_bundle.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -406,6 +411,7 @@ link_map = {
     "executionResult": artifacts.get("executionResult"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
+    "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -434,6 +440,7 @@ artifact_defs = [
     ("executionResult", link_map["executionResult"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
+    ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -670,6 +677,18 @@ record = {
         "handoffChecklistCount": len(as_list(gitops_pr_bundle_body.get("handoffChecklist"))),
         "sourceGitopsPRBundle": nullable_string(link_map.get("gitopsPRBundle")),
         "guardrails": gitops_pr_bundle_guardrails,
+    },
+    "gitopsHandoffBundle": {
+        "gitopsHandoffBundleId": nullable_string(gitops_handoff_bundle.get("gitopsHandoffBundleId")),
+        "mode": nullable_string(gitops_handoff_bundle.get("mode")),
+        "handoffStatus": nullable_string(gitops_handoff_body.get("handoffStatus")),
+        "bundleDir": nullable_string(gitops_handoff_body.get("bundleDir")),
+        "branchName": nullable_string(gitops_handoff_body.get("branchName")),
+        "materializedFileCount": len(as_list(gitops_handoff_body.get("materializedFiles"))),
+        "patchEntryCount": first_not_none(gitops_handoff_body.get("patchEntryCount"), 0),
+        "handoffChecklistCount": first_not_none(gitops_handoff_body.get("handoffChecklistCount"), 0),
+        "sourceGitopsHandoffBundle": nullable_string(link_map.get("gitopsHandoffBundle")),
+        "guardrails": gitops_handoff_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

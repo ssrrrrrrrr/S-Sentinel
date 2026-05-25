@@ -334,6 +334,13 @@
           ],
           "description": "Path to the generated PR-ready GitOps bundle JSON."
         },
+        "gitopsHandoffBundle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated materialized GitOps handoff bundle JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1125,6 +1132,69 @@
           ]
         },
         "sourceGitopsPRBundle": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsHandoffBundle": {
+      "type": "object",
+      "properties": {
+        "gitopsHandoffBundleId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "handoffStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bundleDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "materializedFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "patchEntryCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "handoffChecklistCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsHandoffBundle": {
           "type": [
             "string",
             "null"
