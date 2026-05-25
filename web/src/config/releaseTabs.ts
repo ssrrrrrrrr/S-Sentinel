@@ -39,6 +39,11 @@ export const releaseTabs: ReleaseTabDefinition[] = [
     targetRoute: "Approval",
   },
   {
+    id: "GitOps Bundle",
+    resourceKind: "gitops-bundle",
+    targetRoute: "Approval",
+  },
+  {
     id: "Advisor Trace",
     resourceKind: "advice",
     targetRoute: "Agent Trace",

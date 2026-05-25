@@ -140,6 +140,8 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	latestReleaseEvidenceFile, _ := svc.resolveReleaseEvidenceFile("")
 	latestExecutionPreviewFile, _ := svc.findLatestReportFile("execution-preview-*.json", "execution-preview-latest.json")
 	latestExecutionResultFile, _ := svc.findLatestReportFile("execution-result-*.json", "execution-result-latest.json")
+	latestGitOpsProposalFile, _ := svc.findLatestReportFile("gitops-patch-proposal-*.json", "gitops-patch-proposal-latest.json")
+	latestGitOpsBundleFile, _ := svc.findLatestReportFile("gitops-pr-bundle-*.json", "gitops-pr-bundle-latest.json")
 	latestEvidenceRecordFile, _ := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json")
 
 	ready := false
@@ -168,6 +170,8 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 		"latestReleaseEvidenceFile":  latestReleaseEvidenceFile,
 		"latestExecutionPreviewFile": latestExecutionPreviewFile,
 		"latestExecutionResultFile":  latestExecutionResultFile,
+		"latestGitOpsProposalFile":   latestGitOpsProposalFile,
+		"latestGitOpsBundleFile":     latestGitOpsBundleFile,
 		"latestEvidenceRecordFile":   latestEvidenceRecordFile,
 	}
 
@@ -208,6 +212,12 @@ func (svc *ExecutionService) Latest(ctx context.Context) (map[string]interface{}
 
 	if latestEvidenceRecordFile, recordErr := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json"); recordErr == nil {
 		body["latestEvidenceRecordFile"] = latestEvidenceRecordFile
+	}
+	if latestGitOpsProposalFile, proposalErr := svc.findLatestReportFile("gitops-patch-proposal-*.json", "gitops-patch-proposal-latest.json"); proposalErr == nil {
+		body["latestGitOpsProposalFile"] = latestGitOpsProposalFile
+	}
+	if latestGitOpsBundleFile, bundleErr := svc.findLatestReportFile("gitops-pr-bundle-*.json", "gitops-pr-bundle-latest.json"); bundleErr == nil {
+		body["latestGitOpsBundleFile"] = latestGitOpsBundleFile
 	}
 
 	return body, nil
@@ -251,6 +261,32 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		}
 	}
 
+	gitOpsProposalFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsProposalFile = strings.TrimSpace(extractString(artifacts, "gitopsPatchProposal"))
+		}
+	}
+	if gitOpsProposalFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-patch-proposal-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsProposalFile = candidate
+		}
+	}
+
+	gitOpsBundleFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsBundleFile = strings.TrimSpace(extractString(artifacts, "gitopsPRBundle"))
+		}
+	}
+	if gitOpsBundleFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-pr-bundle-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsBundleFile = candidate
+		}
+	}
+
 	body := map[string]interface{}{
 		"schemaVersion":             "execution.noop.run/v1alpha1",
 		"generatedAt":               time.Now().Format(time.RFC3339),
@@ -265,6 +301,8 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		"mutatesLocalEvidenceFiles": true,
 		"releaseEvidenceFile":       releaseEvidenceFile,
 		"executionResultFile":       executionResultFile,
+		"gitOpsProposalFile":        gitOpsProposalFile,
+		"gitOpsBundleFile":          gitOpsBundleFile,
 		"evidenceRecordFile":        evidenceRecordFile,
 		"scriptOutput":              decodeExecutionOutput(output),
 	}
@@ -274,6 +312,12 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 	if executionResult := svc.readJSONFile(executionResultFile); executionResult != nil {
 		body["executionResult"] = executionResult
+	}
+	if gitOpsProposal := svc.readJSONFile(gitOpsProposalFile); gitOpsProposal != nil {
+		body["gitOpsProposal"] = gitOpsProposal
+	}
+	if gitOpsBundle := svc.readJSONFile(gitOpsBundleFile); gitOpsBundle != nil {
+		body["gitOpsBundle"] = gitOpsBundle
 	}
 	if evidenceRecord := svc.readJSONFile(evidenceRecordFile); evidenceRecord != nil {
 		body["evidenceRecord"] = evidenceRecord

@@ -210,6 +210,13 @@
           ],
           "description": "Path to the generated review-only GitOps patch proposal JSON."
         },
+        "gitopsPRBundle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated PR-ready GitOps bundle JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -810,6 +817,60 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsPRBundle": {
+          "type": "object",
+          "properties": {
+            "gitopsPRBundleId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "bundleStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commitMessage": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pullRequestTitle": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchEntryCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "handoffChecklistCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -987,6 +1048,13 @@
         "null"
       ],
       "description": "Review-only GitOps patch proposal id linked to this release evidence bundle."
+    },
+    "gitopsPRBundleId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "PR-ready GitOps bundle id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

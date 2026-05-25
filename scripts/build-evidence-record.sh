@@ -350,6 +350,11 @@ gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
 gitops_patch_proposal_repo = as_dict(gitops_patch_proposal_body.get("repository"))
 gitops_patch_proposal_guardrails = as_dict(gitops_patch_proposal.get("guardrails"))
 
+gitops_pr_bundle_path = resolve_ref(artifacts.get("gitopsPRBundle"), evidence_path)
+gitops_pr_bundle = load_json(gitops_pr_bundle_path)
+gitops_pr_bundle_body = as_dict(gitops_pr_bundle.get("bundle"))
+gitops_pr_bundle_guardrails = as_dict(gitops_pr_bundle.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -400,6 +405,7 @@ link_map = {
     "executionPreview": artifacts.get("executionPreview"),
     "executionResult": artifacts.get("executionResult"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
+    "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -427,6 +433,7 @@ artifact_defs = [
     ("executionPreview", link_map["executionPreview"], False),
     ("executionResult", link_map["executionResult"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
+    ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -652,6 +659,17 @@ record = {
         "repositoryRoot": nullable_string(gitops_patch_proposal_repo.get("root")),
         "sourceGitopsPatchProposal": nullable_string(link_map.get("gitopsPatchProposal")),
         "guardrails": gitops_patch_proposal_guardrails,
+    },
+    "gitopsPRBundle": {
+        "gitopsPRBundleId": nullable_string(gitops_pr_bundle.get("gitopsPRBundleId")),
+        "mode": nullable_string(gitops_pr_bundle.get("mode")),
+        "bundleStatus": nullable_string(gitops_pr_bundle_body.get("bundleStatus")),
+        "branchName": nullable_string(gitops_pr_bundle_body.get("branchName")),
+        "commitMessage": nullable_string(gitops_pr_bundle_body.get("commitMessage")),
+        "patchEntryCount": len(as_list(gitops_pr_bundle_body.get("patchEntries"))),
+        "handoffChecklistCount": len(as_list(gitops_pr_bundle_body.get("handoffChecklist"))),
+        "sourceGitopsPRBundle": nullable_string(link_map.get("gitopsPRBundle")),
+        "guardrails": gitops_pr_bundle_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

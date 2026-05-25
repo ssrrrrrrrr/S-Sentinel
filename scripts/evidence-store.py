@@ -103,6 +103,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gp-",
     },
     {
+        "object_type": "gitopsPRBundle",
+        "glob": "gitops-pr-bundle-*.json",
+        "latest": "gitops-pr-bundle-latest.json",
+        "prefix": "gitops-pr-bundle-",
+        "id_key": "gitopsPRBundleId",
+        "id_prefix": "gb-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -372,6 +380,7 @@ def derive_object_id(
         as_dict(data.get("executionPreview")).get("executionPreviewId"),
         as_dict(data.get("executionResult")).get("executionResultId"),
         as_dict(data.get("gitopsPatchProposal")).get("gitopsPatchProposalId"),
+        as_dict(data.get("gitopsPRBundle")).get("gitopsPRBundleId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -520,6 +529,8 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     executor = as_dict(data.get("executor"))
     proposal = as_dict(data.get("proposal"))
     proposal_repo = as_dict(proposal.get("repository"))
+    bundle = as_dict(data.get("bundle"))
+    bundle_pr = as_dict(bundle.get("pullRequest"))
     verification_summary = compact_verification_summary(data)
 
     def pick(*values: Any) -> Any:
@@ -698,6 +709,18 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["repositoryRoot"] = proposal_repo.get("root")
         result["outputDir"] = proposal_repo.get("outputDir")
         result["reviewHints"] = proposal.get("reviewHints") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsPRBundle":
+        result["bundleStatus"] = bundle.get("bundleStatus")
+        result["branchName"] = bundle.get("branchName")
+        result["commitMessage"] = bundle.get("commitMessage")
+        result["pullRequestTitle"] = bundle_pr.get("title")
+        result["patchEntryCount"] = len(as_list(bundle.get("patchEntries")))
+        result["handoffChecklistCount"] = len(as_list(bundle.get("handoffChecklist")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

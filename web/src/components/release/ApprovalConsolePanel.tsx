@@ -105,6 +105,16 @@ type GitopsPatchProposalRef = {
   outputDir?: string
 }
 
+type GitopsPRBundleRef = {
+  gitopsPRBundleId?: string
+  bundleStatus?: string
+  branchName?: string
+  commitMessage?: string
+  pullRequestTitle?: string
+  patchEntryCount?: number
+  handoffChecklistCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -152,6 +162,7 @@ type ApprovalEvidencePayload = {
     executionPreview?: ExecutionPreviewRef
     executionResult?: ExecutionResultRef
     gitopsPatchProposal?: GitopsPatchProposalRef
+    gitopsPRBundle?: GitopsPRBundleRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -354,6 +365,7 @@ export function ApprovalConsolePanel({
   const executionPreview = refs.executionPreview
   const executionResult = refs.executionResult
   const gitopsPatchProposal = refs.gitopsPatchProposal
+  const gitopsPRBundle = refs.gitopsPRBundle
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -430,6 +442,8 @@ export function ApprovalConsolePanel({
   const gitopsProposalStatus = gitopsPatchProposal?.proposalStatus ?? previewStatus
   const gitopsPatchCount = gitopsPatchProposal?.patchCount ?? gitopsChangeCount
   const gitopsBlockedChangeCount = gitopsPatchProposal?.blockedChangeCount ?? blockedActionCount
+  const gitopsBundleStatus = gitopsPRBundle?.bundleStatus ?? gitopsProposalStatus
+  const gitopsBundlePatchEntryCount = gitopsPRBundle?.patchEntryCount ?? gitopsPatchCount
 
   const metrics: ConsoleMetric[] = [
     {
@@ -479,6 +493,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsPatchProposal?.gitopsPatchProposalId),
       hint: `patchCount=${gitopsPatchCount}`,
       status: gitopsProposalStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Bundle",
+      value: valueOrDash(gitopsPRBundle?.gitopsPRBundleId),
+      hint: `patchEntries=${gitopsBundlePatchEntryCount}`,
+      status: gitopsBundleStatus,
       icon: FileCheck2,
     },
     {
@@ -568,6 +589,14 @@ export function ApprovalConsolePanel({
       status: gitopsPatchProposal?.gitopsPatchProposalId ? gitopsProposalStatus : "MISSING",
       icon: FileCheck2,
     },
+    {
+      title: "GitOps PR Bundle",
+      description: gitopsPRBundle?.gitopsPRBundleId
+        ? `GitOps bundle 已生成：${gitopsPRBundle.gitopsPRBundleId}，已经整理了 branch、commit message 和 PR 文案，但仍然不会 push 或开 PR。`
+        : "当前 evidence 里还没有 GitOps PR bundle，后续人工 review / adapter handoff 还缺少可直接交付的 PR-ready 对象。",
+      status: gitopsPRBundle?.gitopsPRBundleId ? gitopsBundleStatus : "MISSING",
+      icon: FileCheck2,
+    },
   ]
 
   return (
@@ -646,6 +675,9 @@ export function ApprovalConsolePanel({
                 ["gitopsPatchProposalId", valueOrDash(gitopsPatchProposal?.gitopsPatchProposalId)],
                 ["gitopsProposalStatus", valueOrDash(gitopsProposalStatus)],
                 ["gitopsOverlayPath", valueOrDash(gitopsPatchProposal?.overlayPath)],
+                ["gitopsPRBundleId", valueOrDash(gitopsPRBundle?.gitopsPRBundleId)],
+                ["gitopsBundleStatus", valueOrDash(gitopsBundleStatus)],
+                ["gitopsBranchName", valueOrDash(gitopsPRBundle?.branchName)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -681,6 +713,12 @@ export function ApprovalConsolePanel({
                 ["gitopsPatchCount", valueOrDash(gitopsPatchCount)],
                 ["gitopsBlockedChangeCount", valueOrDash(gitopsBlockedChangeCount)],
                 ["gitopsOverlayPath", valueOrDash(gitopsPatchProposal?.overlayPath)],
+                ["gitopsPRBundleId", valueOrDash(gitopsPRBundle?.gitopsPRBundleId)],
+                ["gitopsBundleStatus", valueOrDash(gitopsBundleStatus)],
+                ["gitopsBranchName", valueOrDash(gitopsPRBundle?.branchName)],
+                ["gitopsCommitMessage", valueOrDash(gitopsPRBundle?.commitMessage)],
+                ["gitopsPRTitle", valueOrDash(gitopsPRBundle?.pullRequestTitle)],
+                ["gitopsPatchEntryCount", valueOrDash(gitopsBundlePatchEntryCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -746,6 +784,25 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Bundle</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `bundleStatus:${valueOrDash(gitopsBundleStatus)}`,
+                `patchEntries:${gitopsBundlePatchEntryCount}`,
+                gitopsPRBundle?.branchName
+                  ? `branch:${gitopsPRBundle.branchName}`
+                  : "branch:none",
+                gitopsPRBundle?.pullRequestTitle
+                  ? `prTitle:${gitopsPRBundle.pullRequestTitle}`
+                  : "prTitle:none",
+                `handoffChecklist:${valueOrDash(gitopsPRBundle?.handoffChecklistCount ?? 0)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -804,6 +861,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("Action Plan")}>查看 Action Plan</ActionButton>
         <ActionButton onClick={() => onTabChange("Execution")}>查看 Execution</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Proposal")}>查看 GitOps Proposal</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Bundle")}>查看 GitOps Bundle</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
