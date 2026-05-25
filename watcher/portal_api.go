@@ -11,8 +11,9 @@ import (
 )
 
 type portalAPI struct {
-	cfg       Config
-	reportDir string
+	cfg          Config
+	reportDir    string
+	executionSvc *ExecutionService
 }
 
 type portalResourceDef struct {
@@ -103,6 +104,9 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/evidence/search", api.handleEvidenceSearch)
 	mux.HandleFunc("/api/evidence/verification-summary", api.handleEvidenceVerificationSummary)
 	mux.HandleFunc("/api/evidence/graph", api.handleEvidenceGraph)
+	mux.HandleFunc("/api/execution/status", api.handleExecutionStatus)
+	mux.HandleFunc("/api/execution/latest", api.handleExecutionLatest)
+	mux.HandleFunc("/api/execution/noop", api.handleExecutionNoop)
 
 	// Backward-compatible Stage41/42 EvidenceStore routes.
 	mux.HandleFunc("/api/evidence-store/releases", api.handleEvidenceStoreReleaseList)
@@ -452,6 +456,79 @@ func (api *portalAPI) handleEvidenceGraph(w http.ResponseWriter, r *http.Request
 			ReleaseID: releaseID,
 		})
 	})
+}
+
+func (api *portalAPI) handleExecutionStatus(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	writePortalJSON(w, http.StatusOK, api.executionService().Status(r.Context()))
+}
+
+func (api *portalAPI) handleExecutionLatest(w http.ResponseWriter, r *http.Request) {
+	if !api.requireGET(w, r) {
+		return
+	}
+
+	body, err := api.executionService().Latest(r.Context())
+	if err != nil {
+		writePortalJSON(w, http.StatusNotFound, map[string]interface{}{
+			"schemaVersion":             "execution.noop.latest.error/v1alpha1",
+			"generatedAt":               time.Now().Format(time.RFC3339),
+			"error":                     err.Error(),
+			"controlPlane":              api.executionService().ControlPlaneMetadataForOperation("latest-error", false),
+			"readOnly":                  true,
+			"willExecute":               false,
+			"doesNotModifyCluster":      true,
+			"doesNotModifyGitOps":       true,
+			"doesNotTriggerRollout":     true,
+			"mutatesLocalEvidenceFiles": false,
+		})
+		return
+	}
+
+	writePortalJSON(w, http.StatusOK, body)
+}
+
+func (api *portalAPI) handleExecutionNoop(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writePortalJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
+			"schemaVersion":             "execution.noop.run.error/v1alpha1",
+			"generatedAt":               time.Now().Format(time.RFC3339),
+			"error":                     "method not allowed",
+			"allowedMethod":             "POST",
+			"controlPlane":              api.executionService().ControlPlaneMetadataForOperation("noop", true),
+			"readOnly":                  false,
+			"willExecute":               false,
+			"doesNotModifyCluster":      true,
+			"doesNotModifyGitOps":       true,
+			"doesNotTriggerRollout":     true,
+			"mutatesLocalEvidenceFiles": true,
+		})
+		return
+	}
+
+	releaseID := strings.TrimSpace(r.URL.Query().Get("releaseId"))
+	body, err := api.executionService().RunNoop(r.Context(), releaseID)
+	if err != nil {
+		writePortalJSON(w, http.StatusConflict, map[string]interface{}{
+			"schemaVersion":             "execution.noop.run.error/v1alpha1",
+			"generatedAt":               time.Now().Format(time.RFC3339),
+			"error":                     err.Error(),
+			"releaseId":                 releaseID,
+			"controlPlane":              api.executionService().ControlPlaneMetadataForOperation("noop", true),
+			"readOnly":                  false,
+			"willExecute":               false,
+			"doesNotModifyCluster":      true,
+			"doesNotModifyGitOps":       true,
+			"doesNotTriggerRollout":     true,
+			"mutatesLocalEvidenceFiles": true,
+		})
+		return
+	}
+
+	writePortalJSON(w, http.StatusOK, body)
 }
 
 func evidencePathSuffix(path string, prefixes ...string) string {

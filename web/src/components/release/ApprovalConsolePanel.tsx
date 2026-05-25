@@ -744,6 +744,7 @@ export function ApprovalConsolePanel({
 
       <div className="mt-5 flex flex-wrap gap-2">
         <ActionButton onClick={() => onTabChange("Action Plan")}>查看 Action Plan</ActionButton>
+        <ActionButton onClick={() => onTabChange("Execution")}>查看 Execution</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
