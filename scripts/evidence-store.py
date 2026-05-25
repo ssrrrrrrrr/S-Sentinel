@@ -151,6 +151,14 @@ RESOURCE_SPECS = [
         "id_prefix": "grun-",
     },
     {
+        "object_type": "gitopsAdapterPickupAck",
+        "glob": "gitops-adapter-pickup-ack-*.json",
+        "latest": "gitops-adapter-pickup-ack-latest.json",
+        "prefix": "gitops-adapter-pickup-ack-",
+        "id_key": "gitopsAdapterPickupAckId",
+        "id_prefix": "gack-",
+    },
+    {
         "object_type": "gitopsAdapterPickup",
         "glob": "gitops-adapter-pickup-*.json",
         "latest": "gitops-adapter-pickup-latest.json",
@@ -435,6 +443,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterDelivery")).get("gitopsAdapterDeliveryId"),
         as_dict(data.get("gitopsAdapterRun")).get("gitopsAdapterRunId"),
         as_dict(data.get("gitopsAdapterPickup")).get("gitopsAdapterPickupId"),
+        as_dict(data.get("gitopsAdapterPickupAck")).get("gitopsAdapterPickupAckId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -863,6 +872,20 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["workspaceFileCount"] = len(as_list(pickup.get("files")))
         result["nextCheckpoint"] = pickup.get("nextCheckpoint")
         result["nextActor"] = pickup.get("nextActor")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterPickupAck":
+        ack = as_dict(data.get("acknowledgement"))
+        result["ackStatus"] = ack.get("ackStatus")
+        result["pickupStatus"] = ack.get("pickupStatus")
+        result["requestedOperation"] = ack.get("requestedOperation")
+        result["branchName"] = ack.get("branchName")
+        result["workspaceDir"] = ack.get("workspaceDir")
+        result["nextCheckpoint"] = ack.get("nextCheckpoint")
+        result["assignedActor"] = ack.get("assignedActor")
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

@@ -360,6 +360,7 @@ main() {
   bash -n scripts/build-gitops-adapter-delivery.sh
   bash -n scripts/build-gitops-adapter-run.sh
   bash -n scripts/build-gitops-adapter-pickup.sh
+  bash -n scripts/build-gitops-adapter-pickup-ack.sh
   bash -n scripts/run-noop-executor.sh
   bash -n scripts/test-release-intelligence.sh
   bash -n scripts/test-readonly-release-agent.sh
@@ -375,6 +376,7 @@ main() {
   bash -n scripts/test-gitops-adapter-delivery.sh
   bash -n scripts/test-gitops-adapter-run.sh
   bash -n scripts/test-gitops-adapter-pickup.sh
+  bash -n scripts/test-gitops-adapter-pickup-ack.sh
   bash -n scripts/test-noop-executor.sh
   bash -n scripts/test-supply-chain-decision.sh
   bash -n scripts/test-agent-tool-router-intelligence.sh
@@ -424,6 +426,7 @@ main() {
   ./scripts/test-gitops-adapter-delivery.sh
   ./scripts/test-gitops-adapter-run.sh
   ./scripts/test-gitops-adapter-pickup.sh
+  ./scripts/test-gitops-adapter-pickup-ack.sh
   ./scripts/test-noop-executor.sh
   ./scripts/test-supply-chain-decision.sh "$TEST_TMP/supply-chain-decision"
   ./scripts/test-release-summary-intelligence.sh "$TEST_TMP/release-summary-intelligence"

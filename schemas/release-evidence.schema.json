@@ -259,6 +259,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter pickup state JSON."
         },
+        "gitopsAdapterPickupAck": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup acknowledgement JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1207,6 +1214,66 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterPickupAck": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterPickupAckId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ackStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pickupStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "assignedActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1433,6 +1500,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter pickup state id linked to this release evidence bundle."
+    },
+    "gitopsAdapterPickupAckId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter pickup acknowledgement id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

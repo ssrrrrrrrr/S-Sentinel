@@ -171,6 +171,17 @@ type GitopsAdapterPickupRef = {
   nextActor?: string
 }
 
+type GitopsAdapterPickupAckRef = {
+  gitopsAdapterPickupAckId?: string
+  ackStatus?: string
+  pickupStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  nextCheckpoint?: string
+  assignedActor?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -225,6 +236,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterDelivery?: GitopsAdapterDeliveryRef
     gitopsAdapterRun?: GitopsAdapterRunRef
     gitopsAdapterPickup?: GitopsAdapterPickupRef
+    gitopsAdapterPickupAck?: GitopsAdapterPickupAckRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -434,6 +446,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterDelivery = refs.gitopsAdapterDelivery
   const gitopsAdapterRun = refs.gitopsAdapterRun
   const gitopsAdapterPickup = refs.gitopsAdapterPickup
+  const gitopsAdapterPickupAck = refs.gitopsAdapterPickupAck
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -523,6 +536,7 @@ export function ApprovalConsolePanel({
   const gitopsRunFileCount = gitopsAdapterRun?.workspaceFileCount ?? gitopsWorkspaceFileCount
   const gitopsPickupStatus = gitopsAdapterPickup?.pickupStatus ?? gitopsRunStatus
   const gitopsPickupFileCount = gitopsAdapterPickup?.workspaceFileCount ?? gitopsRunFileCount
+  const gitopsPickupAckStatus = gitopsAdapterPickupAck?.ackStatus ?? gitopsPickupStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -622,6 +636,13 @@ export function ApprovalConsolePanel({
       hint: `workspaceFiles=${gitopsPickupFileCount}`,
       status: gitopsPickupStatus,
       icon: FileCheck2,
+    },
+    {
+      label: "GitOps Pickup Ack",
+      value: valueOrDash(gitopsAdapterPickupAck?.gitopsAdapterPickupAckId),
+      hint: `nextCheckpoint=${valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)}`,
+      status: gitopsPickupAckStatus,
+      icon: UserCheck,
     },
     {
       label: "Requested Action",
@@ -850,6 +871,10 @@ export function ApprovalConsolePanel({
                 ["gitopsPickupStatus", valueOrDash(gitopsPickupStatus)],
                 ["gitopsPickupCheckpoint", valueOrDash(gitopsAdapterPickup?.nextCheckpoint)],
                 ["gitopsPickupActor", valueOrDash(gitopsAdapterPickup?.nextActor)],
+                ["gitopsAdapterPickupAckId", valueOrDash(gitopsAdapterPickupAck?.gitopsAdapterPickupAckId)],
+                ["gitopsPickupAckStatus", valueOrDash(gitopsPickupAckStatus)],
+                ["gitopsPickupAckCheckpoint", valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)],
+                ["gitopsPickupAckActor", valueOrDash(gitopsAdapterPickupAck?.assignedActor)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -916,6 +941,11 @@ export function ApprovalConsolePanel({
                 ["gitopsPickupCheckpoint", valueOrDash(gitopsAdapterPickup?.nextCheckpoint)],
                 ["gitopsPickupActor", valueOrDash(gitopsAdapterPickup?.nextActor)],
                 ["gitopsPickupFileCount", valueOrDash(gitopsPickupFileCount)],
+                ["gitopsAdapterPickupAckId", valueOrDash(gitopsAdapterPickupAck?.gitopsAdapterPickupAckId)],
+                ["gitopsPickupAckStatus", valueOrDash(gitopsPickupAckStatus)],
+                ["gitopsPickupAckCheckpoint", valueOrDash(gitopsAdapterPickupAck?.nextCheckpoint)],
+                ["gitopsPickupAckActor", valueOrDash(gitopsAdapterPickupAck?.assignedActor)],
+                ["gitopsPickupAckWorkspaceDir", valueOrDash(gitopsAdapterPickupAck?.workspaceDir)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1110,6 +1140,29 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Pickup Ack</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `ackStatus:${valueOrDash(gitopsPickupAckStatus)}`,
+                gitopsAdapterPickupAck?.branchName
+                  ? `branch:${gitopsAdapterPickupAck.branchName}`
+                  : "branch:none",
+                gitopsAdapterPickupAck?.workspaceDir
+                  ? `workspaceDir:${gitopsAdapterPickupAck.workspaceDir}`
+                  : "workspaceDir:none",
+                gitopsAdapterPickupAck?.nextCheckpoint
+                  ? `nextCheckpoint:${gitopsAdapterPickupAck.nextCheckpoint}`
+                  : "nextCheckpoint:none",
+                gitopsAdapterPickupAck?.assignedActor
+                  ? `assignedActor:${gitopsAdapterPickupAck.assignedActor}`
+                  : "assignedActor:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1175,6 +1228,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Workspace")}>查看 GitOps Workspace</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Run")}>查看 GitOps Run</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup")}>查看 GitOps Pickup</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Pickup Ack")}>查看 GitOps Pickup Ack</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

@@ -266,7 +266,7 @@ cat "$TMP_DIR/noop.log"
 
 echo
 echo "===== assert noop executor ====="
-"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/execution-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-patch-proposal-$RELEASE_ID.json" "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-delivery-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-run-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-pickup-$RELEASE_ID.json" "$REPORT_DIR/evidence-record-$RELEASE_ID.json" <<'PY'
+"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/execution-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-patch-proposal-$RELEASE_ID.json" "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-delivery-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-run-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-pickup-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-pickup-ack-$RELEASE_ID.json" "$REPORT_DIR/evidence-record-$RELEASE_ID.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -281,7 +281,8 @@ adapter_result = json.loads(Path(sys.argv[7]).read_text(encoding="utf-8"))
 adapter_delivery = json.loads(Path(sys.argv[8]).read_text(encoding="utf-8"))
 adapter_run = json.loads(Path(sys.argv[9]).read_text(encoding="utf-8"))
 adapter_pickup = json.loads(Path(sys.argv[10]).read_text(encoding="utf-8"))
-record = json.loads(Path(sys.argv[11]).read_text(encoding="utf-8"))
+adapter_pickup_ack = json.loads(Path(sys.argv[11]).read_text(encoding="utf-8"))
+record = json.loads(Path(sys.argv[12]).read_text(encoding="utf-8"))
 
 assert result["schemaVersion"] == "execution.result/v1alpha1"
 assert result["executionResultId"] == "xr-20260101-040404"
@@ -302,6 +303,8 @@ assert adapter_run["schemaVersion"] == "gitops.adapter.run/v1alpha1"
 assert adapter_run["gitopsAdapterRunId"] == "grun-20260101-040404"
 assert adapter_pickup["schemaVersion"] == "gitops.adapter.pickup/v1alpha1"
 assert adapter_pickup["gitopsAdapterPickupId"] == "gpick-20260101-040404"
+assert adapter_pickup_ack["schemaVersion"] == "gitops.adapter.pickup.ack/v1alpha1"
+assert adapter_pickup_ack["gitopsAdapterPickupAckId"] == "gack-20260101-040404"
 assert evidence["decisionRefs"]["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
 assert evidence["decisionRefs"]["gitopsPatchProposal"]["proposalStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsPRBundle"]["bundleStatus"] == "WAITING_APPROVAL"
@@ -311,6 +314,7 @@ assert evidence["decisionRefs"]["gitopsAdapterResult"]["deliveryStatus"] == "WAI
 assert evidence["decisionRefs"]["gitopsAdapterDelivery"]["deliveryStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsAdapterRun"]["runStatus"] == "WAITING_APPROVAL"
 assert evidence["decisionRefs"]["gitopsAdapterPickup"]["pickupStatus"] == "WAITING_APPROVAL"
+assert evidence["decisionRefs"]["gitopsAdapterPickupAck"]["ackStatus"] == "WAITING_APPROVAL"
 assert record["executionResult"]["executionResultId"] == "xr-20260101-040404"
 assert record["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
 assert record["gitopsPatchProposal"]["gitopsPatchProposalId"] == "gp-20260101-040404"
@@ -329,8 +333,10 @@ assert record["gitopsAdapterRun"]["gitopsAdapterRunId"] == "grun-20260101-040404
 assert record["gitopsAdapterRun"]["runStatus"] == "WAITING_APPROVAL"
 assert record["gitopsAdapterPickup"]["gitopsAdapterPickupId"] == "gpick-20260101-040404"
 assert record["gitopsAdapterPickup"]["pickupStatus"] == "WAITING_APPROVAL"
+assert record["gitopsAdapterPickupAck"]["gitopsAdapterPickupAckId"] == "gack-20260101-040404"
+assert record["gitopsAdapterPickupAck"]["ackStatus"] == "WAITING_APPROVAL"
 
-print("PASS: noop executor generated execution result, gitops proposal, gitops bundle, gitops handoff, gitops adapter request, gitops adapter result, gitops adapter delivery, gitops adapter run, gitops adapter pickup, and evidence record")
+print("PASS: noop executor generated execution result, gitops proposal, gitops bundle, gitops handoff, gitops adapter request, gitops adapter result, gitops adapter delivery, gitops adapter run, gitops adapter pickup, gitops adapter pickup ack, and evidence record")
 PY
 
 echo
@@ -347,6 +353,7 @@ echo "===== validate contracts ====="
   "$REPORT_DIR/gitops-adapter-delivery-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-adapter-run-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-adapter-pickup-$RELEASE_ID.json" \
+  "$REPORT_DIR/gitops-adapter-pickup-ack-$RELEASE_ID.json" \
   "$REPORT_DIR/evidence-record-$RELEASE_ID.json"
 
 echo
