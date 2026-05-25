@@ -143,6 +143,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gad-",
     },
     {
+        "object_type": "gitopsAdapterRun",
+        "glob": "gitops-adapter-run-*.json",
+        "latest": "gitops-adapter-run-latest.json",
+        "prefix": "gitops-adapter-run-",
+        "id_key": "gitopsAdapterRunId",
+        "id_prefix": "grun-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -417,6 +425,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterRequest")).get("gitopsAdapterRequestId"),
         as_dict(data.get("gitopsAdapterResult")).get("gitopsAdapterResultId"),
         as_dict(data.get("gitopsAdapterDelivery")).get("gitopsAdapterDeliveryId"),
+        as_dict(data.get("gitopsAdapterRun")).get("gitopsAdapterRunId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -812,6 +821,24 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["branchName"] = delivery_workspace.get("branchName")
         result["workspaceDir"] = delivery_workspace.get("workspaceDir")
         result["outputFileCount"] = len(as_list(delivery_workspace.get("copiedFiles")))
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            adapter.get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterRun":
+        run = as_dict(data.get("run"))
+        adapter = as_dict(data.get("adapter"))
+        pickup_receipt = as_dict(run.get("pickupReceipt"))
+        result["runStatus"] = run.get("runStatus")
+        result["adapterType"] = adapter.get("adapterType")
+        result["requestedOperation"] = run.get("requestedOperation")
+        result["branchName"] = run.get("branchName")
+        result["workspaceDir"] = run.get("workspaceDir")
+        result["workspaceFileCount"] = len(as_list(run.get("workspaceFiles")))
+        result["checkCount"] = len(as_list(run.get("checks")))
+        result["pickupReceiptPath"] = pickup_receipt.get("path")
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             adapter.get("willExecute"),

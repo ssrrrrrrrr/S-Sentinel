@@ -245,6 +245,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter delivery workspace JSON."
         },
+        "gitopsAdapterRun": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter handoff readiness run JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1091,6 +1098,54 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterRun": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterRunId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "runStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1303,6 +1358,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter delivery workspace id linked to this release evidence bundle."
+    },
+    "gitopsAdapterRunId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter handoff readiness run id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

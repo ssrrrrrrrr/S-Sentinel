@@ -102,6 +102,7 @@ func (svc *ExecutionService) capabilities() map[string]interface{} {
 		"evidenceRecordEmitter":   true,
 		"gitopsAdapterReceipt":    true,
 		"gitopsDeliveryWorkspace": true,
+		"gitopsAdapterRun":        true,
 		"futureExecutorAdapter":   false,
 		"approvalAwareExecutor":   true,
 	}
@@ -148,6 +149,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	latestGitOpsAdapterRequestFile, _ := svc.findLatestReportFile("gitops-adapter-request-*.json", "gitops-adapter-request-latest.json")
 	latestGitOpsAdapterResultFile, _ := svc.findLatestReportFile("gitops-adapter-result-*.json", "gitops-adapter-result-latest.json")
 	latestGitOpsAdapterDeliveryFile, _ := svc.findLatestReportFile("gitops-adapter-delivery-*.json", "gitops-adapter-delivery-latest.json")
+	latestGitOpsAdapterRunFile, _ := svc.findLatestReportFile("gitops-adapter-run-*.json", "gitops-adapter-run-latest.json")
 	latestEvidenceRecordFile, _ := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json")
 
 	ready := false
@@ -182,6 +184,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 		"latestGitOpsAdapterRequest":  latestGitOpsAdapterRequestFile,
 		"latestGitOpsAdapterResult":   latestGitOpsAdapterResultFile,
 		"latestGitOpsAdapterDelivery": latestGitOpsAdapterDeliveryFile,
+		"latestGitOpsAdapterRun":      latestGitOpsAdapterRunFile,
 		"latestEvidenceRecordFile":    latestEvidenceRecordFile,
 	}
 
@@ -245,6 +248,12 @@ func (svc *ExecutionService) Latest(ctx context.Context) (map[string]interface{}
 		body["latestGitOpsAdapterDeliveryFile"] = latestGitOpsAdapterDeliveryFile
 		if latestGitOpsAdapterDelivery := svc.readJSONFile(latestGitOpsAdapterDeliveryFile); latestGitOpsAdapterDelivery != nil {
 			body["gitOpsAdapterDelivery"] = latestGitOpsAdapterDelivery
+		}
+	}
+	if latestGitOpsAdapterRunFile, adapterRunErr := svc.findLatestReportFile("gitops-adapter-run-*.json", "gitops-adapter-run-latest.json"); adapterRunErr == nil {
+		body["latestGitOpsAdapterRunFile"] = latestGitOpsAdapterRunFile
+		if latestGitOpsAdapterRun := svc.readJSONFile(latestGitOpsAdapterRunFile); latestGitOpsAdapterRun != nil {
+			body["gitOpsAdapterRun"] = latestGitOpsAdapterRun
 		}
 	}
 
@@ -367,6 +376,19 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		}
 	}
 
+	gitOpsAdapterRunFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsAdapterRunFile = strings.TrimSpace(extractString(artifacts, "gitopsAdapterRun"))
+		}
+	}
+	if gitOpsAdapterRunFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-adapter-run-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsAdapterRunFile = candidate
+		}
+	}
+
 	body := map[string]interface{}{
 		"schemaVersion":             "execution.noop.run/v1alpha1",
 		"generatedAt":               time.Now().Format(time.RFC3339),
@@ -387,6 +409,7 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		"gitOpsAdapterRequestFile":  gitOpsAdapterRequestFile,
 		"gitOpsAdapterResultFile":   gitOpsAdapterResultFile,
 		"gitOpsAdapterDeliveryFile": gitOpsAdapterDeliveryFile,
+		"gitOpsAdapterRunFile":      gitOpsAdapterRunFile,
 		"evidenceRecordFile":        evidenceRecordFile,
 		"scriptOutput":              decodeExecutionOutput(output),
 	}
@@ -414,6 +437,9 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 	if gitOpsAdapterDelivery := svc.readJSONFile(gitOpsAdapterDeliveryFile); gitOpsAdapterDelivery != nil {
 		body["gitOpsAdapterDelivery"] = gitOpsAdapterDelivery
+	}
+	if gitOpsAdapterRun := svc.readJSONFile(gitOpsAdapterRunFile); gitOpsAdapterRun != nil {
+		body["gitOpsAdapterRun"] = gitOpsAdapterRun
 	}
 	if evidenceRecord := svc.readJSONFile(evidenceRecordFile); evidenceRecord != nil {
 		body["evidenceRecord"] = evidenceRecord

@@ -152,6 +152,15 @@ type GitopsAdapterDeliveryRef = {
   copiedFileCount?: number
 }
 
+type GitopsAdapterRunRef = {
+  gitopsAdapterRunId?: string
+  runStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  workspaceFileCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -204,6 +213,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterRequest?: GitopsAdapterRequestRef
     gitopsAdapterResult?: GitopsAdapterResultRef
     gitopsAdapterDelivery?: GitopsAdapterDeliveryRef
+    gitopsAdapterRun?: GitopsAdapterRunRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -411,6 +421,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterRequest = refs.gitopsAdapterRequest
   const gitopsAdapterResult = refs.gitopsAdapterResult
   const gitopsAdapterDelivery = refs.gitopsAdapterDelivery
+  const gitopsAdapterRun = refs.gitopsAdapterRun
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -496,6 +507,8 @@ export function ApprovalConsolePanel({
   const gitopsDeliveryFileCount = gitopsAdapterResult?.outputFileCount ?? gitopsHandoffFileCount
   const gitopsWorkspaceStatus = gitopsAdapterDelivery?.deliveryStatus ?? gitopsDeliveryStatus
   const gitopsWorkspaceFileCount = gitopsAdapterDelivery?.copiedFileCount ?? gitopsDeliveryFileCount
+  const gitopsRunStatus = gitopsAdapterRun?.runStatus ?? gitopsWorkspaceStatus
+  const gitopsRunFileCount = gitopsAdapterRun?.workspaceFileCount ?? gitopsWorkspaceFileCount
 
   const metrics: ConsoleMetric[] = [
     {
@@ -580,6 +593,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsAdapterDelivery?.gitopsAdapterDeliveryId),
       hint: `copiedFiles=${gitopsWorkspaceFileCount}`,
       status: gitopsWorkspaceStatus,
+      icon: FileCheck2,
+    },
+    {
+      label: "GitOps Run",
+      value: valueOrDash(gitopsAdapterRun?.gitopsAdapterRunId),
+      hint: `workspaceFiles=${gitopsRunFileCount}`,
+      status: gitopsRunStatus,
       icon: FileCheck2,
     },
     {
@@ -802,6 +822,9 @@ export function ApprovalConsolePanel({
                 ["gitopsAdapterDeliveryId", valueOrDash(gitopsAdapterDelivery?.gitopsAdapterDeliveryId)],
                 ["gitopsWorkspaceStatus", valueOrDash(gitopsWorkspaceStatus)],
                 ["gitopsWorkspaceDir", valueOrDash(gitopsAdapterDelivery?.workspaceDir)],
+                ["gitopsAdapterRunId", valueOrDash(gitopsAdapterRun?.gitopsAdapterRunId)],
+                ["gitopsRunStatus", valueOrDash(gitopsRunStatus)],
+                ["gitopsRunWorkspaceDir", valueOrDash(gitopsAdapterRun?.workspaceDir)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -859,6 +882,10 @@ export function ApprovalConsolePanel({
                 ["gitopsWorkspaceStatus", valueOrDash(gitopsWorkspaceStatus)],
                 ["gitopsWorkspaceDir", valueOrDash(gitopsAdapterDelivery?.workspaceDir)],
                 ["gitopsWorkspaceFileCount", valueOrDash(gitopsWorkspaceFileCount)],
+                ["gitopsAdapterRunId", valueOrDash(gitopsAdapterRun?.gitopsAdapterRunId)],
+                ["gitopsRunStatus", valueOrDash(gitopsRunStatus)],
+                ["gitopsRunWorkspaceDir", valueOrDash(gitopsAdapterRun?.workspaceDir)],
+                ["gitopsRunFileCount", valueOrDash(gitopsRunFileCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1013,6 +1040,25 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Run</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `runStatus:${valueOrDash(gitopsRunStatus)}`,
+                gitopsAdapterRun?.workspaceDir
+                  ? `workspaceDir:${gitopsAdapterRun.workspaceDir}`
+                  : "workspaceDir:none",
+                gitopsAdapterRun?.branchName
+                  ? `branch:${gitopsAdapterRun.branchName}`
+                  : "branch:none",
+                `workspaceFiles:${valueOrDash(gitopsRunFileCount)}`,
+                `operation:${valueOrDash(gitopsAdapterRun?.requestedOperation ?? gitopsAdapterDelivery?.requestedOperation)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1076,6 +1122,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Adapter")}>查看 GitOps Adapter</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Delivery")}>查看 GitOps Delivery</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Workspace")}>查看 GitOps Workspace</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Run")}>查看 GitOps Run</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
