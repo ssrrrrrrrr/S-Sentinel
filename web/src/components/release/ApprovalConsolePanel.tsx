@@ -84,6 +84,16 @@ type ExecutionPreviewRef = {
   renderedReleasePlan?: string
 }
 
+type ExecutionResultRef = {
+  executionResultId?: string
+  executionStatus?: string
+  readyForExecution?: boolean
+  requestedAction?: string
+  executedActionCount?: number
+  blockedActionCount?: number
+  executorAdapter?: string
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -129,6 +139,7 @@ type ApprovalEvidencePayload = {
     executionRequest?: ExecutionRequestRef
     executionEligibility?: ExecutionEligibilityRef
     executionPreview?: ExecutionPreviewRef
+    executionResult?: ExecutionResultRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -329,6 +340,7 @@ export function ApprovalConsolePanel({
   const executionRequest = refs.executionRequest
   const executionEligibility = refs.executionEligibility
   const executionPreview = refs.executionPreview
+  const executionResult = refs.executionResult
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -399,6 +411,9 @@ export function ApprovalConsolePanel({
   const blockedActionCount = executionPreview?.blockedActionCount ?? 0
   const humanCheckpointCount = executionPreview?.humanCheckpointCount ?? 0
   const gitopsChangeCount = executionPreview?.gitopsChangeCount ?? 0
+  const executionStatus = executionResult?.executionStatus ?? "NOT_EXECUTED"
+  const executedActionCount = executionResult?.executedActionCount ?? 0
+  const executorAdapter = executionResult?.executorAdapter ?? "noop-executor"
 
   const metrics: ConsoleMetric[] = [
     {
@@ -435,6 +450,13 @@ export function ApprovalConsolePanel({
       hint: `plannedActions=${plannedActionCount}`,
       status: previewStatus,
       icon: FileCheck2,
+    },
+    {
+      label: "Execution Result",
+      value: valueOrDash(executionResult?.executionResultId),
+      hint: `executedActions=${executedActionCount}`,
+      status: executionStatus,
+      icon: ClipboardCheck,
     },
     {
       label: "Requested Action",
@@ -506,6 +528,14 @@ export function ApprovalConsolePanel({
         : "当前 evidence 里还没有 execution preview，对执行影响面仍缺少显式预演对象。",
       status: executionPreview?.executionPreviewId ? previewStatus : "MISSING",
       icon: FileCheck2,
+    },
+    {
+      title: "Executor Result",
+      description: executionResult?.executionResultId
+        ? `执行结果对象已生成：${executionResult.executionResultId}，当前由 ${executorAdapter} 记录 preview-only 执行证据。`
+        : "当前 evidence 里还没有 execution result，对后续执行审计仍缺少标准化输出。",
+      status: executionResult?.executionResultId ? executionStatus : "MISSING",
+      icon: ClipboardCheck,
     },
   ]
 
@@ -579,6 +609,9 @@ export function ApprovalConsolePanel({
                 ["eligibilityStatus", eligibilityStatus],
                 ["executionPreviewId", valueOrDash(executionPreview?.executionPreviewId)],
                 ["previewStatus", valueOrDash(previewStatus)],
+                ["executionResultId", valueOrDash(executionResult?.executionResultId)],
+                ["executionStatus", valueOrDash(executionStatus)],
+                ["executorAdapter", valueOrDash(executorAdapter)],
                 ["policyDecision", policyDecision],
                 ["approvalStatus", approvalStatus],
                 ["approvalDecision", valueOrDash(executionEligibility?.approvalDecision ?? executionRequest?.approvalDecision)],
@@ -606,6 +639,9 @@ export function ApprovalConsolePanel({
                 ["supplyChainAllowed", boolText(supplyChainDecision?.allowed)],
                 ["eligibilityDecisionId", valueOrDash(executionEligibility?.eligibilityDecisionId)],
                 ["executionPreviewId", valueOrDash(executionPreview?.executionPreviewId)],
+                ["executionResultId", valueOrDash(executionResult?.executionResultId)],
+                ["executionStatus", valueOrDash(executionStatus)],
+                ["executedActionCount", valueOrDash(executedActionCount)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -631,6 +667,21 @@ export function ApprovalConsolePanel({
                 executionPreview?.renderedReleasePlan
                   ? `renderedPlan:${executionPreview.renderedReleasePlan}`
                   : "renderedPlan:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">Execution Result</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `executionStatus:${valueOrDash(executionStatus)}`,
+                `executedActions:${executedActionCount}`,
+                `blockedActions:${executionResult?.blockedActionCount ?? blockedActionCount}`,
+                `readyForExecution:${boolText(executionResult?.readyForExecution)}`,
+                `executor:${valueOrDash(executorAdapter)}`,
               ]}
             />
           </div>
@@ -686,8 +737,8 @@ export function ApprovalConsolePanel({
           Approval Console 边界
         </div>
         <p className="mt-2 leading-6">
-          当前 Console 只做可观测和审计展示。真正的 approve / reject / execute 应该在后续
-          Policy-bound Execution Request 和 Policy-bound Executor 阶段实现，并写入新的 EvidenceRecord。
+          当前 Console 只做可观测和审计展示。现在已经开始记录 execution result，但它仍然是 preview-only evidence。
+          真正的 approve / reject / execute 应该在后续 Policy-bound Executor 阶段实现，并写入新的 Execution Evidence。
         </p>
       </div>
 

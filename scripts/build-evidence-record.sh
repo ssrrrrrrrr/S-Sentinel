@@ -337,6 +337,13 @@ execution_preview_body = as_dict(execution_preview.get("preview"))
 execution_preview_rollout = as_dict(execution_preview_body.get("rolloutPlan"))
 execution_preview_guardrails = as_dict(execution_preview.get("guardrails"))
 
+execution_result_path = resolve_ref(artifacts.get("executionResult"), evidence_path)
+execution_result = load_json(execution_result_path)
+execution_result_body = as_dict(execution_result.get("result"))
+execution_result_executor = as_dict(execution_result.get("executor"))
+execution_result_evidence = as_dict(execution_result_body.get("evidenceArtifacts"))
+execution_result_guardrails = as_dict(execution_result.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -385,6 +392,7 @@ link_map = {
     "executionRequest": artifacts.get("executionRequest"),
     "executionEligibility": artifacts.get("executionEligibility"),
     "executionPreview": artifacts.get("executionPreview"),
+    "executionResult": artifacts.get("executionResult"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -410,6 +418,7 @@ artifact_defs = [
     ("executionRequest", link_map["executionRequest"], False),
     ("executionEligibility", link_map["executionEligibility"], False),
     ("executionPreview", link_map["executionPreview"], False),
+    ("executionResult", link_map["executionResult"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -610,6 +619,19 @@ record = {
             as_dict(decision_refs.get("executionPreview")).get("renderedReleasePlan"),
         )),
         "guardrails": execution_preview_guardrails,
+    },
+    "executionResult": {
+        "executionResultId": nullable_string(execution_result.get("executionResultId")),
+        "mode": nullable_string(execution_result.get("mode")),
+        "executionStatus": nullable_string(execution_result_body.get("executionStatus")),
+        "readyForExecution": bool_or_none(execution_result_body.get("readyForExecution")),
+        "requestedAction": nullable_string(execution_result_body.get("requestedAction")),
+        "executedActionCount": len(as_list(execution_result_body.get("executedActions"))),
+        "blockedActionCount": len(as_list(execution_result_body.get("blockedActions"))),
+        "executorAdapter": nullable_string(execution_result_executor.get("adapter")),
+        "sourceExecutionResult": nullable_string(link_map.get("executionResult")),
+        "sourceExecutionPreview": nullable_string(execution_result_evidence.get("sourceExecutionPreview")),
+        "guardrails": execution_result_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

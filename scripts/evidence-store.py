@@ -87,6 +87,14 @@ RESOURCE_SPECS = [
         "id_prefix": "ep-",
     },
     {
+        "object_type": "executionResult",
+        "glob": "execution-result-*.json",
+        "latest": "execution-result-latest.json",
+        "prefix": "execution-result-",
+        "id_key": "executionResultId",
+        "id_prefix": "xr-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -354,6 +362,7 @@ def derive_object_id(
         as_dict(data.get("executionRequest")).get("executionRequestId"),
         as_dict(data.get("executionEligibility")).get("eligibilityDecisionId"),
         as_dict(data.get("executionPreview")).get("executionPreviewId"),
+        as_dict(data.get("executionResult")).get("executionResultId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -498,6 +507,8 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     plan = as_dict(data.get("plan"))
     recommendation = as_dict(data.get("recommendation"))
     risk = as_dict(data.get("risk"))
+    result_body = as_dict(data.get("result"))
+    executor = as_dict(data.get("executor"))
     verification_summary = compact_verification_summary(data)
 
     def pick(*values: Any) -> Any:
@@ -645,6 +656,22 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["renderedArtifacts"] = rollout_plan.get("renderedArtifacts")
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "executionResult":
+        result["executionStatus"] = result_body.get("executionStatus")
+        result["readyForExecution"] = result_body.get("readyForExecution")
+        result["requestedAction"] = pick(
+            result_body.get("requestedAction"),
+            result.get("requestedAction"),
+        )
+        result["executedActionCount"] = len(as_list(result_body.get("executedActions")))
+        result["blockedActionCount"] = len(as_list(result_body.get("blockedActions")))
+        result["executorAdapter"] = executor.get("adapter")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            executor.get("willExecute"),
             result.get("willExecute"),
         )
 

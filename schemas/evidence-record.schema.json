@@ -313,6 +313,13 @@
           ],
           "description": "Path to the generated dry-run execution preview JSON."
         },
+        "executionResult": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated controlled executor result JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -915,6 +922,75 @@
           ]
         },
         "renderedReleasePlan": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "executionResult": {
+      "type": "object",
+      "properties": {
+        "executionResultId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executionStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "readyForExecution": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executedActionCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "blockedActionCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "executorAdapter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceExecutionResult": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceExecutionPreview": {
           "type": [
             "string",
             "null"
