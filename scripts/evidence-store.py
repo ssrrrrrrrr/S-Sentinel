@@ -127,6 +127,14 @@ RESOURCE_SPECS = [
         "id_prefix": "ga-",
     },
     {
+        "object_type": "gitopsAdapterResult",
+        "glob": "gitops-adapter-result-*.json",
+        "latest": "gitops-adapter-result-latest.json",
+        "prefix": "gitops-adapter-result-",
+        "id_key": "gitopsAdapterResultId",
+        "id_prefix": "gar-",
+    },
+    {
         "object_type": "policyInput",
         "schema_version": "policy.input/v1alpha1",
         "prefix": "policy-input-",
@@ -399,6 +407,7 @@ def derive_object_id(
         as_dict(data.get("gitopsPRBundle")).get("gitopsPRBundleId"),
         as_dict(data.get("gitopsHandoffBundle")).get("gitopsHandoffBundleId"),
         as_dict(data.get("gitopsAdapterRequest")).get("gitopsAdapterRequestId"),
+        as_dict(data.get("gitopsAdapterResult")).get("gitopsAdapterResultId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -767,6 +776,21 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["handoffFileCount"] = len(as_list(request_body.get("handoffFiles")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterResult":
+        delivery_result = as_dict(data.get("delivery"))
+        adapter = as_dict(data.get("adapter"))
+        receipt = as_dict(delivery_result.get("receipt"))
+        result["deliveryStatus"] = delivery_result.get("deliveryStatus")
+        result["adapterType"] = adapter.get("adapterType")
+        result["requestedOperation"] = delivery_result.get("requestedOperation")
+        result["branchName"] = receipt.get("branchName")
+        result["outputFileCount"] = len(as_list(delivery_result.get("outputFiles")))
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            adapter.get("willExecute"),
             result.get("willExecute"),
         )
 

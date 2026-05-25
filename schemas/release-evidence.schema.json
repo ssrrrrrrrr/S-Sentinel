@@ -231,6 +231,13 @@
           ],
           "description": "Path to the generated adapter-ready GitOps request JSON."
         },
+        "gitopsAdapterResult": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter delivery receipt JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -987,6 +994,54 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterResult": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterResultId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "deliveryStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "adapterType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "outputFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1185,6 +1240,13 @@
         "null"
       ],
       "description": "Adapter-ready GitOps request id linked to this release evidence bundle."
+    },
+    "gitopsAdapterResultId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter delivery receipt id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

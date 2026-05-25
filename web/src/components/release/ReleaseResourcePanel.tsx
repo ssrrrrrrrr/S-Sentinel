@@ -104,12 +104,25 @@ export function ReleaseResourcePanel({
         </div>
       ) : null}
 
+      {activeTab === "GitOps Delivery" ? (
+        <div className="rounded-xl border border-[#35517a] bg-[#101a29] p-4">
+          <div className="flex items-center gap-2 font-semibold text-slate-100">
+            <LockKeyhole className="h-4 w-4 text-amber-300" />
+            GitOps Delivery 边界
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            当前阶段只生成本地 delivery receipt，用来证明 adapter 已经接收并整理交付结果；它不会 commit、push、创建 PR，也不会调用外部 Git 平台。
+          </p>
+        </div>
+      ) : null}
+
       {activeTab === "Action Plan" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "Execution" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Proposal" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Bundle" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Handoff" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Adapter" ? <SafetyPanel latest={latest} /> : null}
+      {activeTab === "GitOps Delivery" ? <SafetyPanel latest={latest} /> : null}
 
       <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
         <div className="flex flex-col gap-3 border-b border-[#1a2535] pb-4 md:flex-row md:items-start md:justify-between">

@@ -10,6 +10,7 @@ export type ReleaseResourceKind =
   | "gitops-bundle"
   | "gitops-handoff"
   | "gitops-adapter"
+  | "gitops-delivery"
   | "intelligence"
   | "advice"
   | "context"

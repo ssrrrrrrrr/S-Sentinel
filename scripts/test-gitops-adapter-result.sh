@@ -15,21 +15,21 @@ if [ -z "${PYTHON_BIN:-}" ]; then
   fi
 fi
 
-TMP_DIR="${TMP_DIR:-/tmp/ssentinel-noop-executor-test}"
+TMP_DIR="${TMP_DIR:-/tmp/ssentinel-gitops-adapter-result-test}"
 REPORT_DIR="$TMP_DIR/reports"
 BUILD_DIR="$TMP_DIR/build/compiled/dev"
 
 rm -rf "$TMP_DIR"
 mkdir -p "$REPORT_DIR" "$BUILD_DIR"
 
-RELEASE_ID="20260101-040404"
+RELEASE_ID="20260101-121212"
 
 cat > "$REPORT_DIR/release-evidence-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "release.evidence.bundle/v1alpha1",
-  "generatedBy": "test-noop-executor.sh",
+  "generatedBy": "test-gitops-adapter-result.sh",
   "releaseId": "$RELEASE_ID",
-  "generatedAt": "2026-01-01T04:04:04Z",
+  "generatedAt": "2026-01-01T12:12:12Z",
   "releaseResult": "FAIL_BY_MULTIPLE_SLO",
   "policyDecision": "REQUIRE_HUMAN_APPROVAL",
   "finalAction": "STOP_PROMOTION",
@@ -39,9 +39,10 @@ cat > "$REPORT_DIR/release-evidence-$RELEASE_ID.json" <<JSON
   "service": "demo-app",
   "namespace": "slo-rollout",
   "env": "dev",
+  "gitopsOverlayPath": "deploy/overlays/dev",
   "summary": {
     "riskLevel": "high",
-    "riskScore": 85,
+    "riskScore": 88,
     "rolloutPhase": "Paused",
     "rolloutAbort": false,
     "analysisRunPhase": "Running",
@@ -77,15 +78,15 @@ JSON
 cat > "$REPORT_DIR/release-summary-$RELEASE_ID.md" <<'MD'
 # Release Summary
 
-Noop executor fixture.
+GitOps adapter result fixture.
 MD
 
 cat > "$REPORT_DIR/execution-request-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "execution.request/v1alpha1",
   "executionRequestId": "er-$RELEASE_ID",
-  "generatedBy": "test-noop-executor.sh",
-  "generatedAt": "2026-01-01T04:04:05Z",
+  "generatedBy": "test-gitops-adapter-result.sh",
+  "generatedAt": "2026-01-01T12:12:13Z",
   "mode": "request_only",
   "release": {
     "releaseId": "$RELEASE_ID",
@@ -118,8 +119,8 @@ cat > "$REPORT_DIR/execution-eligibility-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "execution.eligibility/v1alpha1",
   "eligibilityDecisionId": "el-$RELEASE_ID",
-  "generatedBy": "test-noop-executor.sh",
-  "generatedAt": "2026-01-01T04:04:06Z",
+  "generatedBy": "test-gitops-adapter-result.sh",
+  "generatedAt": "2026-01-01T12:12:14Z",
   "mode": "read_only_eligibility_assessment",
   "release": {
     "releaseId": "$RELEASE_ID",
@@ -145,7 +146,6 @@ cat > "$REPORT_DIR/execution-eligibility-$RELEASE_ID.json" <<JSON
   "supplyChain": {
     "decision": "REQUIRE_HUMAN_APPROVAL"
   },
-  "signedReleaseGate": {},
   "decision": {
     "finalStatus": "WAITING_APPROVAL",
     "readyToExecute": false,
@@ -164,8 +164,8 @@ JSON
 cat > "$REPORT_DIR/action-plan-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "release.action-plan/v1alpha1",
-  "generatedBy": "test-noop-executor.sh",
-  "generatedAt": "2026-01-01T04:04:07Z",
+  "generatedBy": "test-gitops-adapter-result.sh",
+  "generatedAt": "2026-01-01T12:12:15Z",
   "sourceReleaseEvidence": "release-evidence-$RELEASE_ID.json",
   "releaseResult": "FAIL_BY_MULTIPLE_SLO",
   "policyDecision": "REQUIRE_HUMAN_APPROVAL",
@@ -181,8 +181,6 @@ cat > "$REPORT_DIR/action-plan-$RELEASE_ID.json" <<JSON
   },
   "actionPlan": {
     "action": "STOP_PROMOTION",
-    "blocked": false,
-    "blockReason": null,
     "candidateCommands": [
       {
         "name": "inspect_rollout",
@@ -192,7 +190,7 @@ cat > "$REPORT_DIR/action-plan-$RELEASE_ID.json" <<JSON
       }
     ],
     "humanSteps": [
-      "Stop promotion and inspect rollout health."
+      "Review rollout impact before adapter handoff."
     ]
   },
   "guardrails": {
@@ -214,8 +212,8 @@ cat > "$REPORT_DIR/supply-chain-decision-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "supply.chain.decision/v1alpha1",
   "supplyChainDecisionId": "sc-$RELEASE_ID",
-  "generatedBy": "test-noop-executor.sh",
-  "generatedAt": "2026-01-01T04:04:08Z",
+  "generatedBy": "test-gitops-adapter-result.sh",
+  "generatedAt": "2026-01-01T12:12:16Z",
   "decision": {
     "decision": "REQUIRE_HUMAN_APPROVAL",
     "requiresHumanApproval": true,
@@ -229,16 +227,23 @@ cat > "$BUILD_DIR/rendered-release-plan.json" <<JSON
 {
   "schemaVersion": "ssentinel.rendered-release-plan/v1alpha1",
   "kind": "RenderedReleasePlan",
-  "generatedAt": "2026-01-01T04:04:09Z",
+  "generatedAt": "2026-01-01T12:12:17Z",
   "generatedBy": "scripts/compile-release-config.sh",
   "release": {
     "service": "demo-app",
     "env": "dev",
     "namespace": "slo-rollout",
+    "clusterName": "kind-dev",
+    "environmentClass": "development",
+    "policyProfile": "strict-release",
     "appVersion": "v1"
   },
   "inputs": {
+    "environmentConfigRef": "configs/environments/dev.yaml",
     "overlayPath": "deploy/overlays/dev"
+  },
+  "sourceConfigRefs": {
+    "environmentConfig": {"path": "configs/environments/dev.yaml"}
   },
   "outputs": {
     "outputDir": "build/compiled/dev",
@@ -246,6 +251,7 @@ cat > "$BUILD_DIR/rendered-release-plan.json" <<JSON
     "rollout": "rollout.yaml",
     "kustomization": "kustomization.yaml",
     "artifacts": [
+      {"kind": "AnalysisTemplate", "path": "analysis.yaml", "rendererRef": "prometheus-analysis-template-v1"},
       {"kind": "Rollout", "path": "rollout.yaml", "rendererRef": "argo-rollouts-canary-v1"}
     ]
   },
@@ -259,60 +265,65 @@ cat > "$BUILD_DIR/rendered-release-plan.json" <<JSON
 }
 JSON
 
-echo "===== run noop executor ====="
+echo "===== build execution preview ====="
 EXECUTION_PREVIEW_RENDERED_PLAN="$BUILD_DIR/rendered-release-plan.json" \
-  ./scripts/run-noop-executor.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/noop.log"
-cat "$TMP_DIR/noop.log"
+  ./scripts/build-execution-preview.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/preview.log"
+cat "$TMP_DIR/preview.log"
 
 echo
-echo "===== assert noop executor ====="
-"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/execution-result-$RELEASE_ID.json" "$REPORT_DIR/gitops-patch-proposal-$RELEASE_ID.json" "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" "$REPORT_DIR/evidence-record-$RELEASE_ID.json" <<'PY'
+echo "===== build execution result ====="
+./scripts/build-execution-result.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/result.log"
+cat "$TMP_DIR/result.log"
+
+echo
+echo "===== build gitops patch proposal ====="
+./scripts/build-gitops-patch-proposal.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/proposal.log"
+cat "$TMP_DIR/proposal.log"
+
+echo
+echo "===== build gitops pr bundle ====="
+./scripts/build-gitops-pr-bundle.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/bundle.log"
+cat "$TMP_DIR/bundle.log"
+
+echo
+echo "===== build gitops handoff bundle ====="
+./scripts/build-gitops-handoff-bundle.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/handoff.log"
+cat "$TMP_DIR/handoff.log"
+
+echo
+echo "===== build gitops adapter request ====="
+./scripts/build-gitops-adapter-request.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/adapter-request.log"
+cat "$TMP_DIR/adapter-request.log"
+
+echo
+echo "===== build gitops adapter result ====="
+./scripts/build-gitops-adapter-result.sh "$REPORT_DIR/release-evidence-$RELEASE_ID.json" > "$TMP_DIR/adapter-result.log"
+cat "$TMP_DIR/adapter-result.log"
+
+echo
+echo "===== assert gitops adapter result ====="
+"$PYTHON_BIN" - "$REPORT_DIR/release-evidence-$RELEASE_ID.json" "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 evidence = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 result = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
-proposal = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
-bundle = json.loads(Path(sys.argv[4]).read_text(encoding="utf-8"))
-handoff = json.loads(Path(sys.argv[5]).read_text(encoding="utf-8"))
-adapter_request = json.loads(Path(sys.argv[6]).read_text(encoding="utf-8"))
-adapter_result = json.loads(Path(sys.argv[7]).read_text(encoding="utf-8"))
-record = json.loads(Path(sys.argv[8]).read_text(encoding="utf-8"))
 
-assert result["schemaVersion"] == "execution.result/v1alpha1"
-assert result["executionResultId"] == "xr-20260101-040404"
-assert result["result"]["executionStatus"] == "PREVIEW_ONLY"
-assert proposal["schemaVersion"] == "gitops.patch.proposal/v1alpha1"
-assert proposal["gitopsPatchProposalId"] == "gp-20260101-040404"
-assert bundle["schemaVersion"] == "gitops.pr.bundle/v1alpha1"
-assert bundle["gitopsPRBundleId"] == "gb-20260101-040404"
-assert handoff["schemaVersion"] == "gitops.handoff.bundle/v1alpha1"
-assert handoff["gitopsHandoffBundleId"] == "hb-20260101-040404"
-assert adapter_request["schemaVersion"] == "gitops.adapter.request/v1alpha1"
-assert adapter_request["gitopsAdapterRequestId"] == "ga-20260101-040404"
-assert adapter_result["schemaVersion"] == "gitops.adapter.result/v1alpha1"
-assert adapter_result["gitopsAdapterResultId"] == "gar-20260101-040404"
-assert evidence["decisionRefs"]["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
-assert evidence["decisionRefs"]["gitopsPatchProposal"]["proposalStatus"] == "WAITING_APPROVAL"
-assert evidence["decisionRefs"]["gitopsPRBundle"]["bundleStatus"] == "WAITING_APPROVAL"
-assert evidence["decisionRefs"]["gitopsHandoffBundle"]["handoffStatus"] == "WAITING_APPROVAL"
-assert evidence["decisionRefs"]["gitopsAdapterRequest"]["requestStatus"] == "WAITING_APPROVAL"
+assert result["schemaVersion"] == "gitops.adapter.result/v1alpha1"
+assert result["gitopsAdapterResultId"] == "gar-20260101-121212"
+assert result["delivery"]["deliveryStatus"] == "WAITING_APPROVAL"
+assert result["adapter"]["adapterType"] == "gitops-handoff-local"
+assert result["delivery"]["receipt"]["localOnly"] is True
+assert len(result["delivery"]["outputFiles"]) == 4
+assert result["guardrails"]["doesNotCallExternalGitProvider"] is True
+
+assert evidence["gitopsAdapterResultId"] == "gar-20260101-121212"
+assert evidence["artifacts"]["gitopsAdapterResult"].endswith("gitops-adapter-result-20260101-121212.json")
 assert evidence["decisionRefs"]["gitopsAdapterResult"]["deliveryStatus"] == "WAITING_APPROVAL"
-assert record["executionResult"]["executionResultId"] == "xr-20260101-040404"
-assert record["executionResult"]["executionStatus"] == "PREVIEW_ONLY"
-assert record["gitopsPatchProposal"]["gitopsPatchProposalId"] == "gp-20260101-040404"
-assert record["gitopsPatchProposal"]["proposalStatus"] == "WAITING_APPROVAL"
-assert record["gitopsPRBundle"]["gitopsPRBundleId"] == "gb-20260101-040404"
-assert record["gitopsPRBundle"]["bundleStatus"] == "WAITING_APPROVAL"
-assert record["gitopsHandoffBundle"]["gitopsHandoffBundleId"] == "hb-20260101-040404"
-assert record["gitopsHandoffBundle"]["handoffStatus"] == "WAITING_APPROVAL"
-assert record["gitopsAdapterRequest"]["gitopsAdapterRequestId"] == "ga-20260101-040404"
-assert record["gitopsAdapterRequest"]["requestStatus"] == "WAITING_APPROVAL"
-assert record["gitopsAdapterResult"]["gitopsAdapterResultId"] == "gar-20260101-040404"
-assert record["gitopsAdapterResult"]["deliveryStatus"] == "WAITING_APPROVAL"
+assert evidence["decisionRefs"]["gitopsAdapterResult"]["outputFileCount"] == 4
 
-print("PASS: noop executor generated execution result, gitops proposal, gitops bundle, gitops handoff, gitops adapter request, gitops adapter result, and evidence record")
+print("PASS: gitops adapter result generated and linked")
 PY
 
 echo
@@ -325,8 +336,7 @@ echo "===== validate contracts ====="
   "$REPORT_DIR/gitops-pr-bundle-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-handoff-bundle-$RELEASE_ID.json" \
   "$REPORT_DIR/gitops-adapter-request-$RELEASE_ID.json" \
-  "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json" \
-  "$REPORT_DIR/evidence-record-$RELEASE_ID.json"
+  "$REPORT_DIR/gitops-adapter-result-$RELEASE_ID.json"
 
 echo
-echo "PASS: noop executor test passed"
+echo "PASS: gitops adapter result test passed"
