@@ -10,4 +10,7 @@ bash scripts/test-gitops-real-pr-plan.sh
 echo "===== test gitops real PR local flow ====="
 bash scripts/test-gitops-real-pr-local-flow.sh
 
+echo "===== test controlled write guardrails ====="
+bash scripts/test-gitops-real-pr-controlled-write-guardrails.sh
+
 echo "PASS test-gitops-real-pr"
