@@ -213,6 +213,27 @@ type GitopsAdapterPickupEventRef = {
   allowedEvents?: string[]
 }
 
+type GitopsAdapterPickupTransitionRef = {
+  gitopsAdapterPickupTransitionId?: string
+  transitionStatus?: string
+  eventStatus?: string
+  handoffStateStatus?: string
+  pickupStatus?: string
+  ackStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  requestedEvent?: string
+  selectedEvent?: string
+  responseSource?: string
+  resultingStateStatus?: string
+  currentCheckpoint?: string
+  nextCheckpoint?: string
+  currentActor?: string
+  nextActor?: string
+  allowedEvents?: string[]
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -270,6 +291,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterPickupAck?: GitopsAdapterPickupAckRef
     gitopsAdapterHandoffState?: GitopsAdapterHandoffStateRef
     gitopsAdapterPickupEvent?: GitopsAdapterPickupEventRef
+    gitopsAdapterPickupTransition?: GitopsAdapterPickupTransitionRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -482,6 +504,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterPickupAck = refs.gitopsAdapterPickupAck
   const gitopsAdapterHandoffState = refs.gitopsAdapterHandoffState
   const gitopsAdapterPickupEvent = refs.gitopsAdapterPickupEvent
+  const gitopsAdapterPickupTransition = refs.gitopsAdapterPickupTransition
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -574,6 +597,7 @@ export function ApprovalConsolePanel({
   const gitopsPickupAckStatus = gitopsAdapterPickupAck?.ackStatus ?? gitopsPickupStatus
   const gitopsHandoffStateStatus = gitopsAdapterHandoffState?.stateStatus ?? gitopsPickupAckStatus
   const gitopsPickupEventStatus = gitopsAdapterPickupEvent?.eventStatus ?? gitopsHandoffStateStatus
+  const gitopsPickupTransitionStatus = gitopsAdapterPickupTransition?.transitionStatus ?? gitopsPickupEventStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -693,6 +717,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsAdapterPickupEvent?.gitopsAdapterPickupEventId),
       hint: `expectedEvent=${valueOrDash(gitopsAdapterPickupEvent?.expectedEvent)}`,
       status: gitopsPickupEventStatus,
+      icon: Route,
+    },
+    {
+      label: "GitOps Pickup Transition",
+      value: valueOrDash(gitopsAdapterPickupTransition?.gitopsAdapterPickupTransitionId),
+      hint: `selectedEvent=${valueOrDash(gitopsAdapterPickupTransition?.selectedEvent)}`,
+      status: gitopsPickupTransitionStatus,
       icon: Route,
     },
     {
@@ -1019,6 +1050,17 @@ export function ApprovalConsolePanel({
                 ["gitopsPickupEventNextActor", valueOrDash(gitopsAdapterPickupEvent?.nextActor)],
                 ["gitopsPickupEventWorkspaceDir", valueOrDash(gitopsAdapterPickupEvent?.workspaceDir)],
                 ["gitopsPickupEventAllowedEvents", valueOrDash((gitopsAdapterPickupEvent?.allowedEvents ?? []).join(", "))],
+                ["gitopsAdapterPickupTransitionId", valueOrDash(gitopsAdapterPickupTransition?.gitopsAdapterPickupTransitionId)],
+                ["gitopsPickupTransitionStatus", valueOrDash(gitopsPickupTransitionStatus)],
+                ["gitopsPickupTransitionRequestedEvent", valueOrDash(gitopsAdapterPickupTransition?.requestedEvent)],
+                ["gitopsPickupTransitionSelectedEvent", valueOrDash(gitopsAdapterPickupTransition?.selectedEvent)],
+                ["gitopsPickupTransitionResponseSource", valueOrDash(gitopsAdapterPickupTransition?.responseSource)],
+                ["gitopsPickupTransitionResultingState", valueOrDash(gitopsAdapterPickupTransition?.resultingStateStatus)],
+                ["gitopsPickupTransitionCurrentCheckpoint", valueOrDash(gitopsAdapterPickupTransition?.currentCheckpoint)],
+                ["gitopsPickupTransitionNextCheckpoint", valueOrDash(gitopsAdapterPickupTransition?.nextCheckpoint)],
+                ["gitopsPickupTransitionCurrentActor", valueOrDash(gitopsAdapterPickupTransition?.currentActor)],
+                ["gitopsPickupTransitionNextActor", valueOrDash(gitopsAdapterPickupTransition?.nextActor)],
+                ["gitopsPickupTransitionWorkspaceDir", valueOrDash(gitopsAdapterPickupTransition?.workspaceDir)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1282,6 +1324,29 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Pickup Transition</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `transitionStatus:${valueOrDash(gitopsPickupTransitionStatus)}`,
+                gitopsAdapterPickupTransition?.requestedEvent
+                  ? `requestedEvent:${gitopsAdapterPickupTransition.requestedEvent}`
+                  : "requestedEvent:none",
+                gitopsAdapterPickupTransition?.selectedEvent
+                  ? `selectedEvent:${gitopsAdapterPickupTransition.selectedEvent}`
+                  : "selectedEvent:none",
+                gitopsAdapterPickupTransition?.resultingStateStatus
+                  ? `resultingState:${gitopsAdapterPickupTransition.resultingStateStatus}`
+                  : "resultingState:none",
+                gitopsAdapterPickupTransition?.responseSource
+                  ? `responseSource:${gitopsAdapterPickupTransition.responseSource}`
+                  : "responseSource:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1350,6 +1415,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Pickup Ack")}>查看 GitOps Pickup Ack</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff State")}>查看 GitOps Handoff State</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup Event")}>查看 GitOps Pickup Event</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Pickup Transition")}>查看 GitOps Pickup Transition</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

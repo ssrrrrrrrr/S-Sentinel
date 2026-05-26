@@ -280,6 +280,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter pickup event envelope JSON."
         },
+        "gitopsAdapterPickupTransition": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup transition JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1459,6 +1466,123 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterPickupTransition": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterPickupTransitionId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "transitionStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "eventStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "handoffStateStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pickupStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ackStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedEvent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "selectedEvent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "responseSource": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resultingStateStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "allowedEvents": {
+              "type": "array"
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1706,6 +1830,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter pickup event id linked to this release evidence bundle."
+    },
+    "gitopsAdapterPickupTransitionId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter pickup transition id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

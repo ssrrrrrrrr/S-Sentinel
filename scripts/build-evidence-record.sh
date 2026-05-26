@@ -403,6 +403,11 @@ gitops_adapter_pickup_event = load_json(gitops_adapter_pickup_event_path)
 gitops_adapter_pickup_event_body = as_dict(gitops_adapter_pickup_event.get("pickupEvent"))
 gitops_adapter_pickup_event_guardrails = as_dict(gitops_adapter_pickup_event.get("guardrails"))
 
+gitops_adapter_pickup_transition_path = resolve_ref(artifacts.get("gitopsAdapterPickupTransition"), evidence_path)
+gitops_adapter_pickup_transition = load_json(gitops_adapter_pickup_transition_path)
+gitops_adapter_pickup_transition_body = as_dict(gitops_adapter_pickup_transition.get("pickupTransition"))
+gitops_adapter_pickup_transition_guardrails = as_dict(gitops_adapter_pickup_transition.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -463,6 +468,7 @@ link_map = {
     "gitopsAdapterPickupAck": artifacts.get("gitopsAdapterPickupAck"),
     "gitopsAdapterHandoffState": artifacts.get("gitopsAdapterHandoffState"),
     "gitopsAdapterPickupEvent": artifacts.get("gitopsAdapterPickupEvent"),
+    "gitopsAdapterPickupTransition": artifacts.get("gitopsAdapterPickupTransition"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -500,6 +506,7 @@ artifact_defs = [
     ("gitopsAdapterPickupAck", link_map["gitopsAdapterPickupAck"], False),
     ("gitopsAdapterHandoffState", link_map["gitopsAdapterHandoffState"], False),
     ("gitopsAdapterPickupEvent", link_map["gitopsAdapterPickupEvent"], False),
+    ("gitopsAdapterPickupTransition", link_map["gitopsAdapterPickupTransition"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -853,6 +860,29 @@ record = {
         "allowedEventCount": len(as_list(gitops_adapter_pickup_event_body.get("allowedEvents"))),
         "sourceGitopsAdapterPickupEvent": nullable_string(link_map.get("gitopsAdapterPickupEvent")),
         "guardrails": gitops_adapter_pickup_event_guardrails,
+    },
+    "gitopsAdapterPickupTransition": {
+        "gitopsAdapterPickupTransitionId": nullable_string(gitops_adapter_pickup_transition.get("gitopsAdapterPickupTransitionId")),
+        "mode": nullable_string(gitops_adapter_pickup_transition.get("mode")),
+        "transitionStatus": nullable_string(gitops_adapter_pickup_transition_body.get("transitionStatus")),
+        "eventStatus": nullable_string(gitops_adapter_pickup_transition_body.get("eventStatus")),
+        "handoffStateStatus": nullable_string(gitops_adapter_pickup_transition_body.get("handoffStateStatus")),
+        "pickupStatus": nullable_string(gitops_adapter_pickup_transition_body.get("pickupStatus")),
+        "ackStatus": nullable_string(gitops_adapter_pickup_transition_body.get("ackStatus")),
+        "branchName": nullable_string(gitops_adapter_pickup_transition_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_pickup_transition_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_pickup_transition_body.get("workspaceDir")),
+        "requestedEvent": nullable_string(gitops_adapter_pickup_transition_body.get("requestedEvent")),
+        "selectedEvent": nullable_string(gitops_adapter_pickup_transition_body.get("selectedEvent")),
+        "responseSource": nullable_string(gitops_adapter_pickup_transition_body.get("responseSource")),
+        "resultingStateStatus": nullable_string(gitops_adapter_pickup_transition_body.get("resultingStateStatus")),
+        "currentCheckpoint": nullable_string(gitops_adapter_pickup_transition_body.get("currentCheckpoint")),
+        "nextCheckpoint": nullable_string(gitops_adapter_pickup_transition_body.get("nextCheckpoint")),
+        "currentActor": nullable_string(gitops_adapter_pickup_transition_body.get("currentActor")),
+        "nextActor": nullable_string(gitops_adapter_pickup_transition_body.get("nextActor")),
+        "allowedEventCount": len(as_list(gitops_adapter_pickup_transition_body.get("allowedEvents"))),
+        "sourceGitopsAdapterPickupTransition": nullable_string(link_map.get("gitopsAdapterPickupTransition")),
+        "guardrails": gitops_adapter_pickup_transition_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),
