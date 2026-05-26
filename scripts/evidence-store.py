@@ -151,6 +151,14 @@ RESOURCE_SPECS = [
         "id_prefix": "grun-",
     },
     {
+        "object_type": "gitopsAdapterPickupEvent",
+        "glob": "gitops-adapter-pickup-event-*.json",
+        "latest": "gitops-adapter-pickup-event-latest.json",
+        "prefix": "gitops-adapter-pickup-event-",
+        "id_key": "gitopsAdapterPickupEventId",
+        "id_prefix": "gpe-",
+    },
+    {
         "object_type": "gitopsAdapterPickupAck",
         "glob": "gitops-adapter-pickup-ack-*.json",
         "latest": "gitops-adapter-pickup-ack-latest.json",
@@ -453,6 +461,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterPickup")).get("gitopsAdapterPickupId"),
         as_dict(data.get("gitopsAdapterPickupAck")).get("gitopsAdapterPickupAckId"),
         as_dict(data.get("gitopsAdapterHandoffState")).get("gitopsAdapterHandoffStateId"),
+        as_dict(data.get("gitopsAdapterPickupEvent")).get("gitopsAdapterPickupEventId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -912,6 +921,26 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["nextCheckpoint"] = handoff_state.get("nextCheckpoint")
         result["currentActor"] = handoff_state.get("currentActor")
         result["nextActor"] = handoff_state.get("nextActor")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterPickupEvent":
+        pickup_event = as_dict(data.get("pickupEvent"))
+        result["eventStatus"] = pickup_event.get("eventStatus")
+        result["handoffStateStatus"] = pickup_event.get("handoffStateStatus")
+        result["pickupStatus"] = pickup_event.get("pickupStatus")
+        result["ackStatus"] = pickup_event.get("ackStatus")
+        result["requestedOperation"] = pickup_event.get("requestedOperation")
+        result["branchName"] = pickup_event.get("branchName")
+        result["workspaceDir"] = pickup_event.get("workspaceDir")
+        result["currentCheckpoint"] = pickup_event.get("currentCheckpoint")
+        result["nextCheckpoint"] = pickup_event.get("nextCheckpoint")
+        result["currentActor"] = pickup_event.get("currentActor")
+        result["nextActor"] = pickup_event.get("nextActor")
+        result["expectedEvent"] = pickup_event.get("expectedEvent")
+        result["allowedEventCount"] = len(as_list(pickup_event.get("allowedEvents")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

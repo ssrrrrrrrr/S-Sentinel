@@ -273,6 +273,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff lifecycle state JSON."
         },
+        "gitopsAdapterPickupEvent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup event envelope JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1359,6 +1366,99 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterPickupEvent": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterPickupEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "eventStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "handoffStateStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pickupStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ackStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "expectedEvent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "allowedEvents": {
+              "type": "array"
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1599,6 +1699,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter handoff lifecycle state id linked to this release evidence bundle."
+    },
+    "gitopsAdapterPickupEventId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter pickup event id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

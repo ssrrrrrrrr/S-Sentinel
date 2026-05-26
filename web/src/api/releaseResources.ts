@@ -16,6 +16,7 @@ export type ReleaseResourceKind =
   | "gitops-pickup"
   | "gitops-pickup-ack"
   | "gitops-handoff-state"
+  | "gitops-pickup-event"
   | "intelligence"
   | "advice"
   | "context"

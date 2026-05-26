@@ -196,6 +196,23 @@ type GitopsAdapterHandoffStateRef = {
   nextActor?: string
 }
 
+type GitopsAdapterPickupEventRef = {
+  gitopsAdapterPickupEventId?: string
+  eventStatus?: string
+  handoffStateStatus?: string
+  pickupStatus?: string
+  ackStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  currentCheckpoint?: string
+  nextCheckpoint?: string
+  currentActor?: string
+  nextActor?: string
+  expectedEvent?: string
+  allowedEvents?: string[]
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -252,6 +269,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterPickup?: GitopsAdapterPickupRef
     gitopsAdapterPickupAck?: GitopsAdapterPickupAckRef
     gitopsAdapterHandoffState?: GitopsAdapterHandoffStateRef
+    gitopsAdapterPickupEvent?: GitopsAdapterPickupEventRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -463,6 +481,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterPickup = refs.gitopsAdapterPickup
   const gitopsAdapterPickupAck = refs.gitopsAdapterPickupAck
   const gitopsAdapterHandoffState = refs.gitopsAdapterHandoffState
+  const gitopsAdapterPickupEvent = refs.gitopsAdapterPickupEvent
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -554,6 +573,7 @@ export function ApprovalConsolePanel({
   const gitopsPickupFileCount = gitopsAdapterPickup?.workspaceFileCount ?? gitopsRunFileCount
   const gitopsPickupAckStatus = gitopsAdapterPickupAck?.ackStatus ?? gitopsPickupStatus
   const gitopsHandoffStateStatus = gitopsAdapterHandoffState?.stateStatus ?? gitopsPickupAckStatus
+  const gitopsPickupEventStatus = gitopsAdapterPickupEvent?.eventStatus ?? gitopsHandoffStateStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -666,6 +686,13 @@ export function ApprovalConsolePanel({
       value: valueOrDash(gitopsAdapterHandoffState?.gitopsAdapterHandoffStateId),
       hint: `nextCheckpoint=${valueOrDash(gitopsAdapterHandoffState?.nextCheckpoint)}`,
       status: gitopsHandoffStateStatus,
+      icon: Route,
+    },
+    {
+      label: "GitOps Pickup Event",
+      value: valueOrDash(gitopsAdapterPickupEvent?.gitopsAdapterPickupEventId),
+      hint: `expectedEvent=${valueOrDash(gitopsAdapterPickupEvent?.expectedEvent)}`,
+      status: gitopsPickupEventStatus,
       icon: Route,
     },
     {
@@ -983,6 +1010,15 @@ export function ApprovalConsolePanel({
                 ["gitopsHandoffCurrentActor", valueOrDash(gitopsAdapterHandoffState?.currentActor)],
                 ["gitopsHandoffNextActor", valueOrDash(gitopsAdapterHandoffState?.nextActor)],
                 ["gitopsHandoffWorkspaceDir", valueOrDash(gitopsAdapterHandoffState?.workspaceDir)],
+                ["gitopsAdapterPickupEventId", valueOrDash(gitopsAdapterPickupEvent?.gitopsAdapterPickupEventId)],
+                ["gitopsPickupEventStatus", valueOrDash(gitopsPickupEventStatus)],
+                ["gitopsPickupEventExpectedEvent", valueOrDash(gitopsAdapterPickupEvent?.expectedEvent)],
+                ["gitopsPickupEventCurrentCheckpoint", valueOrDash(gitopsAdapterPickupEvent?.currentCheckpoint)],
+                ["gitopsPickupEventNextCheckpoint", valueOrDash(gitopsAdapterPickupEvent?.nextCheckpoint)],
+                ["gitopsPickupEventCurrentActor", valueOrDash(gitopsAdapterPickupEvent?.currentActor)],
+                ["gitopsPickupEventNextActor", valueOrDash(gitopsAdapterPickupEvent?.nextActor)],
+                ["gitopsPickupEventWorkspaceDir", valueOrDash(gitopsAdapterPickupEvent?.workspaceDir)],
+                ["gitopsPickupEventAllowedEvents", valueOrDash((gitopsAdapterPickupEvent?.allowedEvents ?? []).join(", "))],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1223,6 +1259,29 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Pickup Event</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `eventStatus:${valueOrDash(gitopsPickupEventStatus)}`,
+                gitopsAdapterPickupEvent?.expectedEvent
+                  ? `expectedEvent:${gitopsAdapterPickupEvent.expectedEvent}`
+                  : "expectedEvent:none",
+                gitopsAdapterPickupEvent?.currentCheckpoint
+                  ? `currentCheckpoint:${gitopsAdapterPickupEvent.currentCheckpoint}`
+                  : "currentCheckpoint:none",
+                gitopsAdapterPickupEvent?.nextCheckpoint
+                  ? `nextCheckpoint:${gitopsAdapterPickupEvent.nextCheckpoint}`
+                  : "nextCheckpoint:none",
+                (gitopsAdapterPickupEvent?.allowedEvents ?? []).length > 0
+                  ? `allowedEvents:${gitopsAdapterPickupEvent?.allowedEvents?.join("|")}`
+                  : "allowedEvents:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1290,6 +1349,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Pickup")}>查看 GitOps Pickup</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup Ack")}>查看 GitOps Pickup Ack</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff State")}>查看 GitOps Handoff State</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Pickup Event")}>查看 GitOps Pickup Event</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

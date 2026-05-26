@@ -390,6 +390,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff lifecycle state JSON."
         },
+        "gitopsAdapterPickupEvent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter pickup event envelope JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1697,6 +1704,111 @@
           ]
         },
         "sourceGitopsAdapterHandoffState": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterPickupEvent": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterPickupEventId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "eventStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "handoffStateStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pickupStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ackStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currentCheckpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextCheckpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currentActor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextActor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expectedEvent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "allowedEventCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterPickupEvent": {
           "type": [
             "string",
             "null"

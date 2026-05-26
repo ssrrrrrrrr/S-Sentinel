@@ -84,6 +84,11 @@ export const releaseTabs: ReleaseTabDefinition[] = [
     targetRoute: "Approval",
   },
   {
+    id: "GitOps Pickup Event",
+    resourceKind: "gitops-pickup-event",
+    targetRoute: "Approval",
+  },
+  {
     id: "Advisor Trace",
     resourceKind: "advice",
     targetRoute: "Agent Trace",
