@@ -33,6 +33,7 @@ if not repo_dir.exists():
     raise SystemExit(f"ERROR: repo dir does not exist: {repo_dir}")
 
 payload = json.loads(commit_payload_path.read_text(encoding="utf-8-sig"))
+target_repository = mat.get("targetRepository") or payload.get("targetRepository") or {}
 patch_entries = payload.get("patchEntries") or []
 
 written = []
@@ -101,6 +102,7 @@ out = {
         "repoDir": str(repo_dir),
         "commitPayloadPath": str(commit_payload_path)
     },
+    "targetRepository": target_repository,
     "fileMaterialization": {
         "status": status,
         "writtenFileCount": len(written),

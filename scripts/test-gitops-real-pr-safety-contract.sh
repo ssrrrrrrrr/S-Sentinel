@@ -25,6 +25,18 @@ done
 
 grep -q '"gh", "pr", "create"' "$CREATE_SCRIPT"
 grep -q 'didCreatePullRequest' "$CREATE_SCRIPT"
+grep -q 'target_owner' "$CREATE_SCRIPT"
+grep -q 'target_base_branch' "$CREATE_SCRIPT"
+
+if grep -q 'ssrrrrrrrr:' "$CREATE_SCRIPT"; then
+  echo "ERROR: hardcoded PR head owner found in $CREATE_SCRIPT" >&2
+  exit 1
+fi
+
+if grep -Eq '"--base"[[:space:]]*,[[:space:]]*"main"' "$CREATE_SCRIPT"; then
+  echo "ERROR: hardcoded PR base branch found in $CREATE_SCRIPT" >&2
+  exit 1
+fi
 
 grep -q '"gh", "pr", "close"' "$CLEANUP_SCRIPT"
 grep -q '"push", "origin", "--delete"' "$CLEANUP_SCRIPT"

@@ -34,7 +34,16 @@ cat > "$TMP_DIR/package/commit-payload.json" <<JSON
       "changeType": "smoke_test_file",
       "content": "# GitOps Real PR Local Flow Smoke\\n\\nrunId: $RUN_ID\\n\\nThis file is committed locally only. No push or PR is created.\\n"
     }
-  ]
+  ],
+  "targetRepository": {
+    "provider": "github",
+    "owner": "ssrrrrrrrr",
+    "repo": "S-Sentinel",
+    "fullName": "ssrrrrrrrr/S-Sentinel",
+    "cloneUrl": "https://github.com/ssrrrrrrrr/S-Sentinel.git",
+    "baseBranch": "main",
+    "authMode": "gh-cli"
+  }
 }
 JSON
 
@@ -55,7 +64,16 @@ cat > "$TMP_DIR/gitops-adapter-provider-result-ready.json" <<JSON
     "providerType": "github-pr",
     "branchName": "$BRANCH",
     "packageDir": "$TMP_DIR/package",
-    "packageManifestPath": "$TMP_DIR/package/package-manifest.json"
+    "packageManifestPath": "$TMP_DIR/package/package-manifest.json",
+    "targetRepository": {
+      "provider": "github",
+      "owner": "ssrrrrrrrr",
+      "repo": "S-Sentinel",
+      "fullName": "ssrrrrrrrr/S-Sentinel",
+      "cloneUrl": "https://github.com/ssrrrrrrrr/S-Sentinel.git",
+      "baseBranch": "main",
+      "authMode": "gh-cli"
+    }
   },
   "guardrails": {
     "readOnly": false,
@@ -80,7 +98,21 @@ WORKSPACE_DIR="${INFO[0]}"
 REPO_DIR="${INFO[1]}"
 BRANCH_NAME="${INFO[2]}"
 
-git clone https://github.com/ssrrrrrrrr/S-Sentinel.git "$REPO_DIR" >/dev/null 2>&1
+CLONE_URL="$(python3 - "$WORKSPACE_JSON" <<'PY2'
+import json
+import sys
+from pathlib import Path
+
+workspace = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+target = workspace.get("targetRepository") or {}
+clone_url = target.get("cloneUrl") or ""
+if not clone_url:
+    raise SystemExit("ERROR: workspace.targetRepository.cloneUrl is missing")
+print(clone_url)
+PY2
+)"
+
+git clone "$CLONE_URL" "$REPO_DIR" >/dev/null 2>&1
 git -C "$REPO_DIR" checkout -b "$BRANCH_NAME" >/dev/null
 
 MAT="$(bash scripts/build-gitops-real-pr-materialization.sh "$WORKSPACE_JSON")"
@@ -105,6 +137,18 @@ assert files["fileMaterialization"]["status"] == "FILES_MATERIALIZED"
 assert commit["localCommit"]["commitStatus"] == "LOCAL_COMMIT_CREATED"
 assert push_pf["pushPreflight"]["preflightStatus"] == "READY_TO_PUSH_BRANCH"
 assert push_pf["pushPreflight"]["remoteBranchExists"] is False
+
+for name, obj in [
+    ("plan", plan),
+    ("materialization", mat),
+    ("fileMaterialization", files),
+    ("localCommit", commit),
+    ("pushPreflight", push_pf),
+]:
+    target = obj.get("targetRepository") or {}
+    assert target.get("fullName") == "ssrrrrrrrr/S-Sentinel", (name, target)
+    assert target.get("baseBranch") == "main", (name, target)
+    assert target.get("authMode") == "gh-cli", (name, target)
 
 print("PASS local real-pr flow")
 PY

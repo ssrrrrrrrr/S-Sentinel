@@ -23,6 +23,7 @@ data = json.loads(plan_path.read_text(encoding="utf-8-sig"))
 plan = data.get("plan") or {}
 release = data.get("release") or {}
 inputs = data.get("inputs") or {}
+target_repository = data.get("targetRepository") or {}
 
 plan_id = data.get("gitopsRealPRPlanId") or plan_path.stem
 release_id = release.get("releaseId") or plan_id.replace("gprplan-", "")
@@ -43,6 +44,8 @@ else:
 branch = plan.get("branchName") or "<missing-branch>"
 commit = plan.get("commitMessage") or "<missing-commit-message>"
 title = plan.get("pullRequestTitle") or "<missing-pr-title>"
+clone_url = target_repository.get("cloneUrl") or "<missing-clone-url>"
+base_branch = target_repository.get("baseBranch") or "<missing-base-branch>"
 
 preview = workspace_dir / "git-commands-preview.sh"
 preview.write_text(f"""#!/usr/bin/env bash
@@ -50,7 +53,7 @@ set -euo pipefail
 
 # Preview only. Do not execute automatically.
 
-git clone https://github.com/ssrrrrrrrr/S-Sentinel.git repo
+git clone {clone_url} repo
 cd repo
 git checkout -b {branch}
 # materialize files from provider-package
@@ -58,7 +61,7 @@ git status --short
 git add <materialized-files>
 git commit -m {json.dumps(commit)}
 git push origin {branch}
-gh pr create --title {json.dumps(title)} --body-file <pull-request-body.md>
+gh pr create --base {base_branch} --head {branch} --title {json.dumps(title)} --body-file <pull-request-body.md>
 """, encoding="utf-8")
 preview.chmod(0o755)
 
@@ -73,6 +76,7 @@ out = {
         "gitopsRealPRPlan": str(plan_path),
         "packageDir": str(package_src) if package_src else None
     },
+    "targetRepository": target_repository,
     "workspace": {
         "workspaceStatus": "WORKSPACE_PREPARED" if plan.get("planStatus") == "READY_FOR_REAL_PR" else "BLOCKED_BY_PLAN",
         "workspaceDir": str(workspace_dir),

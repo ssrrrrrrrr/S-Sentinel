@@ -25,6 +25,7 @@ local_commit = data.get("localCommit") or {}
 repo_dir = Path(inputs["repoDir"])
 branch = local_commit.get("branchName")
 commit_sha = local_commit.get("commitSha")
+target_repository = data.get("targetRepository") or {}
 
 reasons = []
 
@@ -93,6 +94,7 @@ out = {
         "gitopsRealPRLocalCommit": str(commit_json),
         "repoDir": str(repo_dir)
     },
+    "targetRepository": target_repository,
     "pushPreflight": {
         "preflightStatus": preflight_status,
         "branchName": branch,

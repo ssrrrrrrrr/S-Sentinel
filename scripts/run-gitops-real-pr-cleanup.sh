@@ -26,6 +26,7 @@ data = json.loads(create_path.read_text(encoding="utf-8-sig"))
 release = data.get("release") or {}
 inputs = data.get("inputs") or {}
 pr = data.get("pullRequest") or {}
+target_repository = data.get("targetRepository") or {}
 
 repo_dir = Path(inputs["repoDir"])
 number = pr.get("number")
@@ -77,6 +78,7 @@ out = {
         "gitopsRealPRCreate": str(create_path),
         "repoDir": str(repo_dir)
     },
+    "targetRepository": target_repository,
     "cleanup": {
         "cleanupStatus": "CLEANED_UP" if pr_after.get("state") == "CLOSED" and not remote else "NEEDS_ATTENTION",
         "pullRequest": pr_after,

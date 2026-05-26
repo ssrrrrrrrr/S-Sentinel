@@ -26,6 +26,7 @@ repo_dir = workspace_dir / "repo"
 commit_payload_path = workspace_dir / "provider-package" / "commit-payload.json"
 
 commit_payload = json.loads(commit_payload_path.read_text(encoding="utf-8-sig"))
+target_repository = data.get("targetRepository") or commit_payload.get("targetRepository") or {}
 patch_entries = commit_payload.get("patchEntries") or []
 
 materializable = []
@@ -60,6 +61,7 @@ out = {
         "repoDir": str(repo_dir),
         "commitPayloadPath": str(commit_payload_path)
     },
+    "targetRepository": target_repository,
     "materialization": {
         "materializationStatus": status,
         "branchName": commit_payload.get("branchName"),

@@ -50,6 +50,32 @@ payload_status = package_manifest.get("payloadStatus") or provider_result.get("r
 
 reasons: list[str] = []
 
+target_repository = (
+    provider_result.get("targetRepository")
+    or package_manifest.get("targetRepository")
+    or commit_payload.get("targetRepository")
+    or data.get("targetRepository")
+    or {}
+)
+
+target_owner = target_repository.get("owner")
+target_repo = target_repository.get("repo")
+target_full_name = target_repository.get("fullName") or (
+    f"{target_owner}/{target_repo}" if target_owner and target_repo else None
+)
+target_clone_url = target_repository.get("cloneUrl")
+target_base_branch = target_repository.get("baseBranch")
+target_auth_mode = target_repository.get("authMode") or "gh-cli"
+
+if not target_full_name:
+    reasons.append("targetRepository.fullName is missing")
+
+if not target_clone_url:
+    reasons.append("targetRepository.cloneUrl is missing")
+
+if not target_base_branch:
+    reasons.append("targetRepository.baseBranch is missing")
+
 if payload_status not in {"PAYLOAD_READY", "PROVIDER_RESULT_READY"}:
     reasons.append(f"payload/result status is not actionable: {payload_status}")
 
@@ -91,6 +117,15 @@ plan = {
         "gitopsAdapterProviderResult": str(input_path),
         "packageDir": str(package_dir) if package_dir else None,
         "packageManifestPath": str(package_manifest_path) if package_manifest_path else None,
+    },
+    "targetRepository": {
+        "provider": target_repository.get("provider") or "github",
+        "owner": target_owner,
+        "repo": target_repo,
+        "fullName": target_full_name,
+        "cloneUrl": target_clone_url,
+        "baseBranch": target_base_branch,
+        "authMode": target_auth_mode,
     },
     "plan": {
         "planStatus": plan_status,

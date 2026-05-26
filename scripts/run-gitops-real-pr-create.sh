@@ -26,6 +26,16 @@ pf = json.loads(pf_path.read_text(encoding="utf-8-sig"))
 release = pf.get("release") or {}
 inputs = pf.get("inputs") or {}
 preflight = pf.get("prCreatePreflight") or {}
+target_repository = pf.get("targetRepository") or {}
+
+target_owner = target_repository.get("owner") or preflight.get("headOwner")
+target_base_branch = target_repository.get("baseBranch") or preflight.get("baseBranch")
+
+if not target_owner:
+    raise SystemExit("ERROR: targetRepository.owner/headOwner is missing")
+
+if not target_base_branch:
+    raise SystemExit("ERROR: targetRepository.baseBranch is missing")
 
 if preflight.get("preflightStatus") != "READY_TO_CREATE_PR":
     raise SystemExit("ERROR: PR preflight is not READY_TO_CREATE_PR")
@@ -41,7 +51,7 @@ if not body_path.exists():
     raise SystemExit(f"ERROR: PR body file not found: {body_path}")
 
 existing = json.loads(subprocess.check_output(
-    ["gh", "pr", "list", "--head", f"ssrrrrrrrr:{branch}", "--json", "number,title,state,url"],
+    ["gh", "pr", "list", "--head", f"{target_owner}:{branch}", "--json", "number,title,state,url"],
     cwd=repo_dir,
     text=True,
 ))
@@ -52,7 +62,7 @@ if existing:
 pr_url = subprocess.check_output(
     [
         "gh", "pr", "create",
-        "--base", "main",
+        "--base", target_base_branch,
         "--head", branch,
         "--title", title,
         "--body-file", str(body_path),
@@ -84,6 +94,7 @@ out = {
         "repoDir": str(repo_dir),
         "pullRequestBodyPath": str(body_path)
     },
+    "targetRepository": target_repository,
     "pullRequest": {
         "createStatus": "PULL_REQUEST_CREATED",
         "repo": preflight.get("repo"),

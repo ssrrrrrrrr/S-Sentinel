@@ -21,6 +21,7 @@ pf = json.loads(pf_path.read_text(encoding="utf-8-sig"))
 release = pf.get("release") or {}
 inputs = pf.get("inputs") or {}
 push_pf = pf.get("pushPreflight") or {}
+target_repository = pf.get("targetRepository") or {}
 
 if push_pf.get("preflightStatus") != "READY_TO_PUSH_BRANCH":
     raise SystemExit("ERROR: push preflight is not READY_TO_PUSH_BRANCH")
@@ -54,6 +55,7 @@ out = {
         "gitopsRealPRPushPreflight": str(pf_path),
         "repoDir": str(repo_dir)
     },
+    "targetRepository": target_repository,
     "branchPush": {
         "pushStatus": "BRANCH_PUSHED",
         "branchName": branch,

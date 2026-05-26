@@ -50,7 +50,16 @@ cat > "$TMP_DIR/gitops-adapter-provider-result-ready.json" <<'JSON'
     "providerType": "github-pr",
     "branchName": "ssentinel/demo-app-dev-stop-promotion-test",
     "packageDir": ".tmp/test-gitops-real-pr-plan/package",
-    "packageManifestPath": ".tmp/test-gitops-real-pr-plan/package/package-manifest.json"
+    "packageManifestPath": ".tmp/test-gitops-real-pr-plan/package/package-manifest.json",
+    "targetRepository": {
+      "provider": "github",
+      "owner": "ssrrrrrrrr",
+      "repo": "S-Sentinel",
+      "fullName": "ssrrrrrrrr/S-Sentinel",
+      "cloneUrl": "https://github.com/ssrrrrrrrr/S-Sentinel.git",
+      "baseBranch": "main",
+      "authMode": "gh-cli"
+    }
   },
   "guardrails": {
     "readOnly": false,
@@ -75,10 +84,15 @@ from pathlib import Path
 
 data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
 plan = data["plan"]
+target = data["targetRepository"]
 
 assert plan["planStatus"] == "READY_FOR_REAL_PR", plan
 assert plan["branchName"] == "ssentinel/demo-app-dev-stop-promotion-test", plan
 assert plan["patchEntryCount"] == 1, plan
+assert target["fullName"] == "ssrrrrrrrr/S-Sentinel", target
+assert target["cloneUrl"] == "https://github.com/ssrrrrrrrr/S-Sentinel.git", target
+assert target["baseBranch"] == "main", target
+assert target["authMode"] == "gh-cli", target
 
 print("PASS ready case")
 PY

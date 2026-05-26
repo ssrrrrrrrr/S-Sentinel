@@ -26,6 +26,7 @@ repo_dir = Path(inputs["repoDir"])
 commit_payload_path = Path(inputs["commitPayloadPath"])
 
 payload = json.loads(commit_payload_path.read_text(encoding="utf-8-sig"))
+target_repository = mat.get("targetRepository") or payload.get("targetRepository") or {}
 commit_message = payload.get("commitMessage")
 
 if not commit_message:
@@ -71,6 +72,7 @@ out = {
         "repoDir": str(repo_dir),
         "commitPayloadPath": str(commit_payload_path)
     },
+    "targetRepository": target_repository,
     "localCommit": {
         "commitStatus": "LOCAL_COMMIT_CREATED",
         "branchName": branch,
