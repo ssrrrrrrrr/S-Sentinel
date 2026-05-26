@@ -137,6 +137,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-handoff-progress", api.handleLatestResource("gitopsAdapterHandoffProgress"))
 	mux.HandleFunc("/api/releases/latest/gitops-payload", api.handleLatestResource("gitopsAdapterPayload"))
 	mux.HandleFunc("/api/releases/latest/gitops-dispatch", api.handleLatestResource("gitopsAdapterDispatch"))
+	mux.HandleFunc("/api/releases/latest/gitops-provider-request", api.handleLatestResource("gitopsAdapterProviderRequest"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -337,6 +338,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-adapter-dispatch-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest external GitOps adapter stub dispatch.",
+		},
+		{
+			Name:         "gitopsAdapterProviderRequest",
+			Endpoint:     "/api/releases/latest/gitops-provider-request",
+			Candidates:   []string{"gitops-adapter-provider-request-latest.json"},
+			FallbackGlob: "gitops-adapter-provider-request-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest provider-ready GitOps PR request.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -1043,6 +1052,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterPayload", "application/json; charset=utf-8", true
 	case "gitops-dispatch":
 		return "gitopsAdapterDispatch", "application/json; charset=utf-8", true
+	case "gitops-provider-request":
+		return "gitopsAdapterProviderRequest", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -1096,6 +1107,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"gitopsAdapterHandoffProgress":  "gitops-handoff-progress",
 		"gitopsAdapterPayload":          "gitops-payload",
 		"gitopsAdapterDispatch":         "gitops-dispatch",
+		"gitopsAdapterProviderRequest":  "gitops-provider-request",
 		"executionEligibility":          "eligibility",
 		"failureEvidence":               "failure-evidence",
 		"aiAdvice":                      "advice",
@@ -1208,6 +1220,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"gitops-adapter-handoff-progress-*.json",
 		"gitops-adapter-pickup-ack-*.json",
 		"gitops-adapter-pickup-*.json",
+		"gitops-adapter-provider-request-*.json",
 		"execution-eligibility-*.json",
 		"failure-evidence-*.json",
 		"ai-advice-*.md",
@@ -1450,6 +1463,7 @@ func releaseIDFromReportFile(base string) string {
 		"gitops-adapter-handoff-progress-",
 		"gitops-adapter-pickup-ack-",
 		"gitops-adapter-pickup-",
+		"gitops-adapter-provider-request-",
 		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
@@ -1668,6 +1682,8 @@ func kindFromReportFile(base string) string {
 		return "gitopsAdapterPickupAck"
 	case strings.HasPrefix(base, "gitops-adapter-pickup-"):
 		return "gitopsAdapterPickup"
+	case strings.HasPrefix(base, "gitops-adapter-provider-request-"):
+		return "gitopsAdapterProviderRequest"
 	case strings.HasPrefix(base, "execution-eligibility-"):
 		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):

@@ -315,6 +315,13 @@
           ],
           "description": "Path to the generated external GitOps adapter stub dispatch JSON."
         },
+        "gitopsAdapterProviderRequest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR request JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -2016,6 +2023,90 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterProviderRequest": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterProviderRequestId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "mode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "providerType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payloadManifestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commitPayloadPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "providerRequestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pullRequestTitle": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchEntryCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "workspaceArtifactCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -2298,6 +2389,13 @@
         "null"
       ],
       "description": "External GitOps adapter stub dispatch id linked to this release evidence bundle."
+    },
+    "gitopsAdapterProviderRequestId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Provider-ready GitOps PR request id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

@@ -60,6 +60,7 @@ ADAPTER_HANDOFF_PREP_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-handoff-prep.sh
 ADAPTER_HANDOFF_PROGRESS_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-handoff-progress.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_PAYLOAD_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-payload.sh" "$INPUT_FILE" | tail -n 1)"
 ADAPTER_DISPATCH_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-dispatch.sh" "$INPUT_FILE" | tail -n 1)"
+ADAPTER_PROVIDER_REQUEST_OUTPUT="$("$SCRIPT_DIR/build-gitops-adapter-provider-request.sh" "$INPUT_FILE" | tail -n 1)"
 RECORD_OUTPUT="$("$SCRIPT_DIR/build-evidence-record.sh" "$INPUT_FILE" | tail -n 1)"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
@@ -115,6 +116,7 @@ print(json.dumps({
         "gitopsAdapterHandoffProgress": artifacts.get("gitopsAdapterHandoffProgress"),
         "gitopsAdapterPayload": artifacts.get("gitopsAdapterPayload"),
         "gitopsAdapterDispatch": artifacts.get("gitopsAdapterDispatch"),
+        "gitopsAdapterProviderRequest": artifacts.get("gitopsAdapterProviderRequest"),
     },
     "guardrails": {
         "readOnly": False,

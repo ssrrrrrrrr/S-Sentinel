@@ -306,6 +306,20 @@ type GitopsAdapterDispatchRef = {
   workspaceArtifactCount?: number
 }
 
+type GitopsAdapterProviderRequestRef = {
+  gitopsAdapterProviderRequestId?: string
+  requestStatus?: string
+  providerType?: string
+  branchName?: string
+  requestedOperation?: string
+  payloadManifestPath?: string
+  commitPayloadPath?: string
+  providerRequestPath?: string
+  pullRequestTitle?: string
+  patchEntryCount?: number
+  workspaceArtifactCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -368,6 +382,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterHandoffProgress?: GitopsAdapterHandoffProgressRef
     gitopsAdapterPayload?: GitopsAdapterPayloadRef
     gitopsAdapterDispatch?: GitopsAdapterDispatchRef
+    gitopsAdapterProviderRequest?: GitopsAdapterProviderRequestRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -585,6 +600,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterHandoffProgress = refs.gitopsAdapterHandoffProgress
   const gitopsAdapterPayload = refs.gitopsAdapterPayload
   const gitopsAdapterDispatch = refs.gitopsAdapterDispatch
+  const gitopsAdapterProviderRequest = refs.gitopsAdapterProviderRequest
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -682,6 +698,8 @@ export function ApprovalConsolePanel({
   const gitopsHandoffProgressStatus = gitopsAdapterHandoffProgress?.progressStatus ?? gitopsHandoffPrepStatus
   const gitopsPayloadStatus = gitopsAdapterPayload?.payloadStatus ?? gitopsHandoffProgressStatus
   const gitopsDispatchStatus = gitopsAdapterDispatch?.dispatchStatus ?? gitopsPayloadStatus
+  const gitopsProviderRequestStatus =
+    gitopsAdapterProviderRequest?.requestStatus ?? gitopsDispatchStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -839,6 +857,13 @@ export function ApprovalConsolePanel({
       icon: Route,
     },
     {
+      label: "Provider Request",
+      value: valueOrDash(gitopsAdapterProviderRequest?.gitopsAdapterProviderRequestId),
+      hint: `requestStatus=${valueOrDash(gitopsProviderRequestStatus)}`,
+      status: gitopsProviderRequestStatus,
+      icon: Route,
+    },
+    {
       label: "Requested Action",
       value: actionDisplay(requestedAction),
       hint: `raw=${requestedAction}`,
@@ -979,6 +1004,16 @@ export function ApprovalConsolePanel({
         ? `External adapter stub dispatch 已生成：${gitopsAdapterDispatch.gitopsAdapterDispatchId}，说明平台已经开始产出面向真实 Git provider adapter 的交付回执，但仍然没有真正创建分支或 PR。`
         : "当前 evidence 里还没有 external adapter stub dispatch，说明平台还没有进入面向外部 GitOps adapter 的交付阶段。",
       status: gitopsAdapterDispatch?.gitopsAdapterDispatchId ? gitopsDispatchStatus : "MISSING",
+      icon: Route,
+    },
+    {
+      title: "Provider-ready PR Request",
+      description: gitopsAdapterProviderRequest?.gitopsAdapterProviderRequestId
+        ? `Provider-ready request 已生成：${gitopsAdapterProviderRequest.gitopsAdapterProviderRequestId}，现在已经能把 dispatch 收口成面向 Git provider adapter 的 PR 请求载荷，但仍然没有真正 push 分支或创建 PR。`
+        : "当前 evidence 里还没有 provider-ready PR request，说明平台还没有把 dispatch 进一步收口成面向外部 Git provider 的请求对象。",
+      status: gitopsAdapterProviderRequest?.gitopsAdapterProviderRequestId
+        ? gitopsProviderRequestStatus
+        : "MISSING",
       icon: Route,
     },
   ]
@@ -1579,6 +1614,26 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Provider Request</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `requestStatus:${valueOrDash(gitopsProviderRequestStatus)}`,
+                `providerType:${valueOrDash(gitopsAdapterProviderRequest?.providerType)}`,
+                gitopsAdapterProviderRequest?.branchName
+                  ? `branch:${gitopsAdapterProviderRequest.branchName}`
+                  : "branch:none",
+                gitopsAdapterProviderRequest?.pullRequestTitle
+                  ? `prTitle:${gitopsAdapterProviderRequest.pullRequestTitle}`
+                  : "prTitle:none",
+                `patchEntries:${valueOrDash(gitopsAdapterProviderRequest?.patchEntryCount ?? 0)}`,
+                `workspaceArtifacts:${valueOrDash(gitopsAdapterProviderRequest?.workspaceArtifactCount ?? 0)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1650,6 +1705,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Pickup Transition")}>查看 GitOps Pickup Transition</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff Prep")}>查看 GitOps Handoff Prep</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff Progress")}>查看 GitOps Handoff Progress</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Provider Request")}>查看 GitOps Provider Request</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
