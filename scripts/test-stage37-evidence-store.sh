@@ -48,6 +48,7 @@ assert_file_contains() {
 section "Stage 37 syntax checks"
 "$PYTHON_BIN" -m py_compile scripts/evidence-store.py
 bash -n scripts/test-evidence-store.sh
+bash -n scripts/test-evidence-store-gitops-real-pr.sh
 bash -n scripts/validate-release-portal-api.sh
 
 echo "PASS: syntax checks passed"
@@ -59,6 +60,10 @@ rm -rf scripts/__pycache__
 assert_file_contains "$TMP_DIR/evidence-store-test.log" "PASS: EvidenceStore query result is valid" "query-release regression passed"
 assert_file_contains "$TMP_DIR/evidence-store-test.log" "PASS: EvidenceStore list and object query are valid" "list-releases and get-object regression passed"
 assert_file_contains "$TMP_DIR/evidence-store-test.log" "PASS: evidence store test passed" "EvidenceStore CLI test passed"
+
+section "Stage B GitOps real PR EvidenceStore regression"
+./scripts/test-evidence-store-gitops-real-pr.sh > "$TMP_DIR/gitops-real-pr-evidence-store-test.log"
+assert_file_contains "$TMP_DIR/gitops-real-pr-evidence-store-test.log" "PASS evidence-store gitops real-pr import/search" "GitOps real PR EvidenceStore regression passed"
 
 section "Stage 37 real reports import"
 ./scripts/evidence-store.py init-db --db "$DB_FILE" > "$TMP_DIR/init-db.json"

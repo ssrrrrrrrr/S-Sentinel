@@ -207,6 +207,87 @@ RESOURCE_SPECS = [
         "id_prefix": "gprs-",
     },
     {
+        "object_type": "gitopsRealPRPlan",
+        "glob": "gitops-real-pr-plan-*.json",
+        "latest": "gitops-real-pr-plan-latest.json",
+        "prefix": "gitops-real-pr-plan-",
+        "id_key": "gitopsRealPRPlanId",
+        "id_prefix": "gprplan-",
+    },
+    {
+        "object_type": "gitopsRealPRWorkspace",
+        "glob": "gitops-real-pr-workspace-*.json",
+        "latest": "gitops-real-pr-workspace-latest.json",
+        "prefix": "gitops-real-pr-workspace-",
+        "id_key": "gitopsRealPRWorkspaceId",
+        "id_prefix": "gprws-",
+    },
+    {
+        "object_type": "gitopsRealPRMaterialization",
+        "glob": "gitops-real-pr-materialization-*.json",
+        "latest": "gitops-real-pr-materialization-latest.json",
+        "prefix": "gitops-real-pr-materialization-",
+        "id_key": "gitopsRealPRMaterializationId",
+        "id_prefix": "gprmat-",
+    },
+    {
+        "object_type": "gitopsRealPRFileMaterialization",
+        "glob": "gitops-real-pr-file-materialization-*.json",
+        "latest": "gitops-real-pr-file-materialization-latest.json",
+        "prefix": "gitops-real-pr-file-materialization-",
+        "id_key": "gitopsRealPRFileMaterializationId",
+        "id_prefix": "gprfiles-",
+    },
+    {
+        "object_type": "gitopsRealPRLocalCommit",
+        "glob": "gitops-real-pr-local-commit-*.json",
+        "latest": "gitops-real-pr-local-commit-latest.json",
+        "prefix": "gitops-real-pr-local-commit-",
+        "id_key": "gitopsRealPRLocalCommitId",
+        "id_prefix": "gprcommit-",
+    },
+    {
+        "object_type": "gitopsRealPRPushPreflight",
+        "glob": "gitops-real-pr-push-preflight-*.json",
+        "latest": "gitops-real-pr-push-preflight-latest.json",
+        "prefix": "gitops-real-pr-push-preflight-",
+        "id_key": "gitopsRealPRPushPreflightId",
+        "id_prefix": "gprpushpf-",
+    },
+    {
+        "object_type": "gitopsRealPRBranchPush",
+        "glob": "gitops-real-pr-branch-push-*.json",
+        "latest": "gitops-real-pr-branch-push-latest.json",
+        "prefix": "gitops-real-pr-branch-push-",
+        "id_key": "gitopsRealPRBranchPushId",
+        "id_prefix": "gprpush-",
+    },
+    {
+        "object_type": "gitopsRealPRCreatePreflight",
+        "glob": "gitops-real-pr-create-preflight-*.json",
+        "latest": "gitops-real-pr-create-preflight-latest.json",
+        "prefix": "gitops-real-pr-create-preflight-",
+        "id_key": "gitopsRealPRCreatePreflightId",
+        "id_prefix": "gprprpf-",
+    },
+    {
+        "object_type": "gitopsRealPRCreate",
+        "glob": "gitops-real-pr-create-*.json",
+        "latest": "gitops-real-pr-create-latest.json",
+        "prefix": "gitops-real-pr-create-",
+        "id_key": "gitopsRealPRCreateId",
+        "id_prefix": "gprcreate-",
+    },
+    {
+        "object_type": "gitopsRealPRCleanup",
+        "glob": "gitops-real-pr-cleanup-*.json",
+        "latest": "gitops-real-pr-cleanup-latest.json",
+        "prefix": "gitops-real-pr-cleanup-",
+        "id_key": "gitopsRealPRCleanupId",
+        "id_prefix": "gprcleanup-",
+    },
+
+    {
         "object_type": "gitopsAdapterPickupEvent",
         "glob": "gitops-adapter-pickup-event-*.json",
         "latest": "gitops-adapter-pickup-event-latest.json",
@@ -1202,6 +1283,103 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["agentTraceId"] = agent_trace_id
     if root_span_id:
         result["rootSpanId"] = root_span_id
+
+
+    if object_type == "gitopsRealPRPlan":
+        plan = as_dict(data.get("plan"))
+        result["planStatus"] = plan.get("planStatus")
+        result["providerType"] = plan.get("providerType")
+        result["branchName"] = plan.get("branchName")
+        result["commitMessage"] = plan.get("commitMessage")
+        result["pullRequestTitle"] = plan.get("pullRequestTitle")
+        result["patchEntryCount"] = plan.get("patchEntryCount")
+        result["blockedReasonCount"] = len(as_list(plan.get("blockedReasons")))
+        return result
+
+    if object_type == "gitopsRealPRWorkspace":
+        workspace = as_dict(data.get("workspace"))
+        result["workspaceStatus"] = workspace.get("workspaceStatus")
+        result["planStatus"] = workspace.get("planStatus")
+        result["branchName"] = workspace.get("branchName")
+        result["workspaceDir"] = workspace.get("workspaceDir")
+        return result
+
+    if object_type == "gitopsRealPRMaterialization":
+        materialization = as_dict(data.get("materialization"))
+        result["materializationStatus"] = materialization.get("materializationStatus")
+        result["branchName"] = materialization.get("branchName")
+        result["patchEntryCount"] = materialization.get("patchEntryCount")
+        result["materializableFileCount"] = materialization.get("materializableFileCount")
+        result["blockedEntryCount"] = materialization.get("blockedEntryCount")
+        return result
+
+    if object_type == "gitopsRealPRFileMaterialization":
+        file_materialization = as_dict(data.get("fileMaterialization"))
+        result["fileMaterializationStatus"] = file_materialization.get("status")
+        result["writtenFileCount"] = file_materialization.get("writtenFileCount")
+        result["blockedFileCount"] = file_materialization.get("blockedFileCount")
+        result["gitStatusCount"] = len(as_list(file_materialization.get("gitStatusShort")))
+        return result
+
+    if object_type == "gitopsRealPRLocalCommit":
+        local_commit = as_dict(data.get("localCommit"))
+        result["commitStatus"] = local_commit.get("commitStatus")
+        result["branchName"] = local_commit.get("branchName")
+        result["commitSha"] = local_commit.get("commitSha")
+        result["commitMessage"] = local_commit.get("commitMessage")
+        return result
+
+    if object_type == "gitopsRealPRPushPreflight":
+        push_preflight = as_dict(data.get("pushPreflight"))
+        result["preflightStatus"] = push_preflight.get("preflightStatus")
+        result["branchName"] = push_preflight.get("branchName")
+        result["commitSha"] = push_preflight.get("commitSha")
+        result["remoteBranchExists"] = push_preflight.get("remoteBranchExists")
+        result["blockedReasonCount"] = len(as_list(push_preflight.get("blockedReasons")))
+        return result
+
+    if object_type == "gitopsRealPRBranchPush":
+        branch_push = as_dict(data.get("branchPush"))
+        result["pushStatus"] = branch_push.get("pushStatus")
+        result["branchName"] = branch_push.get("branchName")
+        result["commitSha"] = branch_push.get("commitSha")
+        result["remoteBranchExists"] = branch_push.get("remoteBranchExists")
+        return result
+
+    if object_type == "gitopsRealPRCreatePreflight":
+        pr_preflight = as_dict(data.get("prCreatePreflight"))
+        result["preflightStatus"] = pr_preflight.get("preflightStatus")
+        result["repo"] = pr_preflight.get("repo")
+        result["branchName"] = pr_preflight.get("branchName")
+        result["commitSha"] = pr_preflight.get("commitSha")
+        result["pullRequestTitle"] = pr_preflight.get("pullRequestTitle")
+        result["existingPullRequestCount"] = len(as_list(pr_preflight.get("existingPullRequests")))
+        result["blockedReasonCount"] = len(as_list(pr_preflight.get("blockedReasons")))
+        return result
+
+    if object_type == "gitopsRealPRCreate":
+        pr = as_dict(data.get("pullRequest"))
+        result["createStatus"] = pr.get("createStatus")
+        result["repo"] = pr.get("repo")
+        result["pullRequestNumber"] = pr.get("number")
+        result["pullRequestState"] = pr.get("state")
+        result["pullRequestUrl"] = pr.get("url")
+        result["branchName"] = pr.get("headRefName")
+        result["baseBranch"] = pr.get("baseRefName")
+        result["mergeStateStatus"] = pr.get("mergeStateStatus")
+        return result
+
+    if object_type == "gitopsRealPRCleanup":
+        cleanup = as_dict(data.get("cleanup"))
+        pr = as_dict(cleanup.get("pullRequest"))
+        result["cleanupStatus"] = cleanup.get("cleanupStatus")
+        result["pullRequestNumber"] = pr.get("number")
+        result["pullRequestState"] = pr.get("state")
+        result["pullRequestUrl"] = pr.get("url")
+        result["branchName"] = pr.get("headRefName")
+        result["baseBranch"] = pr.get("baseRefName")
+        result["remoteBranchExists"] = cleanup.get("remoteBranchExists")
+        return result
 
     if object_type == "otelSpanBundle":
         result["spanCount"] = summary.get("spanCount")
