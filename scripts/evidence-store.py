@@ -159,6 +159,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gptn-",
     },
     {
+        "object_type": "gitopsAdapterHandoffPrep",
+        "glob": "gitops-adapter-handoff-prep-*.json",
+        "latest": "gitops-adapter-handoff-prep-latest.json",
+        "prefix": "gitops-adapter-handoff-prep-",
+        "id_key": "gitopsAdapterHandoffPrepId",
+        "id_prefix": "ghp-",
+    },
+    {
         "object_type": "gitopsAdapterPickupEvent",
         "glob": "gitops-adapter-pickup-event-*.json",
         "latest": "gitops-adapter-pickup-event-latest.json",
@@ -471,6 +479,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterHandoffState")).get("gitopsAdapterHandoffStateId"),
         as_dict(data.get("gitopsAdapterPickupEvent")).get("gitopsAdapterPickupEventId"),
         as_dict(data.get("gitopsAdapterPickupTransition")).get("gitopsAdapterPickupTransitionId"),
+        as_dict(data.get("gitopsAdapterHandoffPrep")).get("gitopsAdapterHandoffPrepId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -974,6 +983,31 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["currentActor"] = pickup_transition.get("currentActor")
         result["nextActor"] = pickup_transition.get("nextActor")
         result["allowedEventCount"] = len(as_list(pickup_transition.get("allowedEvents")))
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterHandoffPrep":
+        handoff_prep = as_dict(data.get("handoffPrep"))
+        result["prepStatus"] = handoff_prep.get("prepStatus")
+        result["transitionStatus"] = handoff_prep.get("transitionStatus")
+        result["eventStatus"] = handoff_prep.get("eventStatus")
+        result["handoffStateStatus"] = handoff_prep.get("handoffStateStatus")
+        result["resultingStateStatus"] = handoff_prep.get("resultingStateStatus")
+        result["pickupStatus"] = handoff_prep.get("pickupStatus")
+        result["ackStatus"] = handoff_prep.get("ackStatus")
+        result["requestedOperation"] = handoff_prep.get("requestedOperation")
+        result["branchName"] = handoff_prep.get("branchName")
+        result["workspaceDir"] = handoff_prep.get("workspaceDir")
+        result["selectedEvent"] = handoff_prep.get("selectedEvent")
+        result["responseSource"] = handoff_prep.get("responseSource")
+        result["currentCheckpoint"] = handoff_prep.get("currentCheckpoint")
+        result["nextCheckpoint"] = handoff_prep.get("nextCheckpoint")
+        result["currentActor"] = handoff_prep.get("currentActor")
+        result["nextActor"] = handoff_prep.get("nextActor")
+        result["preparedArtifactCount"] = handoff_prep.get("preparedArtifactCount")
+        result["prepChecklistCount"] = len(as_list(handoff_prep.get("prepChecklist")))
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

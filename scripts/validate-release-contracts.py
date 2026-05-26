@@ -144,6 +144,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "gitops-adapter-pickup-event.schema.json"
         if schema_version == "gitops.adapter.pickup.transition/v1alpha1":
             return "gitops-adapter-pickup-transition.schema.json"
+        if schema_version == "gitops.adapter.handoff.prep/v1alpha1":
+            return "gitops-adapter-handoff-prep.schema.json"
         if schema_version == "gitops.adapter.pickup/v1alpha1":
             return "gitops-adapter-pickup.schema.json"
         if schema_version == "supply.chain.decision/v1alpha1":
@@ -190,6 +192,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "gitops-adapter-pickup-event.schema.json"
     if "gitops-adapter-pickup-transition" in lower_name:
         return "gitops-adapter-pickup-transition.schema.json"
+    if "gitops-adapter-handoff-prep" in lower_name:
+        return "gitops-adapter-handoff-prep.schema.json"
     if "gitops-adapter-pickup" in lower_name:
         return "gitops-adapter-pickup.schema.json"
     if "plan-run" in lower_name:
@@ -206,7 +210,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, gitops-adapter-request, gitops-adapter-result, gitops-adapter-delivery, gitops-adapter-run, gitops-adapter-pickup, gitops-adapter-pickup-ack, gitops-adapter-handoff-state, gitops-adapter-pickup-event, gitops-adapter-pickup-transition, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, gitops-adapter-request, gitops-adapter-result, gitops-adapter-delivery, gitops-adapter-run, gitops-adapter-pickup, gitops-adapter-pickup-ack, gitops-adapter-handoff-state, gitops-adapter-pickup-event, gitops-adapter-pickup-transition, gitops-adapter-handoff-prep, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 

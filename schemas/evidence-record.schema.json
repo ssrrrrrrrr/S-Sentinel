@@ -404,6 +404,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter pickup transition JSON."
         },
+        "gitopsAdapterHandoffPrep": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter handoff prep JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -1945,6 +1952,141 @@
           ]
         },
         "sourceGitopsAdapterPickupTransition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterHandoffPrep": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterHandoffPrepId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prepStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transitionStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "eventStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "handoffStateStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resultingStateStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pickupStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ackStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "selectedEvent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "responseSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currentCheckpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextCheckpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currentActor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextActor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preparedArtifactCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "prepChecklistCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterHandoffPrep": {
           "type": [
             "string",
             "null"

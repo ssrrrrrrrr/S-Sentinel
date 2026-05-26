@@ -133,6 +133,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-handoff-state", api.handleLatestResource("gitopsAdapterHandoffState"))
 	mux.HandleFunc("/api/releases/latest/gitops-pickup-event", api.handleLatestResource("gitopsAdapterPickupEvent"))
 	mux.HandleFunc("/api/releases/latest/gitops-pickup-transition", api.handleLatestResource("gitopsAdapterPickupTransition"))
+	mux.HandleFunc("/api/releases/latest/gitops-handoff-prep", api.handleLatestResource("gitopsAdapterHandoffPrep"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -301,6 +302,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-adapter-pickup-transition-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest local-only GitOps pickup transition result.",
+		},
+		{
+			Name:         "gitopsAdapterHandoffPrep",
+			Endpoint:     "/api/releases/latest/gitops-handoff-prep",
+			Candidates:   []string{"gitops-adapter-handoff-prep-latest.json"},
+			FallbackGlob: "gitops-adapter-handoff-prep-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest local-only GitOps handoff prep result.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -999,6 +1008,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterPickupEvent", "application/json; charset=utf-8", true
 	case "gitops-pickup-transition":
 		return "gitopsAdapterPickupTransition", "application/json; charset=utf-8", true
+	case "gitops-handoff-prep":
+		return "gitopsAdapterHandoffPrep", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -1048,6 +1059,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"gitopsAdapterHandoffState":     "gitops-handoff-state",
 		"gitopsAdapterPickupEvent":      "gitops-pickup-event",
 		"gitopsAdapterPickupTransition": "gitops-pickup-transition",
+		"gitopsAdapterHandoffPrep":      "gitops-handoff-prep",
 		"executionEligibility":          "eligibility",
 		"failureEvidence":               "failure-evidence",
 		"aiAdvice":                      "advice",
@@ -1156,6 +1168,7 @@ func (api *portalAPI) listPortalReportResources() []portalReleaseResource {
 		"gitops-adapter-handoff-state-*.json",
 		"gitops-adapter-pickup-event-*.json",
 		"gitops-adapter-pickup-transition-*.json",
+		"gitops-adapter-handoff-prep-*.json",
 		"gitops-adapter-pickup-ack-*.json",
 		"gitops-adapter-pickup-*.json",
 		"execution-eligibility-*.json",
@@ -1396,6 +1409,7 @@ func releaseIDFromReportFile(base string) string {
 		"gitops-adapter-handoff-state-",
 		"gitops-adapter-pickup-event-",
 		"gitops-adapter-pickup-transition-",
+		"gitops-adapter-handoff-prep-",
 		"gitops-adapter-pickup-ack-",
 		"gitops-adapter-pickup-",
 		"execution-eligibility-",
@@ -1608,6 +1622,8 @@ func kindFromReportFile(base string) string {
 		return "gitopsAdapterPickupEvent"
 	case strings.HasPrefix(base, "gitops-adapter-pickup-transition-"):
 		return "gitopsAdapterPickupTransition"
+	case strings.HasPrefix(base, "gitops-adapter-handoff-prep-"):
+		return "gitopsAdapterHandoffPrep"
 	case strings.HasPrefix(base, "gitops-adapter-pickup-ack-"):
 		return "gitopsAdapterPickupAck"
 	case strings.HasPrefix(base, "gitops-adapter-pickup-"):

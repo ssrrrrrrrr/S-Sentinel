@@ -408,6 +408,11 @@ gitops_adapter_pickup_transition = load_json(gitops_adapter_pickup_transition_pa
 gitops_adapter_pickup_transition_body = as_dict(gitops_adapter_pickup_transition.get("pickupTransition"))
 gitops_adapter_pickup_transition_guardrails = as_dict(gitops_adapter_pickup_transition.get("guardrails"))
 
+gitops_adapter_handoff_prep_path = resolve_ref(artifacts.get("gitopsAdapterHandoffPrep"), evidence_path)
+gitops_adapter_handoff_prep = load_json(gitops_adapter_handoff_prep_path)
+gitops_adapter_handoff_prep_body = as_dict(gitops_adapter_handoff_prep.get("handoffPrep"))
+gitops_adapter_handoff_prep_guardrails = as_dict(gitops_adapter_handoff_prep.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -469,6 +474,7 @@ link_map = {
     "gitopsAdapterHandoffState": artifacts.get("gitopsAdapterHandoffState"),
     "gitopsAdapterPickupEvent": artifacts.get("gitopsAdapterPickupEvent"),
     "gitopsAdapterPickupTransition": artifacts.get("gitopsAdapterPickupTransition"),
+    "gitopsAdapterHandoffPrep": artifacts.get("gitopsAdapterHandoffPrep"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -507,6 +513,7 @@ artifact_defs = [
     ("gitopsAdapterHandoffState", link_map["gitopsAdapterHandoffState"], False),
     ("gitopsAdapterPickupEvent", link_map["gitopsAdapterPickupEvent"], False),
     ("gitopsAdapterPickupTransition", link_map["gitopsAdapterPickupTransition"], False),
+    ("gitopsAdapterHandoffPrep", link_map["gitopsAdapterHandoffPrep"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -883,6 +890,30 @@ record = {
         "allowedEventCount": len(as_list(gitops_adapter_pickup_transition_body.get("allowedEvents"))),
         "sourceGitopsAdapterPickupTransition": nullable_string(link_map.get("gitopsAdapterPickupTransition")),
         "guardrails": gitops_adapter_pickup_transition_guardrails,
+    },
+    "gitopsAdapterHandoffPrep": {
+        "gitopsAdapterHandoffPrepId": nullable_string(gitops_adapter_handoff_prep.get("gitopsAdapterHandoffPrepId")),
+        "mode": nullable_string(gitops_adapter_handoff_prep.get("mode")),
+        "prepStatus": nullable_string(gitops_adapter_handoff_prep_body.get("prepStatus")),
+        "transitionStatus": nullable_string(gitops_adapter_handoff_prep_body.get("transitionStatus")),
+        "eventStatus": nullable_string(gitops_adapter_handoff_prep_body.get("eventStatus")),
+        "handoffStateStatus": nullable_string(gitops_adapter_handoff_prep_body.get("handoffStateStatus")),
+        "resultingStateStatus": nullable_string(gitops_adapter_handoff_prep_body.get("resultingStateStatus")),
+        "pickupStatus": nullable_string(gitops_adapter_handoff_prep_body.get("pickupStatus")),
+        "ackStatus": nullable_string(gitops_adapter_handoff_prep_body.get("ackStatus")),
+        "branchName": nullable_string(gitops_adapter_handoff_prep_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_handoff_prep_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_handoff_prep_body.get("workspaceDir")),
+        "selectedEvent": nullable_string(gitops_adapter_handoff_prep_body.get("selectedEvent")),
+        "responseSource": nullable_string(gitops_adapter_handoff_prep_body.get("responseSource")),
+        "currentCheckpoint": nullable_string(gitops_adapter_handoff_prep_body.get("currentCheckpoint")),
+        "nextCheckpoint": nullable_string(gitops_adapter_handoff_prep_body.get("nextCheckpoint")),
+        "currentActor": nullable_string(gitops_adapter_handoff_prep_body.get("currentActor")),
+        "nextActor": nullable_string(gitops_adapter_handoff_prep_body.get("nextActor")),
+        "preparedArtifactCount": gitops_adapter_handoff_prep_body.get("preparedArtifactCount"),
+        "prepChecklistCount": len(as_list(gitops_adapter_handoff_prep_body.get("prepChecklist"))),
+        "sourceGitopsAdapterHandoffPrep": nullable_string(link_map.get("gitopsAdapterHandoffPrep")),
+        "guardrails": gitops_adapter_handoff_prep_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),
