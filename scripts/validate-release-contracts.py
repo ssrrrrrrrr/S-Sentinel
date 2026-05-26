@@ -154,6 +154,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
             return "gitops-adapter-dispatch.schema.json"
         if schema_version == "gitops.adapter.provider.request/v1alpha1":
             return "gitops-adapter-provider-request.schema.json"
+        if schema_version == "gitops.adapter.provider.result/v1alpha1":
+            return "gitops-adapter-provider-result.schema.json"
         if schema_version == "gitops.adapter.pickup/v1alpha1":
             return "gitops-adapter-pickup.schema.json"
         if schema_version == "supply.chain.decision/v1alpha1":
@@ -210,6 +212,8 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "gitops-adapter-dispatch.schema.json"
     if "gitops-adapter-provider-request" in lower_name:
         return "gitops-adapter-provider-request.schema.json"
+    if "gitops-adapter-provider-result" in lower_name:
+        return "gitops-adapter-provider-result.schema.json"
     if "gitops-adapter-pickup" in lower_name:
         return "gitops-adapter-pickup.schema.json"
     if "plan-run" in lower_name:
@@ -226,7 +230,7 @@ def infer_schema_name(document: Any, file_name: str) -> str:
         return "agent-run.schema.json"
 
     raise ValidationError(
-        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, gitops-adapter-request, gitops-adapter-result, gitops-adapter-delivery, gitops-adapter-run, gitops-adapter-pickup, gitops-adapter-pickup-ack, gitops-adapter-handoff-state, gitops-adapter-pickup-event, gitops-adapter-pickup-transition, gitops-adapter-handoff-prep, gitops-adapter-handoff-progress, gitops-adapter-payload, gitops-adapter-dispatch, gitops-adapter-provider-request, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
+        f"cannot infer schema for {file_name}; use a file name containing release-context, policy-decision, release-evidence, ai-decision, action-plan, plan-run, execution-request, execution-eligibility, execution-preview, execution-result, gitops-patch-proposal, gitops-pr-bundle, gitops-handoff-bundle, gitops-adapter-request, gitops-adapter-result, gitops-adapter-delivery, gitops-adapter-run, gitops-adapter-pickup, gitops-adapter-pickup-ack, gitops-adapter-handoff-state, gitops-adapter-pickup-event, gitops-adapter-pickup-transition, gitops-adapter-handoff-prep, gitops-adapter-handoff-progress, gitops-adapter-payload, gitops-adapter-dispatch, gitops-adapter-provider-request, gitops-adapter-provider-result, supply-chain-decision, release-intelligence, release-timeline, evidence-record, agent-run"
     )
 
 

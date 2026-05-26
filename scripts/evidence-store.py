@@ -199,6 +199,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gpr-",
     },
     {
+        "object_type": "gitopsAdapterProviderResult",
+        "glob": "gitops-adapter-provider-result-*.json",
+        "latest": "gitops-adapter-provider-result-latest.json",
+        "prefix": "gitops-adapter-provider-result-",
+        "id_key": "gitopsAdapterProviderResultId",
+        "id_prefix": "gprs-",
+    },
+    {
         "object_type": "gitopsAdapterPickupEvent",
         "glob": "gitops-adapter-pickup-event-*.json",
         "latest": "gitops-adapter-pickup-event-latest.json",
@@ -516,6 +524,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterPayload")).get("gitopsAdapterPayloadId"),
         as_dict(data.get("gitopsAdapterDispatch")).get("gitopsAdapterDispatchId"),
         as_dict(data.get("gitopsAdapterProviderRequest")).get("gitopsAdapterProviderRequestId"),
+        as_dict(data.get("gitopsAdapterProviderResult")).get("gitopsAdapterProviderResultId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -1135,6 +1144,25 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["workspaceArtifactCount"] = provider_request.get("workspaceArtifactCount")
         result["labels"] = provider_request.get("labels") or []
         result["warnings"] = provider_request.get("warnings") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterProviderResult":
+        provider_result = as_dict(data.get("providerResult"))
+        result["resultStatus"] = provider_result.get("resultStatus")
+        result["providerType"] = provider_result.get("providerType")
+        result["branchName"] = provider_result.get("branchName")
+        result["requestedOperation"] = provider_result.get("requestedOperation")
+        result["packageDir"] = provider_result.get("packageDir")
+        result["packageManifestPath"] = provider_result.get("packageManifestPath")
+        result["providerRequestPath"] = provider_result.get("providerRequestPath")
+        result["patchEntryCount"] = provider_result.get("patchEntryCount")
+        result["workspaceArtifactCount"] = provider_result.get("workspaceArtifactCount")
+        result["materializedFileCount"] = provider_result.get("materializedFileCount")
+        result["materializedFiles"] = provider_result.get("materializedFiles") or []
+        result["warnings"] = provider_result.get("warnings") or []
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

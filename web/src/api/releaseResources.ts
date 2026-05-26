@@ -23,6 +23,7 @@ export type ReleaseResourceKind =
   | "gitops-payload"
   | "gitops-dispatch"
   | "gitops-provider-request"
+  | "gitops-provider-result"
   | "intelligence"
   | "advice"
   | "context"

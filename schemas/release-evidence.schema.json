@@ -322,6 +322,13 @@
           ],
           "description": "Path to the generated provider-ready GitOps PR request JSON."
         },
+        "gitopsAdapterProviderResult": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -2107,6 +2114,90 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterProviderResult": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterProviderResultId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "mode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resultStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "providerType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "packageDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "packageManifestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "providerRequestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchEntryCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "workspaceArtifactCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "materializedFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -2396,6 +2487,13 @@
         "null"
       ],
       "description": "Provider-ready GitOps PR request id linked to this release evidence bundle."
+    },
+    "gitopsAdapterProviderResultId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Provider-ready GitOps PR result id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

@@ -439,6 +439,13 @@
           ],
           "description": "Path to the generated provider-ready GitOps PR request JSON."
         },
+        "gitopsAdapterProviderResult": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -2511,6 +2518,93 @@
           ]
         },
         "sourceGitopsAdapterProviderRequest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterProviderResult": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterProviderResultId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resultStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "providerType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "packageDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "packageManifestPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "providerRequestPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patchEntryCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "workspaceArtifactCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "materializedFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterProviderResult": {
           "type": [
             "string",
             "null"

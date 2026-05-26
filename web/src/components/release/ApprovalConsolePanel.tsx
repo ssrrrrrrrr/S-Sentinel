@@ -320,6 +320,20 @@ type GitopsAdapterProviderRequestRef = {
   workspaceArtifactCount?: number
 }
 
+type GitopsAdapterProviderResultRef = {
+  gitopsAdapterProviderResultId?: string
+  resultStatus?: string
+  providerType?: string
+  branchName?: string
+  requestedOperation?: string
+  packageDir?: string
+  packageManifestPath?: string
+  providerRequestPath?: string
+  patchEntryCount?: number
+  workspaceArtifactCount?: number
+  materializedFileCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -383,6 +397,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterPayload?: GitopsAdapterPayloadRef
     gitopsAdapterDispatch?: GitopsAdapterDispatchRef
     gitopsAdapterProviderRequest?: GitopsAdapterProviderRequestRef
+    gitopsAdapterProviderResult?: GitopsAdapterProviderResultRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -601,6 +616,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterPayload = refs.gitopsAdapterPayload
   const gitopsAdapterDispatch = refs.gitopsAdapterDispatch
   const gitopsAdapterProviderRequest = refs.gitopsAdapterProviderRequest
+  const gitopsAdapterProviderResult = refs.gitopsAdapterProviderResult
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -700,6 +716,8 @@ export function ApprovalConsolePanel({
   const gitopsDispatchStatus = gitopsAdapterDispatch?.dispatchStatus ?? gitopsPayloadStatus
   const gitopsProviderRequestStatus =
     gitopsAdapterProviderRequest?.requestStatus ?? gitopsDispatchStatus
+  const gitopsProviderResultStatus =
+    gitopsAdapterProviderResult?.resultStatus ?? gitopsProviderRequestStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -864,6 +882,13 @@ export function ApprovalConsolePanel({
       icon: Route,
     },
     {
+      label: "Provider Result",
+      value: valueOrDash(gitopsAdapterProviderResult?.gitopsAdapterProviderResultId),
+      hint: `resultStatus=${valueOrDash(gitopsProviderResultStatus)}`,
+      status: gitopsProviderResultStatus,
+      icon: FileCheck2,
+    },
+    {
       label: "Requested Action",
       value: actionDisplay(requestedAction),
       hint: `raw=${requestedAction}`,
@@ -1015,6 +1040,16 @@ export function ApprovalConsolePanel({
         ? gitopsProviderRequestStatus
         : "MISSING",
       icon: Route,
+    },
+    {
+      title: "Provider-ready PR Result",
+      description: gitopsAdapterProviderResult?.gitopsAdapterProviderResultId
+        ? `Provider-ready result 已生成：${gitopsAdapterProviderResult.gitopsAdapterProviderResultId}，说明平台已经把 provider request 落成了本地 PR-ready package 和交付回执，后续真实 provider adapter 只需要接手这个结果对象。`
+        : "当前 evidence 里还没有 provider-ready result，说明 provider request 之后的本地 PR package 还没有真正落地完成。",
+      status: gitopsAdapterProviderResult?.gitopsAdapterProviderResultId
+        ? gitopsProviderResultStatus
+        : "MISSING",
+      icon: FileCheck2,
     },
   ]
 
@@ -1634,6 +1669,26 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Provider Result</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `resultStatus:${valueOrDash(gitopsProviderResultStatus)}`,
+                `providerType:${valueOrDash(gitopsAdapterProviderResult?.providerType)}`,
+                gitopsAdapterProviderResult?.branchName
+                  ? `branch:${gitopsAdapterProviderResult.branchName}`
+                  : "branch:none",
+                gitopsAdapterProviderResult?.packageDir
+                  ? `packageDir:${gitopsAdapterProviderResult.packageDir}`
+                  : "packageDir:none",
+                `patchEntries:${valueOrDash(gitopsAdapterProviderResult?.patchEntryCount ?? 0)}`,
+                `materializedFiles:${valueOrDash(gitopsAdapterProviderResult?.materializedFileCount ?? 0)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1706,6 +1761,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Handoff Prep")}>查看 GitOps Handoff Prep</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff Progress")}>查看 GitOps Handoff Progress</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Provider Request")}>查看 GitOps Provider Request</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Provider Result")}>查看 GitOps Provider Result</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>
