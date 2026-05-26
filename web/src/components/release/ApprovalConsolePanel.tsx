@@ -256,6 +256,29 @@ type GitopsAdapterHandoffPrepRef = {
   prepChecklist?: string[]
 }
 
+type GitopsAdapterHandoffProgressRef = {
+  gitopsAdapterHandoffProgressId?: string
+  progressStatus?: string
+  prepStatus?: string
+  transitionStatus?: string
+  eventStatus?: string
+  handoffStateStatus?: string
+  resultingStateStatus?: string
+  pickupStatus?: string
+  ackStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  selectedEvent?: string
+  selectedAction?: string
+  actionSource?: string
+  currentCheckpoint?: string
+  nextCheckpoint?: string
+  currentActor?: string
+  nextActor?: string
+  workspaceArtifactCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -315,6 +338,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterPickupEvent?: GitopsAdapterPickupEventRef
     gitopsAdapterPickupTransition?: GitopsAdapterPickupTransitionRef
     gitopsAdapterHandoffPrep?: GitopsAdapterHandoffPrepRef
+    gitopsAdapterHandoffProgress?: GitopsAdapterHandoffProgressRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -529,6 +553,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterPickupEvent = refs.gitopsAdapterPickupEvent
   const gitopsAdapterPickupTransition = refs.gitopsAdapterPickupTransition
   const gitopsAdapterHandoffPrep = refs.gitopsAdapterHandoffPrep
+  const gitopsAdapterHandoffProgress = refs.gitopsAdapterHandoffProgress
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -623,6 +648,7 @@ export function ApprovalConsolePanel({
   const gitopsPickupEventStatus = gitopsAdapterPickupEvent?.eventStatus ?? gitopsHandoffStateStatus
   const gitopsPickupTransitionStatus = gitopsAdapterPickupTransition?.transitionStatus ?? gitopsPickupEventStatus
   const gitopsHandoffPrepStatus = gitopsAdapterHandoffPrep?.prepStatus ?? gitopsPickupTransitionStatus
+  const gitopsHandoffProgressStatus = gitopsAdapterHandoffProgress?.progressStatus ?? gitopsHandoffPrepStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -757,6 +783,13 @@ export function ApprovalConsolePanel({
       hint: `prepStatus=${valueOrDash(gitopsHandoffPrepStatus)}`,
       status: gitopsHandoffPrepStatus,
       icon: FileCheck2,
+    },
+    {
+      label: "GitOps Handoff Progress",
+      value: valueOrDash(gitopsAdapterHandoffProgress?.gitopsAdapterHandoffProgressId),
+      hint: `progressStatus=${valueOrDash(gitopsHandoffProgressStatus)}`,
+      status: gitopsHandoffProgressStatus,
+      icon: Route,
     },
     {
       label: "Requested Action",
@@ -1103,6 +1136,16 @@ export function ApprovalConsolePanel({
                 ["gitopsHandoffPrepNextActor", valueOrDash(gitopsAdapterHandoffPrep?.nextActor)],
                 ["gitopsHandoffPrepPreparedArtifacts", valueOrDash(gitopsAdapterHandoffPrep?.preparedArtifactCount)],
                 ["gitopsHandoffPrepWorkspaceDir", valueOrDash(gitopsAdapterHandoffPrep?.workspaceDir)],
+                ["gitopsAdapterHandoffProgressId", valueOrDash(gitopsAdapterHandoffProgress?.gitopsAdapterHandoffProgressId)],
+                ["gitopsHandoffProgressStatus", valueOrDash(gitopsHandoffProgressStatus)],
+                ["gitopsHandoffProgressSelectedAction", valueOrDash(gitopsAdapterHandoffProgress?.selectedAction)],
+                ["gitopsHandoffProgressActionSource", valueOrDash(gitopsAdapterHandoffProgress?.actionSource)],
+                ["gitopsHandoffProgressCurrentCheckpoint", valueOrDash(gitopsAdapterHandoffProgress?.currentCheckpoint)],
+                ["gitopsHandoffProgressNextCheckpoint", valueOrDash(gitopsAdapterHandoffProgress?.nextCheckpoint)],
+                ["gitopsHandoffProgressCurrentActor", valueOrDash(gitopsAdapterHandoffProgress?.currentActor)],
+                ["gitopsHandoffProgressNextActor", valueOrDash(gitopsAdapterHandoffProgress?.nextActor)],
+                ["gitopsHandoffProgressWorkspaceArtifacts", valueOrDash(gitopsAdapterHandoffProgress?.workspaceArtifactCount)],
+                ["gitopsHandoffProgressWorkspaceDir", valueOrDash(gitopsAdapterHandoffProgress?.workspaceDir)],
                 ["plannedActionCount", valueOrDash(plannedActionCount)],
                 ["blockedActionCount", valueOrDash(blockedActionCount)],
                 ["humanCheckpointCount", valueOrDash(humanCheckpointCount)],
@@ -1410,6 +1453,27 @@ export function ApprovalConsolePanel({
         </div>
 
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Handoff Progress</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `progressStatus:${valueOrDash(gitopsHandoffProgressStatus)}`,
+                gitopsAdapterHandoffProgress?.selectedAction
+                  ? `selectedAction:${gitopsAdapterHandoffProgress.selectedAction}`
+                  : "selectedAction:none",
+                gitopsAdapterHandoffProgress?.actionSource
+                  ? `actionSource:${gitopsAdapterHandoffProgress.actionSource}`
+                  : "actionSource:none",
+                `workspaceArtifacts:${valueOrDash(gitopsAdapterHandoffProgress?.workspaceArtifactCount ?? 0)}`,
+                gitopsAdapterHandoffProgress?.nextCheckpoint
+                  ? `nextCheckpoint:${gitopsAdapterHandoffProgress.nextCheckpoint}`
+                  : "nextCheckpoint:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Matched Policy Rules</h4>
           <div className="mt-3">
             <RuleChipsPanel rules={matchedRules} />
@@ -1480,6 +1544,7 @@ export function ApprovalConsolePanel({
         <ActionButton onClick={() => onTabChange("GitOps Pickup Event")}>查看 GitOps Pickup Event</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Pickup Transition")}>查看 GitOps Pickup Transition</ActionButton>
         <ActionButton onClick={() => onTabChange("GitOps Handoff Prep")}>查看 GitOps Handoff Prep</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps Handoff Progress")}>查看 GitOps Handoff Progress</ActionButton>
         <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
         <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
       </div>

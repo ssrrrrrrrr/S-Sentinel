@@ -413,6 +413,11 @@ gitops_adapter_handoff_prep = load_json(gitops_adapter_handoff_prep_path)
 gitops_adapter_handoff_prep_body = as_dict(gitops_adapter_handoff_prep.get("handoffPrep"))
 gitops_adapter_handoff_prep_guardrails = as_dict(gitops_adapter_handoff_prep.get("guardrails"))
 
+gitops_adapter_handoff_progress_path = resolve_ref(artifacts.get("gitopsAdapterHandoffProgress"), evidence_path)
+gitops_adapter_handoff_progress = load_json(gitops_adapter_handoff_progress_path)
+gitops_adapter_handoff_progress_body = as_dict(gitops_adapter_handoff_progress.get("handoffProgress"))
+gitops_adapter_handoff_progress_guardrails = as_dict(gitops_adapter_handoff_progress.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -475,6 +480,7 @@ link_map = {
     "gitopsAdapterPickupEvent": artifacts.get("gitopsAdapterPickupEvent"),
     "gitopsAdapterPickupTransition": artifacts.get("gitopsAdapterPickupTransition"),
     "gitopsAdapterHandoffPrep": artifacts.get("gitopsAdapterHandoffPrep"),
+    "gitopsAdapterHandoffProgress": artifacts.get("gitopsAdapterHandoffProgress"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -514,6 +520,7 @@ artifact_defs = [
     ("gitopsAdapterPickupEvent", link_map["gitopsAdapterPickupEvent"], False),
     ("gitopsAdapterPickupTransition", link_map["gitopsAdapterPickupTransition"], False),
     ("gitopsAdapterHandoffPrep", link_map["gitopsAdapterHandoffPrep"], False),
+    ("gitopsAdapterHandoffProgress", link_map["gitopsAdapterHandoffProgress"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -914,6 +921,31 @@ record = {
         "prepChecklistCount": len(as_list(gitops_adapter_handoff_prep_body.get("prepChecklist"))),
         "sourceGitopsAdapterHandoffPrep": nullable_string(link_map.get("gitopsAdapterHandoffPrep")),
         "guardrails": gitops_adapter_handoff_prep_guardrails,
+    },
+    "gitopsAdapterHandoffProgress": {
+        "gitopsAdapterHandoffProgressId": nullable_string(gitops_adapter_handoff_progress.get("gitopsAdapterHandoffProgressId")),
+        "mode": nullable_string(gitops_adapter_handoff_progress.get("mode")),
+        "progressStatus": nullable_string(gitops_adapter_handoff_progress_body.get("progressStatus")),
+        "prepStatus": nullable_string(gitops_adapter_handoff_progress_body.get("prepStatus")),
+        "transitionStatus": nullable_string(gitops_adapter_handoff_progress_body.get("transitionStatus")),
+        "eventStatus": nullable_string(gitops_adapter_handoff_progress_body.get("eventStatus")),
+        "handoffStateStatus": nullable_string(gitops_adapter_handoff_progress_body.get("handoffStateStatus")),
+        "resultingStateStatus": nullable_string(gitops_adapter_handoff_progress_body.get("resultingStateStatus")),
+        "pickupStatus": nullable_string(gitops_adapter_handoff_progress_body.get("pickupStatus")),
+        "ackStatus": nullable_string(gitops_adapter_handoff_progress_body.get("ackStatus")),
+        "branchName": nullable_string(gitops_adapter_handoff_progress_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_handoff_progress_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_handoff_progress_body.get("workspaceDir")),
+        "selectedEvent": nullable_string(gitops_adapter_handoff_progress_body.get("selectedEvent")),
+        "selectedAction": nullable_string(gitops_adapter_handoff_progress_body.get("selectedAction")),
+        "actionSource": nullable_string(gitops_adapter_handoff_progress_body.get("actionSource")),
+        "currentCheckpoint": nullable_string(gitops_adapter_handoff_progress_body.get("currentCheckpoint")),
+        "nextCheckpoint": nullable_string(gitops_adapter_handoff_progress_body.get("nextCheckpoint")),
+        "currentActor": nullable_string(gitops_adapter_handoff_progress_body.get("currentActor")),
+        "nextActor": nullable_string(gitops_adapter_handoff_progress_body.get("nextActor")),
+        "workspaceArtifactCount": gitops_adapter_handoff_progress_body.get("workspaceArtifactCount"),
+        "sourceGitopsAdapterHandoffProgress": nullable_string(link_map.get("gitopsAdapterHandoffProgress")),
+        "guardrails": gitops_adapter_handoff_progress_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

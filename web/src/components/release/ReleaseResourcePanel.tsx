@@ -212,6 +212,18 @@ export function ReleaseResourcePanel({
         </div>
       ) : null}
 
+      {activeTab === "GitOps Handoff Progress" ? (
+        <div className="rounded-xl border border-[#35517a] bg-[#101a29] p-4">
+          <div className="flex items-center gap-2 font-semibold text-slate-100">
+            <LockKeyhole className="h-4 w-4 text-amber-300" />
+            GitOps Handoff Progress 边界
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            当前阶段只在本地控制面记录 handoff 是否开始、完成或退回返工，不会 commit、push、创建 Pull Request，也不会调用外部 Git 平台。
+          </p>
+        </div>
+      ) : null}
+
       {activeTab === "Action Plan" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "Execution" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Proposal" ? <SafetyPanel latest={latest} /> : null}
@@ -227,6 +239,7 @@ export function ReleaseResourcePanel({
       {activeTab === "GitOps Pickup Event" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Pickup Transition" ? <SafetyPanel latest={latest} /> : null}
       {activeTab === "GitOps Handoff Prep" ? <SafetyPanel latest={latest} /> : null}
+      {activeTab === "GitOps Handoff Progress" ? <SafetyPanel latest={latest} /> : null}
 
       <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-5">
         <div className="flex flex-col gap-3 border-b border-[#1a2535] pb-4 md:flex-row md:items-start md:justify-between">

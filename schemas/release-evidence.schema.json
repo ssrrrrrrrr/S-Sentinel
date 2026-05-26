@@ -294,6 +294,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff prep JSON."
         },
+        "gitopsAdapterHandoffProgress": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter handoff progress JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1713,6 +1720,138 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterHandoffProgress": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterHandoffProgressId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "progressStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "prepStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "transitionStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "eventStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "handoffStateStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "resultingStateStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pickupStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ackStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "selectedEvent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "selectedAction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "actionSource": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextCheckpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "currentActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "nextActor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceArtifactCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -1974,6 +2113,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter handoff prep id linked to this release evidence bundle."
+    },
+    "gitopsAdapterHandoffProgressId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter handoff progress id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [
