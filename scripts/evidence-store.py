@@ -183,6 +183,14 @@ RESOURCE_SPECS = [
         "id_prefix": "gpay-",
     },
     {
+        "object_type": "gitopsAdapterDispatch",
+        "glob": "gitops-adapter-dispatch-*.json",
+        "latest": "gitops-adapter-dispatch-latest.json",
+        "prefix": "gitops-adapter-dispatch-",
+        "id_key": "gitopsAdapterDispatchId",
+        "id_prefix": "gdisp-",
+    },
+    {
         "object_type": "gitopsAdapterPickupEvent",
         "glob": "gitops-adapter-pickup-event-*.json",
         "latest": "gitops-adapter-pickup-event-latest.json",
@@ -498,6 +506,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterHandoffPrep")).get("gitopsAdapterHandoffPrepId"),
         as_dict(data.get("gitopsAdapterHandoffProgress")).get("gitopsAdapterHandoffProgressId"),
         as_dict(data.get("gitopsAdapterPayload")).get("gitopsAdapterPayloadId"),
+        as_dict(data.get("gitopsAdapterDispatch")).get("gitopsAdapterDispatchId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -1078,6 +1087,26 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["payloadManifestPath"] = manifest.get("path")
         result["commitPayloadPath"] = manifest.get("commitPayloadPath")
         result["warnings"] = payload.get("warnings") or []
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterDispatch":
+        dispatch = as_dict(data.get("dispatch"))
+        receipt = as_dict(dispatch.get("dispatchReceipt"))
+        result["dispatchStatus"] = dispatch.get("dispatchStatus")
+        result["payloadStatus"] = dispatch.get("payloadStatus")
+        result["branchName"] = dispatch.get("branchName")
+        result["requestedOperation"] = dispatch.get("requestedOperation")
+        result["payloadDir"] = dispatch.get("payloadDir")
+        result["payloadManifestPath"] = dispatch.get("payloadManifestPath")
+        result["commitPayloadPath"] = dispatch.get("commitPayloadPath")
+        result["providerRequestPath"] = dispatch.get("providerRequestPath")
+        result["patchEntryCount"] = dispatch.get("patchEntryCount")
+        result["workspaceArtifactCount"] = dispatch.get("workspaceArtifactCount")
+        result["dispatchReceiptPath"] = receipt.get("path")
+        result["warnings"] = dispatch.get("warnings") or []
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

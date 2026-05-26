@@ -308,6 +308,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter payload JSON."
         },
+        "gitopsAdapterDispatch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated external GitOps adapter stub dispatch JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1931,6 +1938,84 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterDispatch": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterDispatchId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "dispatchStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payloadStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payloadDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payloadManifestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commitPayloadPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "providerRequestPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchEntryCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "workspaceArtifactCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -2206,6 +2291,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter payload id linked to this release evidence bundle."
+    },
+    "gitopsAdapterDispatchId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "External GitOps adapter stub dispatch id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

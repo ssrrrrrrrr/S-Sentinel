@@ -292,6 +292,20 @@ type GitopsAdapterPayloadRef = {
   workspaceArtifactCount?: number
 }
 
+type GitopsAdapterDispatchRef = {
+  gitopsAdapterDispatchId?: string
+  dispatchStatus?: string
+  payloadStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  payloadDir?: string
+  payloadManifestPath?: string
+  commitPayloadPath?: string
+  providerRequestPath?: string
+  patchEntryCount?: number
+  workspaceArtifactCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -353,6 +367,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterHandoffPrep?: GitopsAdapterHandoffPrepRef
     gitopsAdapterHandoffProgress?: GitopsAdapterHandoffProgressRef
     gitopsAdapterPayload?: GitopsAdapterPayloadRef
+    gitopsAdapterDispatch?: GitopsAdapterDispatchRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -569,6 +584,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterHandoffPrep = refs.gitopsAdapterHandoffPrep
   const gitopsAdapterHandoffProgress = refs.gitopsAdapterHandoffProgress
   const gitopsAdapterPayload = refs.gitopsAdapterPayload
+  const gitopsAdapterDispatch = refs.gitopsAdapterDispatch
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -665,6 +681,7 @@ export function ApprovalConsolePanel({
   const gitopsHandoffPrepStatus = gitopsAdapterHandoffPrep?.prepStatus ?? gitopsPickupTransitionStatus
   const gitopsHandoffProgressStatus = gitopsAdapterHandoffProgress?.progressStatus ?? gitopsHandoffPrepStatus
   const gitopsPayloadStatus = gitopsAdapterPayload?.payloadStatus ?? gitopsHandoffProgressStatus
+  const gitopsDispatchStatus = gitopsAdapterDispatch?.dispatchStatus ?? gitopsPayloadStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -815,6 +832,13 @@ export function ApprovalConsolePanel({
       icon: FileCheck2,
     },
     {
+      label: "GitOps Dispatch",
+      value: valueOrDash(gitopsAdapterDispatch?.gitopsAdapterDispatchId),
+      hint: `dispatchStatus=${valueOrDash(gitopsDispatchStatus)}`,
+      status: gitopsDispatchStatus,
+      icon: Route,
+    },
+    {
       label: "Requested Action",
       value: actionDisplay(requestedAction),
       hint: `raw=${requestedAction}`,
@@ -948,6 +972,14 @@ export function ApprovalConsolePanel({
         : "当前 evidence 里还没有 adapter payload，说明进入外部自动化前的最终载荷还没有形成稳定对象。",
       status: gitopsAdapterPayload?.gitopsAdapterPayloadId ? gitopsPayloadStatus : "MISSING",
       icon: FileCheck2,
+    },
+    {
+      title: "External Adapter Stub Dispatch",
+      description: gitopsAdapterDispatch?.gitopsAdapterDispatchId
+        ? `External adapter stub dispatch 已生成：${gitopsAdapterDispatch.gitopsAdapterDispatchId}，说明平台已经开始产出面向真实 Git provider adapter 的交付回执，但仍然没有真正创建分支或 PR。`
+        : "当前 evidence 里还没有 external adapter stub dispatch，说明平台还没有进入面向外部 GitOps adapter 的交付阶段。",
+      status: gitopsAdapterDispatch?.gitopsAdapterDispatchId ? gitopsDispatchStatus : "MISSING",
+      icon: Route,
     },
   ]
 
@@ -1519,6 +1551,28 @@ export function ApprovalConsolePanel({
                 `patchEntries:${valueOrDash(gitopsAdapterPayload?.patchEntryCount ?? 0)}`,
                 `handoffFiles:${valueOrDash(gitopsAdapterPayload?.handoffFileCount ?? 0)}`,
                 `workspaceArtifacts:${valueOrDash(gitopsAdapterPayload?.workspaceArtifactCount ?? 0)}`,
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Dispatch</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `dispatchStatus:${valueOrDash(gitopsDispatchStatus)}`,
+                gitopsAdapterDispatch?.branchName
+                  ? `branch:${gitopsAdapterDispatch.branchName}`
+                  : "branch:none",
+                gitopsAdapterDispatch?.payloadDir
+                  ? `payloadDir:${gitopsAdapterDispatch.payloadDir}`
+                  : "payloadDir:none",
+                `patchEntries:${valueOrDash(gitopsAdapterDispatch?.patchEntryCount ?? 0)}`,
+                `workspaceArtifacts:${valueOrDash(gitopsAdapterDispatch?.workspaceArtifactCount ?? 0)}`,
+                gitopsAdapterDispatch?.providerRequestPath
+                  ? `providerRequest:${gitopsAdapterDispatch.providerRequestPath}`
+                  : "providerRequest:none",
               ]}
             />
           </div>

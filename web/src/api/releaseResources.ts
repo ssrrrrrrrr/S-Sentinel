@@ -21,6 +21,7 @@ export type ReleaseResourceKind =
   | "gitops-handoff-prep"
   | "gitops-handoff-progress"
   | "gitops-payload"
+  | "gitops-dispatch"
   | "intelligence"
   | "advice"
   | "context"

@@ -425,6 +425,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter payload JSON."
         },
+        "gitopsAdapterDispatch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated external GitOps adapter stub dispatch JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -2323,6 +2330,93 @@
           ]
         },
         "sourceGitopsAdapterPayload": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterDispatch": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterDispatchId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dispatchStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payloadStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payloadDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payloadManifestPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commitPayloadPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "providerRequestPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patchEntryCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "workspaceArtifactCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterDispatch": {
           "type": [
             "string",
             "null"

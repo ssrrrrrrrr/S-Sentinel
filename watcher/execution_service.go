@@ -111,6 +111,7 @@ func (svc *ExecutionService) capabilities() map[string]interface{} {
 		"gitopsAdapterHandoffPrep":      true,
 		"gitopsAdapterHandoffProgress":  true,
 		"gitopsAdapterPayload":          true,
+		"gitopsAdapterDispatch":         true,
 		"futureExecutorAdapter":         false,
 		"approvalAwareExecutor":         true,
 	}
@@ -166,6 +167,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 	latestGitOpsAdapterHandoffPrepFile, _ := svc.findLatestReportFile("gitops-adapter-handoff-prep-*.json", "gitops-adapter-handoff-prep-latest.json")
 	latestGitOpsAdapterHandoffProgressFile, _ := svc.findLatestReportFile("gitops-adapter-handoff-progress-*.json", "gitops-adapter-handoff-progress-latest.json")
 	latestGitOpsAdapterPayloadFile, _ := svc.findLatestReportFile("gitops-adapter-payload-*.json", "gitops-adapter-payload-latest.json")
+	latestGitOpsAdapterDispatchFile, _ := svc.findLatestReportFile("gitops-adapter-dispatch-*.json", "gitops-adapter-dispatch-latest.json")
 	latestEvidenceRecordFile, _ := svc.findLatestReportFile("evidence-record-*.json", "evidence-record-latest.json")
 
 	ready := false
@@ -209,6 +211,7 @@ func (svc *ExecutionService) Status(ctx context.Context) map[string]interface{} 
 		"latestGitOpsAdapterHandoffPrep":      latestGitOpsAdapterHandoffPrepFile,
 		"latestGitOpsAdapterHandoffProgress":  latestGitOpsAdapterHandoffProgressFile,
 		"latestGitOpsAdapterPayload":          latestGitOpsAdapterPayloadFile,
+		"latestGitOpsAdapterDispatch":         latestGitOpsAdapterDispatchFile,
 		"latestEvidenceRecordFile":            latestEvidenceRecordFile,
 	}
 
@@ -326,6 +329,12 @@ func (svc *ExecutionService) Latest(ctx context.Context) (map[string]interface{}
 		body["latestGitOpsAdapterPayloadFile"] = latestGitOpsAdapterPayloadFile
 		if latestGitOpsAdapterPayload := svc.readJSONFile(latestGitOpsAdapterPayloadFile); latestGitOpsAdapterPayload != nil {
 			body["gitOpsAdapterPayload"] = latestGitOpsAdapterPayload
+		}
+	}
+	if latestGitOpsAdapterDispatchFile, dispatchErr := svc.findLatestReportFile("gitops-adapter-dispatch-*.json", "gitops-adapter-dispatch-latest.json"); dispatchErr == nil {
+		body["latestGitOpsAdapterDispatchFile"] = latestGitOpsAdapterDispatchFile
+		if latestGitOpsAdapterDispatch := svc.readJSONFile(latestGitOpsAdapterDispatchFile); latestGitOpsAdapterDispatch != nil {
+			body["gitOpsAdapterDispatch"] = latestGitOpsAdapterDispatch
 		}
 	}
 
@@ -552,6 +561,18 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 			gitOpsAdapterPayloadFile = candidate
 		}
 	}
+	gitOpsAdapterDispatchFile := ""
+	if releaseEvidence != nil {
+		if artifacts, ok := releaseEvidence["artifacts"].(map[string]interface{}); ok {
+			gitOpsAdapterDispatchFile = strings.TrimSpace(extractString(artifacts, "gitopsAdapterDispatch"))
+		}
+	}
+	if gitOpsAdapterDispatchFile == "" && releaseEvidenceID != "" {
+		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-adapter-dispatch-"+releaseEvidenceID+".json")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			gitOpsAdapterDispatchFile = candidate
+		}
+	}
 	if gitOpsAdapterRunFile == "" && releaseEvidenceID != "" {
 		candidate := filepath.Join(svc.cfg.ReportDir, "gitops-adapter-run-"+releaseEvidenceID+".json")
 		if _, statErr := os.Stat(candidate); statErr == nil {
@@ -588,6 +609,7 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 		"gitOpsAdapterHandoffPrepFile":      gitOpsAdapterHandoffPrepFile,
 		"gitOpsAdapterHandoffProgressFile":  gitOpsAdapterHandoffProgressFile,
 		"gitOpsAdapterPayloadFile":          gitOpsAdapterPayloadFile,
+		"gitOpsAdapterDispatchFile":         gitOpsAdapterDispatchFile,
 		"evidenceRecordFile":                evidenceRecordFile,
 		"scriptOutput":                      decodeExecutionOutput(output),
 	}
@@ -642,6 +664,9 @@ func (svc *ExecutionService) RunNoop(ctx context.Context, releaseID string) (map
 	}
 	if gitOpsAdapterPayload := svc.readJSONFile(gitOpsAdapterPayloadFile); gitOpsAdapterPayload != nil {
 		body["gitOpsAdapterPayload"] = gitOpsAdapterPayload
+	}
+	if gitOpsAdapterDispatch := svc.readJSONFile(gitOpsAdapterDispatchFile); gitOpsAdapterDispatch != nil {
+		body["gitOpsAdapterDispatch"] = gitOpsAdapterDispatch
 	}
 	if evidenceRecord := svc.readJSONFile(evidenceRecordFile); evidenceRecord != nil {
 		body["evidenceRecord"] = evidenceRecord
