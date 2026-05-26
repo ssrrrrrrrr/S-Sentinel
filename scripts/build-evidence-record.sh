@@ -418,6 +418,11 @@ gitops_adapter_handoff_progress = load_json(gitops_adapter_handoff_progress_path
 gitops_adapter_handoff_progress_body = as_dict(gitops_adapter_handoff_progress.get("handoffProgress"))
 gitops_adapter_handoff_progress_guardrails = as_dict(gitops_adapter_handoff_progress.get("guardrails"))
 
+gitops_adapter_payload_path = resolve_ref(artifacts.get("gitopsAdapterPayload"), evidence_path)
+gitops_adapter_payload = load_json(gitops_adapter_payload_path)
+gitops_adapter_payload_body = as_dict(gitops_adapter_payload.get("payload"))
+gitops_adapter_payload_guardrails = as_dict(gitops_adapter_payload.get("guardrails"))
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -481,6 +486,7 @@ link_map = {
     "gitopsAdapterPickupTransition": artifacts.get("gitopsAdapterPickupTransition"),
     "gitopsAdapterHandoffPrep": artifacts.get("gitopsAdapterHandoffPrep"),
     "gitopsAdapterHandoffProgress": artifacts.get("gitopsAdapterHandoffProgress"),
+    "gitopsAdapterPayload": artifacts.get("gitopsAdapterPayload"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -521,6 +527,7 @@ artifact_defs = [
     ("gitopsAdapterPickupTransition", link_map["gitopsAdapterPickupTransition"], False),
     ("gitopsAdapterHandoffPrep", link_map["gitopsAdapterHandoffPrep"], False),
     ("gitopsAdapterHandoffProgress", link_map["gitopsAdapterHandoffProgress"], False),
+    ("gitopsAdapterPayload", link_map["gitopsAdapterPayload"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),
@@ -946,6 +953,21 @@ record = {
         "workspaceArtifactCount": gitops_adapter_handoff_progress_body.get("workspaceArtifactCount"),
         "sourceGitopsAdapterHandoffProgress": nullable_string(link_map.get("gitopsAdapterHandoffProgress")),
         "guardrails": gitops_adapter_handoff_progress_guardrails,
+    },
+    "gitopsAdapterPayload": {
+        "gitopsAdapterPayloadId": nullable_string(gitops_adapter_payload.get("gitopsAdapterPayloadId")),
+        "mode": nullable_string(gitops_adapter_payload.get("mode")),
+        "payloadStatus": nullable_string(gitops_adapter_payload_body.get("payloadStatus")),
+        "progressStatus": nullable_string(gitops_adapter_payload_body.get("progressStatus")),
+        "branchName": nullable_string(gitops_adapter_payload_body.get("branchName")),
+        "requestedOperation": nullable_string(gitops_adapter_payload_body.get("requestedOperation")),
+        "workspaceDir": nullable_string(gitops_adapter_payload_body.get("workspaceDir")),
+        "bundleDir": nullable_string(gitops_adapter_payload_body.get("bundleDir")),
+        "patchEntryCount": gitops_adapter_payload_body.get("patchEntryCount"),
+        "handoffFileCount": gitops_adapter_payload_body.get("handoffFileCount"),
+        "workspaceArtifactCount": gitops_adapter_payload_body.get("workspaceArtifactCount"),
+        "sourceGitopsAdapterPayload": nullable_string(link_map.get("gitopsAdapterPayload")),
+        "guardrails": gitops_adapter_payload_guardrails,
     },
     "supplyChain": {
         "supplyChainDecisionId": nullable_string(supply_chain_decision.get("supplyChainDecisionId")),

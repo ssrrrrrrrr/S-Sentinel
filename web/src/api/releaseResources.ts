@@ -20,6 +20,7 @@ export type ReleaseResourceKind =
   | "gitops-pickup-transition"
   | "gitops-handoff-prep"
   | "gitops-handoff-progress"
+  | "gitops-payload"
   | "intelligence"
   | "advice"
   | "context"

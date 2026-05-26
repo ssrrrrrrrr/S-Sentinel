@@ -175,6 +175,14 @@ RESOURCE_SPECS = [
         "id_prefix": "ghpr-",
     },
     {
+        "object_type": "gitopsAdapterPayload",
+        "glob": "gitops-adapter-payload-*.json",
+        "latest": "gitops-adapter-payload-latest.json",
+        "prefix": "gitops-adapter-payload-",
+        "id_key": "gitopsAdapterPayloadId",
+        "id_prefix": "gpay-",
+    },
+    {
         "object_type": "gitopsAdapterPickupEvent",
         "glob": "gitops-adapter-pickup-event-*.json",
         "latest": "gitops-adapter-pickup-event-latest.json",
@@ -489,6 +497,7 @@ def derive_object_id(
         as_dict(data.get("gitopsAdapterPickupTransition")).get("gitopsAdapterPickupTransitionId"),
         as_dict(data.get("gitopsAdapterHandoffPrep")).get("gitopsAdapterHandoffPrepId"),
         as_dict(data.get("gitopsAdapterHandoffProgress")).get("gitopsAdapterHandoffProgressId"),
+        as_dict(data.get("gitopsAdapterPayload")).get("gitopsAdapterPayloadId"),
         as_dict(data.get("supplyChain")).get("supplyChainDecisionId"),
     ]
 
@@ -1043,6 +1052,32 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["currentActor"] = handoff_progress.get("currentActor")
         result["nextActor"] = handoff_progress.get("nextActor")
         result["workspaceArtifactCount"] = handoff_progress.get("workspaceArtifactCount")
+        result["willExecute"] = pick(
+            as_dict(data.get("guardrails")).get("willExecute"),
+            result.get("willExecute"),
+        )
+
+    if object_type == "gitopsAdapterPayload":
+        payload = as_dict(data.get("payload"))
+        manifest = as_dict(payload.get("payloadManifest"))
+        result["payloadStatus"] = payload.get("payloadStatus")
+        result["progressStatus"] = payload.get("progressStatus")
+        result["prepStatus"] = payload.get("prepStatus")
+        result["transitionStatus"] = payload.get("transitionStatus")
+        result["eventStatus"] = payload.get("eventStatus")
+        result["handoffStateStatus"] = payload.get("handoffStateStatus")
+        result["pickupStatus"] = payload.get("pickupStatus")
+        result["ackStatus"] = payload.get("ackStatus")
+        result["requestedOperation"] = payload.get("requestedOperation")
+        result["branchName"] = payload.get("branchName")
+        result["workspaceDir"] = payload.get("workspaceDir")
+        result["bundleDir"] = payload.get("bundleDir")
+        result["patchEntryCount"] = payload.get("patchEntryCount")
+        result["handoffFileCount"] = payload.get("handoffFileCount")
+        result["workspaceArtifactCount"] = payload.get("workspaceArtifactCount")
+        result["payloadManifestPath"] = manifest.get("path")
+        result["commitPayloadPath"] = manifest.get("commitPayloadPath")
+        result["warnings"] = payload.get("warnings") or []
         result["willExecute"] = pick(
             as_dict(data.get("guardrails")).get("willExecute"),
             result.get("willExecute"),

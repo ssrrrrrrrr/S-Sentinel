@@ -418,6 +418,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff progress JSON."
         },
+        "gitopsAdapterPayload": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter payload JSON."
+        },
         "supplyChainDecision": {
           "type": [
             "string",
@@ -2235,6 +2242,87 @@
           ]
         },
         "sourceGitopsAdapterHandoffProgress": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gitopsAdapterPayload": {
+      "type": "object",
+      "properties": {
+        "gitopsAdapterPayloadId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payloadStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "progressStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "branchName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedOperation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workspaceDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bundleDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "patchEntryCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "handoffFileCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "workspaceArtifactCount": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "sourceGitopsAdapterPayload": {
           "type": [
             "string",
             "null"

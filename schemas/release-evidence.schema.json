@@ -301,6 +301,13 @@
           ],
           "description": "Path to the generated local-only GitOps adapter handoff progress JSON."
         },
+        "gitopsAdapterPayload": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated local-only GitOps adapter payload JSON."
+        },
         "environmentConfig": {
           "type": [
             "string",
@@ -1852,6 +1859,78 @@
             }
           },
           "additionalProperties": true
+        },
+        "gitopsAdapterPayload": {
+          "type": "object",
+          "properties": {
+            "gitopsAdapterPayloadId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payloadStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "progressStatus": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "branchName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "requestedOperation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "workspaceDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "bundleDir": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "patchEntryCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "handoffFileCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "workspaceArtifactCount": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
         }
       }
     },
@@ -2120,6 +2199,13 @@
         "null"
       ],
       "description": "Local-only GitOps adapter handoff progress id linked to this release evidence bundle."
+    },
+    "gitopsAdapterPayloadId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Local-only GitOps adapter payload id linked to this release evidence bundle."
     },
     "namespace": {
       "type": [

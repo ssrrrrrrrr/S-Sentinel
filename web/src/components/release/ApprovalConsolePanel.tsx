@@ -279,6 +279,19 @@ type GitopsAdapterHandoffProgressRef = {
   workspaceArtifactCount?: number
 }
 
+type GitopsAdapterPayloadRef = {
+  gitopsAdapterPayloadId?: string
+  payloadStatus?: string
+  progressStatus?: string
+  branchName?: string
+  requestedOperation?: string
+  workspaceDir?: string
+  bundleDir?: string
+  patchEntryCount?: number
+  handoffFileCount?: number
+  workspaceArtifactCount?: number
+}
+
 type AgentRunRef = {
   agentRunId?: string
   recommendedAction?: string
@@ -339,6 +352,7 @@ type ApprovalEvidencePayload = {
     gitopsAdapterPickupTransition?: GitopsAdapterPickupTransitionRef
     gitopsAdapterHandoffPrep?: GitopsAdapterHandoffPrepRef
     gitopsAdapterHandoffProgress?: GitopsAdapterHandoffProgressRef
+    gitopsAdapterPayload?: GitopsAdapterPayloadRef
     agentRun?: AgentRunRef
     planRun?: PlanRunRef
     supplyChainDecision?: SupplyChainDecisionRef
@@ -554,6 +568,7 @@ export function ApprovalConsolePanel({
   const gitopsAdapterPickupTransition = refs.gitopsAdapterPickupTransition
   const gitopsAdapterHandoffPrep = refs.gitopsAdapterHandoffPrep
   const gitopsAdapterHandoffProgress = refs.gitopsAdapterHandoffProgress
+  const gitopsAdapterPayload = refs.gitopsAdapterPayload
   const supplyChainDecision = refs.supplyChainDecision
   const agentRun = refs.agentRun
   const planRun = refs.planRun
@@ -649,6 +664,7 @@ export function ApprovalConsolePanel({
   const gitopsPickupTransitionStatus = gitopsAdapterPickupTransition?.transitionStatus ?? gitopsPickupEventStatus
   const gitopsHandoffPrepStatus = gitopsAdapterHandoffPrep?.prepStatus ?? gitopsPickupTransitionStatus
   const gitopsHandoffProgressStatus = gitopsAdapterHandoffProgress?.progressStatus ?? gitopsHandoffPrepStatus
+  const gitopsPayloadStatus = gitopsAdapterPayload?.payloadStatus ?? gitopsHandoffProgressStatus
 
   const metrics: ConsoleMetric[] = [
     {
@@ -792,6 +808,13 @@ export function ApprovalConsolePanel({
       icon: Route,
     },
     {
+      label: "GitOps Payload",
+      value: valueOrDash(gitopsAdapterPayload?.gitopsAdapterPayloadId),
+      hint: `payloadStatus=${valueOrDash(gitopsPayloadStatus)}`,
+      status: gitopsPayloadStatus,
+      icon: FileCheck2,
+    },
+    {
       label: "Requested Action",
       value: actionDisplay(requestedAction),
       hint: `raw=${requestedAction}`,
@@ -916,6 +939,14 @@ export function ApprovalConsolePanel({
         ? `GitOps workspace 已生成：${gitopsAdapterDelivery.gitopsAdapterDeliveryId}，说明 adapter 已经准备好本地 pickup 目录，后续可以由人工或受控 adapter 接手。`
         : "当前 evidence 里还没有 delivery workspace，说明 adapter 还没有把 handoff 文件整理成可接手的本地工作区。",
       status: gitopsAdapterDelivery?.gitopsAdapterDeliveryId ? gitopsWorkspaceStatus : "MISSING",
+      icon: FileCheck2,
+    },
+    {
+      title: "GitOps Adapter Payload",
+      description: gitopsAdapterPayload?.gitopsAdapterPayloadId
+        ? `GitOps payload 已生成：${gitopsAdapterPayload.gitopsAdapterPayloadId}，说明进入外部自动化前的 commit-ready 载荷已经收口完成，后续真实 adapter 可以稳定消费它。`
+        : "当前 evidence 里还没有 adapter payload，说明进入外部自动化前的最终载荷还没有形成稳定对象。",
+      status: gitopsAdapterPayload?.gitopsAdapterPayloadId ? gitopsPayloadStatus : "MISSING",
       icon: FileCheck2,
     },
   ]
@@ -1468,6 +1499,26 @@ export function ApprovalConsolePanel({
                 gitopsAdapterHandoffProgress?.nextCheckpoint
                   ? `nextCheckpoint:${gitopsAdapterHandoffProgress.nextCheckpoint}`
                   : "nextCheckpoint:none",
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+          <h4 className="text-sm font-semibold text-slate-100">GitOps Payload</h4>
+          <div className="mt-3">
+            <RuleChipsPanel
+              rules={[
+                `payloadStatus:${valueOrDash(gitopsPayloadStatus)}`,
+                gitopsAdapterPayload?.branchName
+                  ? `branch:${gitopsAdapterPayload.branchName}`
+                  : "branch:none",
+                gitopsAdapterPayload?.workspaceDir
+                  ? `workspaceDir:${gitopsAdapterPayload.workspaceDir}`
+                  : "workspaceDir:none",
+                `patchEntries:${valueOrDash(gitopsAdapterPayload?.patchEntryCount ?? 0)}`,
+                `handoffFiles:${valueOrDash(gitopsAdapterPayload?.handoffFileCount ?? 0)}`,
+                `workspaceArtifacts:${valueOrDash(gitopsAdapterPayload?.workspaceArtifactCount ?? 0)}`,
               ]}
             />
           </div>

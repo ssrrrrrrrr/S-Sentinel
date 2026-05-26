@@ -135,6 +135,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-pickup-transition", api.handleLatestResource("gitopsAdapterPickupTransition"))
 	mux.HandleFunc("/api/releases/latest/gitops-handoff-prep", api.handleLatestResource("gitopsAdapterHandoffPrep"))
 	mux.HandleFunc("/api/releases/latest/gitops-handoff-progress", api.handleLatestResource("gitopsAdapterHandoffProgress"))
+	mux.HandleFunc("/api/releases/latest/gitops-payload", api.handleLatestResource("gitopsAdapterPayload"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -319,6 +320,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-adapter-handoff-progress-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest local-only GitOps handoff progress result.",
+		},
+		{
+			Name:         "gitopsAdapterPayload",
+			Endpoint:     "/api/releases/latest/gitops-payload",
+			Candidates:   []string{"gitops-adapter-payload-latest.json"},
+			FallbackGlob: "gitops-adapter-payload-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest local-only GitOps adapter payload.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -1021,6 +1030,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterHandoffPrep", "application/json; charset=utf-8", true
 	case "gitops-handoff-progress":
 		return "gitopsAdapterHandoffProgress", "application/json; charset=utf-8", true
+	case "gitops-payload":
+		return "gitopsAdapterPayload", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -1072,6 +1083,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"gitopsAdapterPickupTransition": "gitops-pickup-transition",
 		"gitopsAdapterHandoffPrep":      "gitops-handoff-prep",
 		"gitopsAdapterHandoffProgress":  "gitops-handoff-progress",
+		"gitopsAdapterPayload":          "gitops-payload",
 		"executionEligibility":          "eligibility",
 		"failureEvidence":               "failure-evidence",
 		"aiAdvice":                      "advice",
