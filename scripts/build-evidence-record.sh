@@ -438,6 +438,36 @@ gitops_adapter_provider_result = load_json(gitops_adapter_provider_result_path)
 gitops_adapter_provider_result_body = as_dict(gitops_adapter_provider_result.get("providerResult"))
 gitops_adapter_provider_result_guardrails = as_dict(gitops_adapter_provider_result.get("guardrails"))
 
+gitops_real_pr_plan_path = resolve_ref(artifacts.get("gitopsRealPRPlan"), evidence_path)
+gitops_real_pr_plan = load_json(gitops_real_pr_plan_path)
+
+gitops_real_pr_workspace_path = resolve_ref(artifacts.get("gitopsRealPRWorkspace"), evidence_path)
+gitops_real_pr_workspace = load_json(gitops_real_pr_workspace_path)
+
+gitops_real_pr_materialization_path = resolve_ref(artifacts.get("gitopsRealPRMaterialization"), evidence_path)
+gitops_real_pr_materialization = load_json(gitops_real_pr_materialization_path)
+
+gitops_real_pr_file_materialization_path = resolve_ref(artifacts.get("gitopsRealPRFileMaterialization"), evidence_path)
+gitops_real_pr_file_materialization = load_json(gitops_real_pr_file_materialization_path)
+
+gitops_real_pr_local_commit_path = resolve_ref(artifacts.get("gitopsRealPRLocalCommit"), evidence_path)
+gitops_real_pr_local_commit = load_json(gitops_real_pr_local_commit_path)
+
+gitops_real_pr_push_preflight_path = resolve_ref(artifacts.get("gitopsRealPRPushPreflight"), evidence_path)
+gitops_real_pr_push_preflight = load_json(gitops_real_pr_push_preflight_path)
+
+gitops_real_pr_branch_push_path = resolve_ref(artifacts.get("gitopsRealPRBranchPush"), evidence_path)
+gitops_real_pr_branch_push = load_json(gitops_real_pr_branch_push_path)
+
+gitops_real_pr_create_preflight_path = resolve_ref(artifacts.get("gitopsRealPRCreatePreflight"), evidence_path)
+gitops_real_pr_create_preflight = load_json(gitops_real_pr_create_preflight_path)
+
+gitops_real_pr_create_path = resolve_ref(artifacts.get("gitopsRealPRCreate"), evidence_path)
+gitops_real_pr_create = load_json(gitops_real_pr_create_path)
+
+gitops_real_pr_cleanup_path = resolve_ref(artifacts.get("gitopsRealPRCleanup"), evidence_path)
+gitops_real_pr_cleanup = load_json(gitops_real_pr_cleanup_path)
+
 supply_chain_decision_path = resolve_ref(artifacts.get("supplyChainDecision"), evidence_path)
 supply_chain_decision = load_json(supply_chain_decision_path)
 supply_chain_decision_obj = as_dict(supply_chain_decision.get("decision"))
@@ -505,6 +535,16 @@ link_map = {
     "gitopsAdapterDispatch": artifacts.get("gitopsAdapterDispatch"),
     "gitopsAdapterProviderRequest": artifacts.get("gitopsAdapterProviderRequest"),
     "gitopsAdapterProviderResult": artifacts.get("gitopsAdapterProviderResult"),
+    "gitopsRealPRPlan": artifacts.get("gitopsRealPRPlan"),
+    "gitopsRealPRWorkspace": artifacts.get("gitopsRealPRWorkspace"),
+    "gitopsRealPRMaterialization": artifacts.get("gitopsRealPRMaterialization"),
+    "gitopsRealPRFileMaterialization": artifacts.get("gitopsRealPRFileMaterialization"),
+    "gitopsRealPRLocalCommit": artifacts.get("gitopsRealPRLocalCommit"),
+    "gitopsRealPRPushPreflight": artifacts.get("gitopsRealPRPushPreflight"),
+    "gitopsRealPRBranchPush": artifacts.get("gitopsRealPRBranchPush"),
+    "gitopsRealPRCreatePreflight": artifacts.get("gitopsRealPRCreatePreflight"),
+    "gitopsRealPRCreate": artifacts.get("gitopsRealPRCreate"),
+    "gitopsRealPRCleanup": artifacts.get("gitopsRealPRCleanup"),
     "supplyChainDecision": artifacts.get("supplyChainDecision"),
 }
 
@@ -549,6 +589,16 @@ artifact_defs = [
     ("gitopsAdapterDispatch", link_map["gitopsAdapterDispatch"], False),
     ("gitopsAdapterProviderRequest", link_map["gitopsAdapterProviderRequest"], False),
     ("gitopsAdapterProviderResult", link_map["gitopsAdapterProviderResult"], False),
+    ("gitopsRealPRPlan", link_map["gitopsRealPRPlan"], False),
+    ("gitopsRealPRWorkspace", link_map["gitopsRealPRWorkspace"], False),
+    ("gitopsRealPRMaterialization", link_map["gitopsRealPRMaterialization"], False),
+    ("gitopsRealPRFileMaterialization", link_map["gitopsRealPRFileMaterialization"], False),
+    ("gitopsRealPRLocalCommit", link_map["gitopsRealPRLocalCommit"], False),
+    ("gitopsRealPRPushPreflight", link_map["gitopsRealPRPushPreflight"], False),
+    ("gitopsRealPRBranchPush", link_map["gitopsRealPRBranchPush"], False),
+    ("gitopsRealPRCreatePreflight", link_map["gitopsRealPRCreatePreflight"], False),
+    ("gitopsRealPRCreate", link_map["gitopsRealPRCreate"], False),
+    ("gitopsRealPRCleanup", link_map["gitopsRealPRCleanup"], False),
     ("approval", link_map["approval"], False),
     ("timeline", link_map["timeline"], False),
     ("runbook", link_map["runbook"], False),

@@ -471,6 +471,76 @@
             "string",
             "null"
           ]
+        },
+        "gitopsRealPRPlan": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRWorkspace": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRMaterialization": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRFileMaterialization": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRLocalCommit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRPushPreflight": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRBranchPush": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRCreatePreflight": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRCreate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
+        },
+        "gitopsRealPRCleanup": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated provider-ready GitOps PR result JSON."
         }
       }
     },
