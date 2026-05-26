@@ -139,6 +139,16 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/gitops-dispatch", api.handleLatestResource("gitopsAdapterDispatch"))
 	mux.HandleFunc("/api/releases/latest/gitops-provider-request", api.handleLatestResource("gitopsAdapterProviderRequest"))
 	mux.HandleFunc("/api/releases/latest/gitops-provider-result", api.handleLatestResource("gitopsAdapterProviderResult"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-plan", api.handleLatestResource("gitopsRealPRPlan"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-workspace", api.handleLatestResource("gitopsRealPRWorkspace"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-materialization", api.handleLatestResource("gitopsRealPRMaterialization"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-file-materialization", api.handleLatestResource("gitopsRealPRFileMaterialization"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-local-commit", api.handleLatestResource("gitopsRealPRLocalCommit"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-push-preflight", api.handleLatestResource("gitopsRealPRPushPreflight"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-branch-push", api.handleLatestResource("gitopsRealPRBranchPush"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-create-preflight", api.handleLatestResource("gitopsRealPRCreatePreflight"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-create", api.handleLatestResource("gitopsRealPRCreate"))
+	mux.HandleFunc("/api/releases/latest/gitops-real-pr-cleanup", api.handleLatestResource("gitopsRealPRCleanup"))
 	mux.HandleFunc("/api/releases/latest/advice", api.handleLatestResource("aiAdvice"))
 	mux.HandleFunc("/api/releases/latest/memory", api.handleLatestResource("releaseMemory"))
 	mux.HandleFunc("/api/releases/latest/timeline", api.handleLatestResource("releaseTimeline"))
@@ -355,6 +365,86 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "gitops-adapter-provider-result-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest provider-ready GitOps PR result.",
+		},
+		{
+			Name:         "gitopsRealPRPlan",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-plan",
+			Candidates:   []string{"gitops-real-pr-plan-latest.json"},
+			FallbackGlob: "gitops-real-pr-plan-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest real GitOps PR preflight plan.",
+		},
+		{
+			Name:         "gitopsRealPRWorkspace",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-workspace",
+			Candidates:   []string{"gitops-real-pr-workspace-latest.json"},
+			FallbackGlob: "gitops-real-pr-workspace-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest isolated real GitOps PR workspace.",
+		},
+		{
+			Name:         "gitopsRealPRMaterialization",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-materialization",
+			Candidates:   []string{"gitops-real-pr-materialization-latest.json"},
+			FallbackGlob: "gitops-real-pr-materialization-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest real GitOps PR materialization plan.",
+		},
+		{
+			Name:         "gitopsRealPRFileMaterialization",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-file-materialization",
+			Candidates:   []string{"gitops-real-pr-file-materialization-latest.json"},
+			FallbackGlob: "gitops-real-pr-file-materialization-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest real GitOps PR file materialization receipt.",
+		},
+		{
+			Name:         "gitopsRealPRLocalCommit",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-local-commit",
+			Candidates:   []string{"gitops-real-pr-local-commit-latest.json"},
+			FallbackGlob: "gitops-real-pr-local-commit-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest isolated real GitOps PR local commit receipt.",
+		},
+		{
+			Name:         "gitopsRealPRPushPreflight",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-push-preflight",
+			Candidates:   []string{"gitops-real-pr-push-preflight-latest.json"},
+			FallbackGlob: "gitops-real-pr-push-preflight-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest real GitOps PR branch push preflight.",
+		},
+		{
+			Name:         "gitopsRealPRBranchPush",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-branch-push",
+			Candidates:   []string{"gitops-real-pr-branch-push-latest.json"},
+			FallbackGlob: "gitops-real-pr-branch-push-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest guarded real GitOps PR branch push receipt.",
+		},
+		{
+			Name:         "gitopsRealPRCreatePreflight",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-create-preflight",
+			Candidates:   []string{"gitops-real-pr-create-preflight-latest.json"},
+			FallbackGlob: "gitops-real-pr-create-preflight-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest real GitOps PR create preflight.",
+		},
+		{
+			Name:         "gitopsRealPRCreate",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-create",
+			Candidates:   []string{"gitops-real-pr-create-latest.json"},
+			FallbackGlob: "gitops-real-pr-create-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest guarded real GitOps PR create receipt.",
+		},
+		{
+			Name:         "gitopsRealPRCleanup",
+			Endpoint:     "/api/releases/latest/gitops-real-pr-cleanup",
+			Candidates:   []string{"gitops-real-pr-cleanup-latest.json"},
+			FallbackGlob: "gitops-real-pr-cleanup-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest guarded real GitOps PR cleanup receipt.",
 		},
 		{
 			Name:         "failureEvidence",
@@ -1065,6 +1155,26 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterProviderRequest", "application/json; charset=utf-8", true
 	case "gitops-provider-result":
 		return "gitopsAdapterProviderResult", "application/json; charset=utf-8", true
+	case "gitops-real-pr-plan":
+		return "gitopsRealPRPlan", "application/json; charset=utf-8", true
+	case "gitops-real-pr-workspace":
+		return "gitopsRealPRWorkspace", "application/json; charset=utf-8", true
+	case "gitops-real-pr-materialization":
+		return "gitopsRealPRMaterialization", "application/json; charset=utf-8", true
+	case "gitops-real-pr-file-materialization":
+		return "gitopsRealPRFileMaterialization", "application/json; charset=utf-8", true
+	case "gitops-real-pr-local-commit":
+		return "gitopsRealPRLocalCommit", "application/json; charset=utf-8", true
+	case "gitops-real-pr-push-preflight":
+		return "gitopsRealPRPushPreflight", "application/json; charset=utf-8", true
+	case "gitops-real-pr-branch-push":
+		return "gitopsRealPRBranchPush", "application/json; charset=utf-8", true
+	case "gitops-real-pr-create-preflight":
+		return "gitopsRealPRCreatePreflight", "application/json; charset=utf-8", true
+	case "gitops-real-pr-create":
+		return "gitopsRealPRCreate", "application/json; charset=utf-8", true
+	case "gitops-real-pr-cleanup":
+		return "gitopsRealPRCleanup", "application/json; charset=utf-8", true
 	case "eligibility":
 		return "executionEligibility", "application/json; charset=utf-8", true
 	case "failure-evidence":
@@ -1094,41 +1204,51 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 	}
 
 	resourceByKind := map[string]string{
-		"releaseEvidence":               "evidence",
-		"evidenceRecord":                "evidence-record",
-		"releaseSummary":                "summary",
-		"actionPlan":                    "action-plan",
-		"releaseIntelligence":           "intelligence",
-		"approvalRecord":                "approval",
-		"executionPreview":              "preview",
-		"executionResult":               "execution-result",
-		"gitopsPatchProposal":           "gitops-proposal",
-		"gitopsPRBundle":                "gitops-bundle",
-		"gitopsHandoffBundle":           "gitops-handoff",
-		"gitopsAdapterRequest":          "gitops-adapter",
-		"gitopsAdapterResult":           "gitops-delivery",
-		"gitopsAdapterDelivery":         "gitops-workspace",
-		"gitopsAdapterRun":              "gitops-run",
-		"gitopsAdapterPickup":           "gitops-pickup",
-		"gitopsAdapterPickupAck":        "gitops-pickup-ack",
-		"gitopsAdapterHandoffState":     "gitops-handoff-state",
-		"gitopsAdapterPickupEvent":      "gitops-pickup-event",
-		"gitopsAdapterPickupTransition": "gitops-pickup-transition",
-		"gitopsAdapterHandoffPrep":      "gitops-handoff-prep",
-		"gitopsAdapterHandoffProgress":  "gitops-handoff-progress",
-		"gitopsAdapterPayload":          "gitops-payload",
-		"gitopsAdapterDispatch":         "gitops-dispatch",
-		"gitopsAdapterProviderRequest":  "gitops-provider-request",
-		"gitopsAdapterProviderResult":   "gitops-provider-result",
-		"executionEligibility":          "eligibility",
-		"failureEvidence":               "failure-evidence",
-		"aiAdvice":                      "advice",
-		"aiDecision":                    "ai-decision",
-		"policyDecision":                "policy-decision",
-		"releaseContext":                "context",
-		"releaseTimeline":               "timeline",
-		"runbook":                       "runbook",
-		"rca":                           "rca",
+		"releaseEvidence":                 "evidence",
+		"evidenceRecord":                  "evidence-record",
+		"releaseSummary":                  "summary",
+		"actionPlan":                      "action-plan",
+		"releaseIntelligence":             "intelligence",
+		"approvalRecord":                  "approval",
+		"executionPreview":                "preview",
+		"executionResult":                 "execution-result",
+		"gitopsPatchProposal":             "gitops-proposal",
+		"gitopsPRBundle":                  "gitops-bundle",
+		"gitopsHandoffBundle":             "gitops-handoff",
+		"gitopsAdapterRequest":            "gitops-adapter",
+		"gitopsAdapterResult":             "gitops-delivery",
+		"gitopsAdapterDelivery":           "gitops-workspace",
+		"gitopsAdapterRun":                "gitops-run",
+		"gitopsAdapterPickup":             "gitops-pickup",
+		"gitopsAdapterPickupAck":          "gitops-pickup-ack",
+		"gitopsAdapterHandoffState":       "gitops-handoff-state",
+		"gitopsAdapterPickupEvent":        "gitops-pickup-event",
+		"gitopsAdapterPickupTransition":   "gitops-pickup-transition",
+		"gitopsAdapterHandoffPrep":        "gitops-handoff-prep",
+		"gitopsAdapterHandoffProgress":    "gitops-handoff-progress",
+		"gitopsAdapterPayload":            "gitops-payload",
+		"gitopsAdapterDispatch":           "gitops-dispatch",
+		"gitopsAdapterProviderRequest":    "gitops-provider-request",
+		"gitopsAdapterProviderResult":     "gitops-provider-result",
+		"gitopsRealPRPlan":                "gitops-real-pr-plan",
+		"gitopsRealPRWorkspace":           "gitops-real-pr-workspace",
+		"gitopsRealPRMaterialization":     "gitops-real-pr-materialization",
+		"gitopsRealPRFileMaterialization": "gitops-real-pr-file-materialization",
+		"gitopsRealPRLocalCommit":         "gitops-real-pr-local-commit",
+		"gitopsRealPRPushPreflight":       "gitops-real-pr-push-preflight",
+		"gitopsRealPRBranchPush":          "gitops-real-pr-branch-push",
+		"gitopsRealPRCreatePreflight":     "gitops-real-pr-create-preflight",
+		"gitopsRealPRCreate":              "gitops-real-pr-create",
+		"gitopsRealPRCleanup":             "gitops-real-pr-cleanup",
+		"executionEligibility":            "eligibility",
+		"failureEvidence":                 "failure-evidence",
+		"aiAdvice":                        "advice",
+		"aiDecision":                      "ai-decision",
+		"policyDecision":                  "policy-decision",
+		"releaseContext":                  "context",
+		"releaseTimeline":                 "timeline",
+		"runbook":                         "runbook",
+		"rca":                             "rca",
 	}
 
 	names := []string{}
@@ -1478,6 +1598,16 @@ func releaseIDFromReportFile(base string) string {
 		"gitops-adapter-pickup-",
 		"gitops-adapter-provider-request-",
 		"gitops-adapter-provider-result-",
+		"gitops-real-pr-plan-",
+		"gitops-real-pr-workspace-",
+		"gitops-real-pr-materialization-",
+		"gitops-real-pr-file-materialization-",
+		"gitops-real-pr-local-commit-",
+		"gitops-real-pr-push-preflight-",
+		"gitops-real-pr-branch-push-",
+		"gitops-real-pr-create-preflight-",
+		"gitops-real-pr-create-",
+		"gitops-real-pr-cleanup-",
 		"execution-eligibility-",
 		"failure-evidence-",
 		"ai-advice-",
@@ -1700,6 +1830,26 @@ func kindFromReportFile(base string) string {
 		return "gitopsAdapterProviderRequest"
 	case strings.HasPrefix(base, "gitops-adapter-provider-result-"):
 		return "gitopsAdapterProviderResult"
+	case strings.HasPrefix(base, "gitops-real-pr-file-materialization-"):
+		return "gitopsRealPRFileMaterialization"
+	case strings.HasPrefix(base, "gitops-real-pr-create-preflight-"):
+		return "gitopsRealPRCreatePreflight"
+	case strings.HasPrefix(base, "gitops-real-pr-push-preflight-"):
+		return "gitopsRealPRPushPreflight"
+	case strings.HasPrefix(base, "gitops-real-pr-materialization-"):
+		return "gitopsRealPRMaterialization"
+	case strings.HasPrefix(base, "gitops-real-pr-local-commit-"):
+		return "gitopsRealPRLocalCommit"
+	case strings.HasPrefix(base, "gitops-real-pr-branch-push-"):
+		return "gitopsRealPRBranchPush"
+	case strings.HasPrefix(base, "gitops-real-pr-workspace-"):
+		return "gitopsRealPRWorkspace"
+	case strings.HasPrefix(base, "gitops-real-pr-cleanup-"):
+		return "gitopsRealPRCleanup"
+	case strings.HasPrefix(base, "gitops-real-pr-create-"):
+		return "gitopsRealPRCreate"
+	case strings.HasPrefix(base, "gitops-real-pr-plan-"):
+		return "gitopsRealPRPlan"
 	case strings.HasPrefix(base, "execution-eligibility-"):
 		return "executionEligibility"
 	case strings.HasPrefix(base, "failure-evidence-"):
