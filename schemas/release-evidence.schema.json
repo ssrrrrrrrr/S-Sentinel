@@ -361,6 +361,13 @@
             "null"
           ],
           "description": "Path to the generated runtime action recommendation JSON."
+        },
+        "runtimeActionRequest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated runtime action request JSON."
         }
       }
     },

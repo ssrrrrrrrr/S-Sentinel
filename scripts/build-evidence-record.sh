@@ -360,6 +360,16 @@ runtime_action_recommendation_snapshot = as_dict(runtime_action_recommendation.g
 runtime_action_recommendation_evidence_refs = as_dict(runtime_action_recommendation.get("evidenceRefs"))
 runtime_action_recommendation_guardrails = as_dict(runtime_action_recommendation.get("guardrails"))
 
+runtime_action_request_path = resolve_ref(artifacts.get("runtimeActionRequest"), evidence_path)
+runtime_action_request = load_json(runtime_action_request_path)
+runtime_action_request_target = as_dict(runtime_action_request.get("target"))
+runtime_action_request_body = as_dict(runtime_action_request.get("request"))
+runtime_action_request_binding = as_dict(runtime_action_request.get("recommendationBinding"))
+runtime_action_request_snapshot = as_dict(runtime_action_request.get("runtimeSnapshot"))
+runtime_action_request_approval = as_dict(runtime_action_request.get("approval"))
+runtime_action_request_evidence_refs = as_dict(runtime_action_request.get("evidenceRefs"))
+runtime_action_request_guardrails = as_dict(runtime_action_request.get("guardrails"))
+
 gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
 gitops_patch_proposal = load_json(gitops_patch_proposal_path)
 gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
@@ -535,6 +545,7 @@ link_map = {
     "executionResult": artifacts.get("executionResult"),
     "rolloutRuntimeInspect": artifacts.get("rolloutRuntimeInspect"),
     "runtimeActionRecommendation": artifacts.get("runtimeActionRecommendation"),
+    "runtimeActionRequest": artifacts.get("runtimeActionRequest"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
     "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
@@ -591,6 +602,7 @@ artifact_defs = [
     ("executionResult", link_map["executionResult"], False),
     ("rolloutRuntimeInspect", link_map["rolloutRuntimeInspect"], False),
     ("runtimeActionRecommendation", link_map["runtimeActionRecommendation"], False),
+    ("runtimeActionRequest", link_map["runtimeActionRequest"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
     ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
@@ -889,6 +901,42 @@ record = {
         "sourceRolloutRuntimeInspect": nullable_string(runtime_action_recommendation_evidence_refs.get("rolloutRuntimeInspect")),
         "sourceRuntimeActionRecommendation": nullable_string(link_map.get("runtimeActionRecommendation")),
         "guardrails": runtime_action_recommendation_guardrails,
+    },
+    "runtimeActionRequest": {
+        "runtimeActionRequestId": nullable_string(runtime_action_request.get("runtimeActionRequestId")),
+        "mode": nullable_string(runtime_action_request.get("mode")),
+        "sourceRuntimeActionRecommendationId": nullable_string(runtime_action_request.get("sourceRuntimeActionRecommendationId")),
+        "requestedAction": nullable_string(runtime_action_request_body.get("requestedAction")),
+        "requestStatus": nullable_string(runtime_action_request_body.get("requestStatus")),
+        "lifecycleStage": nullable_string(runtime_action_request_body.get("lifecycleStage")),
+        "requestedBy": nullable_string(runtime_action_request_body.get("requestedBy")),
+        "riskLevel": nullable_string(runtime_action_request_body.get("riskLevel")),
+        "confidence": nullable_string(runtime_action_request_body.get("confidence")),
+        "approvalRequired": bool_or_none(runtime_action_request_body.get("approvalRequired")),
+        "readyToExecute": bool_or_none(runtime_action_request_body.get("readyToExecute")),
+        "willExecute": bool_or_none(first_not_none(
+            runtime_action_request_body.get("willExecute"),
+            runtime_action_request_binding.get("willExecute"),
+            runtime_action_request_guardrails.get("willExecute"),
+        )),
+        "recommendationStatus": nullable_string(runtime_action_request_binding.get("recommendationStatus")),
+        "recommendedAction": nullable_string(runtime_action_request_binding.get("recommendedAction")),
+        "allowedToRequest": bool_or_none(runtime_action_request_binding.get("allowedToRequest")),
+        "blockingReasons": [str(item) for item in as_list(runtime_action_request_binding.get("blockingReasons"))],
+        "approvalStatus": nullable_string(runtime_action_request_approval.get("status")),
+        "approved": bool_or_none(runtime_action_request_approval.get("approved")),
+        "approvalDecision": nullable_string(runtime_action_request_approval.get("approvalDecision")),
+        "rolloutName": nullable_string(runtime_action_request_target.get("rolloutName")),
+        "namespace": nullable_string(runtime_action_request_target.get("namespace")),
+        "service": nullable_string(first_not_none(runtime_action_request_target.get("service"), service)),
+        "env": nullable_string(first_not_none(runtime_action_request_target.get("env"), env)),
+        "rolloutPhase": nullable_string(runtime_action_request_snapshot.get("rolloutPhase")),
+        "analysisStatus": nullable_string(runtime_action_request_snapshot.get("analysisStatus")),
+        "sourceRuntimeActionRecommendation": nullable_string(runtime_action_request_evidence_refs.get("runtimeActionRecommendation")),
+        "sourceRolloutRuntimeInspect": nullable_string(runtime_action_request_evidence_refs.get("rolloutRuntimeInspect")),
+        "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_request_evidence_refs.get("sourceRolloutRuntimeInspectId")),
+        "sourceRuntimeActionRequest": nullable_string(link_map.get("runtimeActionRequest")),
+        "guardrails": runtime_action_request_guardrails,
     },
     "gitopsPatchProposal": {
         "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),
