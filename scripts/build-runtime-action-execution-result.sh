@@ -27,9 +27,10 @@ Behavior:
   - Generates runtime-action-execution-result-*.json and runtime-action-execution-result-latest.json.
   - Records a controlled runtime action execution result / receipt.
   - Default mode records evidence only.
-  - Real PAUSE_ROLLOUT execution requires all explicit gates.
-  - RESUME_ROLLOUT is supported by the controlled rollout executor and patches spec.paused=false after gates pass.
-  - Promote, abort, rollback, GitOps writes, commits, and pushes are not supported.
+  - Real PAUSE_ROLLOUT execution requires all explicit gates and patches spec.paused=true after gates pass.
+  - Real RESUME_ROLLOUT execution requires all explicit gates and patches spec.paused=false after gates pass.
+  - Real PROMOTE_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts promote after gates pass.
+  - ABORT_ROLLOUT, ROLLBACK_ROLLOUT, GitOps writes, commits, and pushes are not supported by this executor yet.
 USAGE
 }
 
