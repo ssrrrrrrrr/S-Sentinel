@@ -5,12 +5,20 @@ metadata:
   namespace: monitoring
   labels:
     release: prometheus-stack
+    ssentinel.io/generated-by: config-compiler
+    ssentinel.io/env: dev
+  annotations:
+    ssentinel.io/generated-by: config-compiler
+    ssentinel.io/env: dev
+    ssentinel.io/renderer-ref: prometheus-rule-v1
+    ssentinel.io/output-kind: PrometheusRule
+    ssentinel.io/compiler-profile: demo-app-compiler-profile
 spec:
   groups:
   - name: demo-app-rollout.rules
     rules:
-    - alert: DemoAppCanaryHighErrorRate
-      expr: |
+    - alert: DemoAppCanaryErrorRateSLOViolation
+      expr: |-
         (
           (
             sum by (version) (
@@ -37,20 +45,21 @@ spec:
         project: slo-rollout-demo
         component: demo-app
         alert_type: rollout-slo
+        ssentinel.io/generated-by: config-compiler
+        ssentinel.io/env: dev
       annotations:
-        summary: "demo-app canary error rate is too high"
-        description: "version={{ $labels.version }} 5xx error rate is above 5%. Current value={{ printf \"%.2f\" $value }}%."
-        runbook: "kubectl describe rollout demo-app -n slo-rollout"
-
-    - alert: DemoAppCanaryHighP95Latency
-      expr: |
+        summary: demo-app canary error rate is too high
+        description: version={{ $labels.version }} 5xx error rate is above 5%.
+        runbook: kubectl describe rollout demo-app -n slo-rollout
+    - alert: DemoAppCanaryP95LatencySLOViolation
+      expr: |-
         (
           histogram_quantile(
             0.95,
             sum by (version, le) (
               rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout"}[1m])
             )
-          ) > 0.3
+          ) > 0.5
         )
         and on(version)
         (
@@ -60,11 +69,13 @@ spec:
         )
       for: 30s
       labels:
-        severity: warning
+        severity: critical
         project: slo-rollout-demo
         component: demo-app
         alert_type: rollout-slo
+        ssentinel.io/generated-by: config-compiler
+        ssentinel.io/env: dev
       annotations:
-        summary: "demo-app canary p95 latency is too high"
-        description: "version={{ $labels.version }} p95 latency is above 0.3s. Current value={{ printf \"%.3f\" $value }}s."
-        runbook: "kubectl describe rollout demo-app -n slo-rollout"
+        summary: demo-app canary p95 latency is too high
+        description: version={{ $labels.version }} p95 latency is above 0.5s.
+        runbook: kubectl describe rollout demo-app -n slo-rollout

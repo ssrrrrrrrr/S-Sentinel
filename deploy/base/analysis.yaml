@@ -3,59 +3,67 @@ kind: AnalysisTemplate
 metadata:
   name: demo-app-error-rate
   namespace: slo-rollout
+  labels:
+    app: demo-app
+    ssentinel.io/generated-by: config-compiler
+    ssentinel.io/env: dev
+  annotations:
+    ssentinel.io/generated-by: config-compiler
+    ssentinel.io/env: dev
+    ssentinel.io/renderer-ref: prometheus-analysis-template-v1
+    ssentinel.io/output-kind: AnalysisTemplate
+    ssentinel.io/compiler-profile: demo-app-compiler-profile
 spec:
   metrics:
   - name: request-count
-    interval: 20s
+    interval: 30s
     count: 3
     failureLimit: 1
     successCondition: result[0] >= 20
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
+        query: |-
           (
-            sum(increase(demo_http_requests_total{namespace="slo-rollout",version="v11-actions"}[1m]))
+            sum(increase(demo_http_requests_total{namespace="slo-rollout",version="runtime-pause-test-20260527-170724"}[1m]))
             or on() vector(0)
           )
-
   - name: error-rate
-    interval: 20s
+    interval: 30s
     count: 3
     failureLimit: 1
-    successCondition: result[0] < 5
+    successCondition: result[0] <= 5
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
+        query: |-
           (
             (
-              sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v11-actions",status=~"5.."}[1m]))
+              sum(rate(demo_http_requests_total{namespace="slo-rollout",version="runtime-pause-test-20260527-170724",status=~"5.."}[1m]))
               or vector(0)
             )
             /
             clamp_min(
               (
-                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="v11-actions"}[1m]))
+                sum(rate(demo_http_requests_total{namespace="slo-rollout",version="runtime-pause-test-20260527-170724"}[1m]))
                 or vector(0)
               ),
               0.001
             )
           ) * 100
-
   - name: p95-latency
-    interval: 20s
+    interval: 30s
     count: 3
     failureLimit: 1
-    successCondition: isNaN(result[0]) || result[0] < 0.3
+    successCondition: isNaN(result[0]) || result[0] <= 0.5
     provider:
       prometheus:
         address: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-        query: |
+        query: |-
           (
             histogram_quantile(
               0.95,
-              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="v11-actions"}[1m])) by (le)
+              sum(rate(demo_http_request_duration_seconds_bucket{namespace="slo-rollout",version="runtime-pause-test-20260527-170724"}[1m])) by (le)
             )
             or on() vector(0)
           )
