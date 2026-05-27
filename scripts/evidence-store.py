@@ -87,6 +87,14 @@ RESOURCE_SPECS = [
         "id_prefix": "rarq-",
     },
     {
+        "object_type": "runtimeActionPreflight",
+        "glob": "runtime-action-preflight-*.json",
+        "latest": "runtime-action-preflight-latest.json",
+        "prefix": "runtime-action-preflight-",
+        "id_key": "runtimeActionPreflightId",
+        "id_prefix": "rap-",
+    },
+    {
         "object_type": "executionRequest",
         "glob": "execution-request-*.json",
         "latest": "execution-request-latest.json",
@@ -919,6 +927,48 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["sourceRolloutRuntimeInspect"] = evidence_refs.get("rolloutRuntimeInspect")
         result["sourceRolloutRuntimeInspectId"] = evidence_refs.get("sourceRolloutRuntimeInspectId")
         result["requestOnly"] = guardrails.get("requestOnly")
+        result["readOnly"] = guardrails.get("readOnly")
+        result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotPause"] = guardrails.get("doesNotPause")
+        result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
+
+    if object_type == "runtimeActionPreflight":
+        request_body = as_dict(data.get("request"))
+        preflight = as_dict(data.get("preflight"))
+        runtime_snapshot = as_dict(data.get("runtimeSnapshot"))
+        target = as_dict(data.get("target"))
+        evidence_refs = as_dict(data.get("evidenceRefs"))
+        guardrails = as_dict(data.get("guardrails"))
+
+        result["runtimeActionPreflightId"] = data.get("runtimeActionPreflightId")
+        result["sourceRuntimeActionRequestId"] = data.get("sourceRuntimeActionRequestId")
+        result["requestedAction"] = request_body.get("requestedAction")
+        result["requestStatus"] = request_body.get("requestStatus")
+        result["lifecycleStage"] = request_body.get("lifecycleStage")
+        result["riskLevel"] = request_body.get("riskLevel")
+        result["confidence"] = request_body.get("confidence")
+        result["approvalRequired"] = request_body.get("approvalRequired")
+        result["approved"] = request_body.get("approved")
+        result["allowedToRequest"] = request_body.get("allowedToRequest")
+        result["preflightStatus"] = preflight.get("preflightStatus")
+        result["eligibilityStatus"] = preflight.get("eligibilityStatus")
+        result["blockingReasons"] = preflight.get("blockingReasons") or []
+        result["approvalReasons"] = preflight.get("approvalReasons") or []
+        result["warningReasons"] = preflight.get("warningReasons") or []
+        result["eligibleForExecution"] = preflight.get("eligibleForExecution")
+        result["readyToExecute"] = preflight.get("readyToExecute")
+        result["rolloutName"] = target.get("rolloutName")
+        result["namespace"] = target.get("namespace")
+        result["service"] = first_non_empty(target.get("service"), release.get("service"))
+        result["env"] = first_non_empty(target.get("env"), release.get("env"))
+        result["rolloutPhase"] = runtime_snapshot.get("rolloutPhase")
+        result["analysisStatus"] = runtime_snapshot.get("analysisStatus")
+        result["sourceRuntimeActionRequest"] = evidence_refs.get("runtimeActionRequest")
+        result["sourceRuntimeActionRecommendation"] = evidence_refs.get("runtimeActionRecommendation")
+        result["sourceRuntimeActionRecommendationId"] = evidence_refs.get("sourceRuntimeActionRecommendationId")
+        result["sourceRolloutRuntimeInspect"] = evidence_refs.get("rolloutRuntimeInspect")
+        result["sourceRolloutRuntimeInspectId"] = evidence_refs.get("sourceRolloutRuntimeInspectId")
+        result["preflightOnly"] = guardrails.get("preflightOnly")
         result["readOnly"] = guardrails.get("readOnly")
         result["willExecute"] = guardrails.get("willExecute")
         result["doesNotPause"] = guardrails.get("doesNotPause")
