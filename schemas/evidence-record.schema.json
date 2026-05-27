@@ -3922,6 +3922,87 @@
             "string",
             "null"
           ]
+        },
+        "didRollback": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rollbackVerified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rollbackTarget": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "strategy": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "targetRevision": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "targetStableRS": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "targetPodHash": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commandArgumentMode": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "usesArgoRolloutsUndo": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "usesGitOpsRollback": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "requiresGitOpsWrite": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "summary": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
         }
       }
     }

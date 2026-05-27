@@ -1020,6 +1020,11 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             abort_verified = result_body.get("abortVerified")
         if abort_verified is None:
             abort_verified = receipt.get("abortVerified")
+        rollback_verified = post_action_verification.get("rollbackVerified")
+        if rollback_verified is None:
+            rollback_verified = result_body.get("rollbackVerified")
+        if rollback_verified is None:
+            rollback_verified = receipt.get("rollbackVerified")
         post_action_observed = post_action_verification.get("postActionObserved")
         if post_action_observed is None:
             post_action_observed = result_body.get("postActionObserved")
@@ -1034,12 +1039,14 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["actionStatus"] = first_non_empty(action.get("actionStatus"), result_body.get("actionStatus"))
         result["executionStatus"] = result_body.get("executionStatus")
         result["commandMode"] = action.get("commandMode")
+        result["rollbackTarget"] = as_dict(data.get("rollbackTarget"))
         result["commandExitCode"] = action.get("commandExitCode")
         result["commandWillExecute"] = action.get("commandWillExecute")
         result["didPause"] = result_body.get("didPause")
         result["didResume"] = result_body.get("didResume")
         result["didPromote"] = result_body.get("didPromote")
         result["didAbort"] = result_body.get("didAbort")
+        result["didRollback"] = result_body.get("didRollback")
         result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
         result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
         result["mutatedGitOps"] = result_body.get("mutatedGitOps")
@@ -1059,6 +1066,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["resumeVerified"] = resume_verified
         result["promoteVerified"] = promote_verified
         result["abortVerified"] = abort_verified
+        result["rollbackVerified"] = rollback_verified
         result["postActionObserved"] = post_action_observed
         result["desiredStateObserved"] = desired_state_observed
         result["preflightStatus"] = write_gate.get("preflightStatus")

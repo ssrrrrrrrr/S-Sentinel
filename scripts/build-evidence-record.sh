@@ -389,6 +389,7 @@ runtime_action_execution_result_write_gate = as_dict(runtime_action_execution_re
 runtime_action_execution_result_before_snapshot = as_dict(runtime_action_execution_result.get("beforeSnapshot"))
 runtime_action_execution_result_after_snapshot = as_dict(runtime_action_execution_result.get("afterSnapshot"))
 runtime_action_execution_result_verification = as_dict(runtime_action_execution_result.get("postActionVerification"))
+runtime_action_execution_result_rollback_target = as_dict(runtime_action_execution_result.get("rollbackTarget"))
 runtime_action_execution_result_receipt = as_dict(runtime_action_execution_result.get("receipt"))
 runtime_action_execution_result_evidence_refs = as_dict(runtime_action_execution_result.get("evidenceRefs"))
 runtime_action_execution_result_guardrails = as_dict(runtime_action_execution_result.get("guardrails"))
@@ -1042,6 +1043,11 @@ record = {
             runtime_action_execution_result_body.get("abortVerified"),
             runtime_action_execution_result_receipt.get("abortVerified"),
         )),
+        "rollbackVerified": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("rollbackVerified"),
+            runtime_action_execution_result_body.get("rollbackVerified"),
+            runtime_action_execution_result_receipt.get("rollbackVerified"),
+        )),
         "postActionObserved": bool_or_none(first_not_none(
             runtime_action_execution_result_verification.get("postActionObserved"),
             runtime_action_execution_result_body.get("postActionObserved"),
@@ -1052,12 +1058,14 @@ record = {
         )),
         "afterObservationMode": nullable_string(runtime_action_execution_result_after_snapshot.get("observationMode")),
         "commandMode": nullable_string(runtime_action_execution_result_action.get("commandMode")),
+        "rollbackTarget": runtime_action_execution_result_rollback_target,
         "commandExitCode": runtime_action_execution_result_action.get("commandExitCode"),
         "commandWillExecute": bool_or_none(runtime_action_execution_result_action.get("commandWillExecute")),
         "didPause": bool_or_none(runtime_action_execution_result_body.get("didPause")),
         "didResume": bool_or_none(runtime_action_execution_result_body.get("didResume")),
         "didPromote": bool_or_none(runtime_action_execution_result_body.get("didPromote")),
         "didAbort": bool_or_none(runtime_action_execution_result_body.get("didAbort")),
+        "didRollback": bool_or_none(runtime_action_execution_result_body.get("didRollback")),
         "attemptedKubernetesMutation": bool_or_none(runtime_action_execution_result_body.get("attemptedKubernetesMutation")),
         "mutatedKubernetes": bool_or_none(runtime_action_execution_result_body.get("mutatedKubernetes")),
         "mutatedGitOps": bool_or_none(runtime_action_execution_result_body.get("mutatedGitOps")),
