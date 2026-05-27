@@ -36,11 +36,15 @@ grep -q 'didCreateLocalCommit' "$LOCAL_COMMIT_SCRIPT"
 grep -q 'doesNotPush' "$LOCAL_COMMIT_SCRIPT"
 
 grep -q 'S_SENTINEL_ALLOW_GITHUB_WRITE' "$PUSH_BRANCH_SCRIPT"
+grep -q 'S_SENTINEL_GITHUB_WRITE_OPERATION' "$PUSH_BRANCH_SCRIPT"
+grep -q 'push-branch' "$PUSH_BRANCH_SCRIPT"
 grep -q '"willExecute": True' "$PUSH_BRANCH_SCRIPT"
 grep -q 'didPushBranch' "$PUSH_BRANCH_SCRIPT"
 grep -q '"push", "-u", "origin"' "$PUSH_BRANCH_SCRIPT"
 grep -q 'doesNotCreatePullRequest' "$PUSH_BRANCH_SCRIPT"
 
+grep -q 'S_SENTINEL_GITHUB_WRITE_OPERATION' "$CREATE_SCRIPT"
+grep -q 'create-pr' "$CREATE_SCRIPT"
 grep -q '"gh", "pr", "create"' "$CREATE_SCRIPT"
 grep -q '"willExecute": True' "$CREATE_SCRIPT"
 grep -q 'didCreatePullRequest' "$CREATE_SCRIPT"
@@ -57,6 +61,8 @@ if grep -Eq '"--base"[[:space:]]*,[[:space:]]*"main"' "$CREATE_SCRIPT"; then
   exit 1
 fi
 
+grep -q 'S_SENTINEL_GITHUB_WRITE_OPERATION' "$CLEANUP_SCRIPT"
+grep -q 'cleanup-pr' "$CLEANUP_SCRIPT"
 grep -q '"gh", "pr", "close"' "$CLEANUP_SCRIPT"
 grep -q '"push", "origin", "--delete"' "$CLEANUP_SCRIPT"
 grep -q '"willExecute": True' "$CLEANUP_SCRIPT"

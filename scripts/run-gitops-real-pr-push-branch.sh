@@ -8,6 +8,11 @@ if [ "${S_SENTINEL_ALLOW_GITHUB_WRITE:-false}" != "true" ]; then
   exit 1
 fi
 
+if [ "${S_SENTINEL_GITHUB_WRITE_OPERATION:-}" != "push-branch" ]; then
+  echo "ERROR: set S_SENTINEL_GITHUB_WRITE_OPERATION=push-branch to push a real Git branch" >&2
+  exit 1
+fi
+
 if [ -z "$PUSH_PREFLIGHT_JSON" ] || [ ! -f "$PUSH_PREFLIGHT_JSON" ]; then
   echo "ERROR: push preflight json not found: ${PUSH_PREFLIGHT_JSON:-empty}" >&2
   exit 1

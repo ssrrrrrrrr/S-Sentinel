@@ -8,6 +8,11 @@ if [ "${S_SENTINEL_ALLOW_GITHUB_WRITE:-false}" != "true" ]; then
   exit 1
 fi
 
+if [ "${S_SENTINEL_GITHUB_WRITE_OPERATION:-}" != "create-pr" ]; then
+  echo "ERROR: set S_SENTINEL_GITHUB_WRITE_OPERATION=create-pr to create a real GitHub PR" >&2
+  exit 1
+fi
+
 if [ -z "$PR_PREFLIGHT_JSON" ] || [ ! -f "$PR_PREFLIGHT_JSON" ]; then
   echo "ERROR: PR preflight json not found: ${PR_PREFLIGHT_JSON:-empty}" >&2
   exit 1

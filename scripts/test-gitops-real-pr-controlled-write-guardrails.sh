@@ -24,6 +24,14 @@ fi
 
 grep -q "S_SENTINEL_ALLOW_GITHUB_WRITE=true" /tmp/ssentinel-push-guardrail.log
 
+echo "===== branch push operation guardrail ====="
+if S_SENTINEL_ALLOW_GITHUB_WRITE=true bash scripts/run-gitops-real-pr-push-branch.sh "$PUSH_PREFLIGHT" >/tmp/ssentinel-push-operation-guardrail.log 2>&1; then
+  echo "ERROR: branch push operation guardrail did not block" >&2
+  exit 1
+fi
+
+grep -q "S_SENTINEL_GITHUB_WRITE_OPERATION=push-branch" /tmp/ssentinel-push-operation-guardrail.log
+
 echo "===== create guardrail ====="
 if S_SENTINEL_ALLOW_GITHUB_WRITE=false bash scripts/run-gitops-real-pr-create.sh "$PR_PREFLIGHT" >/tmp/ssentinel-create-guardrail.log 2>&1; then
   echo "ERROR: create guardrail did not block" >&2
@@ -32,6 +40,14 @@ fi
 
 grep -q "S_SENTINEL_ALLOW_GITHUB_WRITE=true" /tmp/ssentinel-create-guardrail.log
 
+echo "===== create operation guardrail ====="
+if S_SENTINEL_ALLOW_GITHUB_WRITE=true bash scripts/run-gitops-real-pr-create.sh "$PR_PREFLIGHT" >/tmp/ssentinel-create-operation-guardrail.log 2>&1; then
+  echo "ERROR: create operation guardrail did not block" >&2
+  exit 1
+fi
+
+grep -q "S_SENTINEL_GITHUB_WRITE_OPERATION=create-pr" /tmp/ssentinel-create-operation-guardrail.log
+
 echo "===== cleanup guardrail ====="
 if S_SENTINEL_ALLOW_GITHUB_WRITE=false bash scripts/run-gitops-real-pr-cleanup.sh "$CREATE_JSON" >/tmp/ssentinel-cleanup-guardrail.log 2>&1; then
   echo "ERROR: cleanup guardrail did not block" >&2
@@ -39,5 +55,13 @@ if S_SENTINEL_ALLOW_GITHUB_WRITE=false bash scripts/run-gitops-real-pr-cleanup.s
 fi
 
 grep -q "S_SENTINEL_ALLOW_GITHUB_WRITE=true" /tmp/ssentinel-cleanup-guardrail.log
+
+echo "===== cleanup operation guardrail ====="
+if S_SENTINEL_ALLOW_GITHUB_WRITE=true bash scripts/run-gitops-real-pr-cleanup.sh "$CREATE_JSON" >/tmp/ssentinel-cleanup-operation-guardrail.log 2>&1; then
+  echo "ERROR: cleanup operation guardrail did not block" >&2
+  exit 1
+fi
+
+grep -q "S_SENTINEL_GITHUB_WRITE_OPERATION=cleanup-pr" /tmp/ssentinel-cleanup-operation-guardrail.log
 
 echo "PASS test-gitops-real-pr-controlled-write-guardrails"

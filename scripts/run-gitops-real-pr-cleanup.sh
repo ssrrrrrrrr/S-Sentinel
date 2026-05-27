@@ -8,6 +8,11 @@ if [ "${S_SENTINEL_ALLOW_GITHUB_WRITE:-false}" != "true" ]; then
   exit 1
 fi
 
+if [ "${S_SENTINEL_GITHUB_WRITE_OPERATION:-}" != "cleanup-pr" ]; then
+  echo "ERROR: set S_SENTINEL_GITHUB_WRITE_OPERATION=cleanup-pr to cleanup a real GitHub PR" >&2
+  exit 1
+fi
+
 if [ -z "$PR_CREATE_JSON" ] || [ ! -f "$PR_CREATE_JSON" ]; then
   echo "ERROR: PR create json not found: ${PR_CREATE_JSON:-empty}" >&2
   exit 1
