@@ -140,6 +140,7 @@ global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
 pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
 resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
 promote_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PROMOTE")
+abort_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ABORT")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
 
 operation_gate_env = None
@@ -153,6 +154,9 @@ elif requested_action == "RESUME_ROLLOUT":
 elif requested_action == "PROMOTE_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_PROMOTE"
     operation_gate_enabled = promote_gate_enabled
+elif requested_action == "ABORT_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ABORT"
+    operation_gate_enabled = abort_gate_enabled
 
 manual_pause_gate_enabled = (
     requested_action == "PAUSE_ROLLOUT"
@@ -172,17 +176,24 @@ manual_promote_gate_enabled = (
     and promote_gate_enabled
     and approval_gate_enabled
 )
+manual_abort_gate_enabled = (
+    requested_action == "ABORT_ROLLOUT"
+    and global_gate_enabled
+    and abort_gate_enabled
+    and approval_gate_enabled
+)
 manual_operation_gate_enabled = (
     manual_pause_gate_enabled
     or manual_resume_gate_enabled
     or manual_promote_gate_enabled
+    or manual_abort_gate_enabled
 )
 
 blocking_reasons = unique_strings(as_list(binding.get("blockingReasons")))
 approval_reasons: list[str] = []
 warning_reasons: list[str] = []
 
-supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
+supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
 
 if requested_action not in supported_actions:
     blocking_reasons.append("unsupported_runtime_action")
@@ -238,7 +249,7 @@ else:
 eligible_for_execution = (
     preflight_status == "PREFLIGHT_PASSED"
     and eligibility_status == "ELIGIBLE_FOR_CONTROLLED_EXECUTOR"
-    and requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
+    and requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
     and approved
     and manual_operation_gate_enabled
 )
@@ -316,11 +327,13 @@ doc = {
         "pauseGateEnabled": pause_gate_enabled,
         "resumeGateEnabled": resume_gate_enabled,
         "promoteGateEnabled": promote_gate_enabled,
+        "abortGateEnabled": abort_gate_enabled,
         "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
         "approvalGateEnabled": approval_gate_enabled,
         "manualPauseGateEnabled": manual_pause_gate_enabled,
         "manualResumeGateEnabled": manual_resume_gate_enabled,
         "manualPromoteGateEnabled": manual_promote_gate_enabled,
+        "manualAbortGateEnabled": manual_abort_gate_enabled,
         "manualOperationGateEnabled": manual_operation_gate_enabled,
         "readyForControlledExecutor": ready_to_execute,
         "willExecute": False,
