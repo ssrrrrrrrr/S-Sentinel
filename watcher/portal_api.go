@@ -121,6 +121,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/failure-evidence", api.handleLatestResource("failureEvidence"))
 	mux.HandleFunc("/api/releases/latest/preview", api.handleLatestResource("executionPreview"))
 	mux.HandleFunc("/api/releases/latest/execution-result", api.handleLatestResource("executionResult"))
+	mux.HandleFunc("/api/releases/latest/rollout-runtime-inspect", api.handleLatestResource("rolloutRuntimeInspect"))
 	mux.HandleFunc("/api/releases/latest/gitops-proposal", api.handleLatestResource("gitopsPatchProposal"))
 	mux.HandleFunc("/api/releases/latest/gitops-bundle", api.handleLatestResource("gitopsPRBundle"))
 	mux.HandleFunc("/api/releases/latest/gitops-handoff", api.handleLatestResource("gitopsHandoffBundle"))
@@ -221,6 +222,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "execution-result-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest controlled executor result.",
+		},
+		{
+			Name:         "rolloutRuntimeInspect",
+			Endpoint:     "/api/releases/latest/rollout-runtime-inspect",
+			Candidates:   []string{"rollout-runtime-inspect-latest.json"},
+			FallbackGlob: "rollout-runtime-inspect-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest read-only rollout runtime inspect snapshot.",
 		},
 		{
 			Name:         "gitopsPatchProposal",
@@ -1155,6 +1164,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "gitopsAdapterProviderRequest", "application/json; charset=utf-8", true
 	case "gitops-provider-result":
 		return "gitopsAdapterProviderResult", "application/json; charset=utf-8", true
+	case "rollout-runtime-inspect":
+		return "rolloutRuntimeInspect", "application/json; charset=utf-8", true
 	case "gitops-real-pr-plan":
 		return "gitopsRealPRPlan", "application/json; charset=utf-8", true
 	case "gitops-real-pr-workspace":
@@ -1230,6 +1241,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"gitopsAdapterDispatch":           "gitops-dispatch",
 		"gitopsAdapterProviderRequest":    "gitops-provider-request",
 		"gitopsAdapterProviderResult":     "gitops-provider-result",
+		"rolloutRuntimeInspect":           "rollout-runtime-inspect",
 		"gitopsRealPRPlan":                "gitops-real-pr-plan",
 		"gitopsRealPRWorkspace":           "gitops-real-pr-workspace",
 		"gitopsRealPRMaterialization":     "gitops-real-pr-materialization",
@@ -1582,6 +1594,7 @@ func releaseIDFromReportFile(base string) string {
 		"approval-record-",
 		"execution-preview-",
 		"execution-result-",
+		"rollout-runtime-inspect-",
 		"gitops-patch-proposal-",
 		"gitops-pr-bundle-",
 		"gitops-handoff-bundle-",
@@ -1830,6 +1843,8 @@ func kindFromReportFile(base string) string {
 		return "gitopsAdapterProviderRequest"
 	case strings.HasPrefix(base, "gitops-adapter-provider-result-"):
 		return "gitopsAdapterProviderResult"
+	case strings.HasPrefix(base, "rollout-runtime-inspect-"):
+		return "rolloutRuntimeInspect"
 	case strings.HasPrefix(base, "gitops-real-pr-file-materialization-"):
 		return "gitopsRealPRFileMaterialization"
 	case strings.HasPrefix(base, "gitops-real-pr-create-preflight-"):
