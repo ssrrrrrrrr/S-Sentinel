@@ -70,6 +70,11 @@ assert execution["sourceRuntimeActionRequestId"] == "rarq-" + release_id, execut
 assert execution["requestedAction"] == "PAUSE_ROLLOUT", execution
 assert execution["actionStatus"] == "EXECUTION_SUCCEEDED", execution
 assert execution["executionStatus"] == "SUCCEEDED", execution
+assert execution["verificationStatus"] == "VERIFIED", execution
+assert execution["pauseVerified"] is True, execution
+assert execution["postActionObserved"] is True, execution
+assert execution["desiredStateObserved"] is True, execution
+assert execution["afterObservationMode"] == "live_readonly_rollout_get_after_action", execution
 assert execution["commandMode"] == "kubectl_patch_rollout_spec_paused", execution
 assert execution["commandExitCode"] == 0, execution
 assert execution["commandWillExecute"] is True, execution

@@ -993,6 +993,24 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         receipt = as_dict(data.get("receipt"))
         evidence_refs = as_dict(data.get("evidenceRefs"))
         guardrails = as_dict(data.get("guardrails"))
+        post_action_verification = as_dict(data.get("postActionVerification"))
+
+        verification_status = (
+            post_action_verification.get("verificationStatus")
+            or result_body.get("verificationStatus")
+            or receipt.get("verificationStatus")
+        )
+        pause_verified = post_action_verification.get("pauseVerified")
+        if pause_verified is None:
+            pause_verified = result_body.get("pauseVerified")
+        if pause_verified is None:
+            pause_verified = receipt.get("pauseVerified")
+        post_action_observed = post_action_verification.get("postActionObserved")
+        if post_action_observed is None:
+            post_action_observed = result_body.get("postActionObserved")
+        desired_state_observed = post_action_verification.get("desiredStateObserved")
+        if desired_state_observed is None:
+            desired_state_observed = result_body.get("desiredStateObserved")
 
         result["runtimeActionExecutionResultId"] = data.get("runtimeActionExecutionResultId")
         result["sourceRuntimeActionPreflightId"] = data.get("sourceRuntimeActionPreflightId")
@@ -1018,6 +1036,10 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["rolloutPhase"] = before_snapshot.get("rolloutPhase")
         result["analysisStatus"] = before_snapshot.get("analysisStatus")
         result["afterObservationMode"] = after_snapshot.get("observationMode")
+        result["verificationStatus"] = verification_status
+        result["pauseVerified"] = pause_verified
+        result["postActionObserved"] = post_action_observed
+        result["desiredStateObserved"] = desired_state_observed
         result["preflightStatus"] = write_gate.get("preflightStatus")
         result["eligibilityStatus"] = write_gate.get("eligibilityStatus")
         result["finalExecuteEnabled"] = write_gate.get("finalExecuteEnabled")

@@ -46,6 +46,11 @@ assert summary.get("sourceRuntimeActionPreflightId") == "rap-" + release_id, sum
 assert summary.get("requestedAction") == "PAUSE_ROLLOUT", summary
 assert summary.get("actionStatus") == "EXECUTION_SUCCEEDED", summary
 assert summary.get("executionStatus") == "SUCCEEDED", summary
+assert summary.get("verificationStatus") == "VERIFIED", summary
+assert summary.get("pauseVerified") is True, summary
+assert summary.get("postActionObserved") is True, summary
+assert summary.get("desiredStateObserved") is True, summary
+assert summary.get("afterObservationMode") == "live_readonly_rollout_get_after_action", summary
 assert summary.get("commandMode") == "kubectl_patch_rollout_spec_paused", summary
 assert summary.get("commandExitCode") == 0, summary
 assert summary.get("didPause") is True, summary

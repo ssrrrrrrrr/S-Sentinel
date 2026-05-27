@@ -387,6 +387,8 @@ runtime_action_execution_result_body = as_dict(runtime_action_execution_result.g
 runtime_action_execution_result_executor = as_dict(runtime_action_execution_result.get("executor"))
 runtime_action_execution_result_write_gate = as_dict(runtime_action_execution_result.get("writeGate"))
 runtime_action_execution_result_before_snapshot = as_dict(runtime_action_execution_result.get("beforeSnapshot"))
+runtime_action_execution_result_after_snapshot = as_dict(runtime_action_execution_result.get("afterSnapshot"))
+runtime_action_execution_result_verification = as_dict(runtime_action_execution_result.get("postActionVerification"))
 runtime_action_execution_result_receipt = as_dict(runtime_action_execution_result.get("receipt"))
 runtime_action_execution_result_evidence_refs = as_dict(runtime_action_execution_result.get("evidenceRefs"))
 runtime_action_execution_result_guardrails = as_dict(runtime_action_execution_result.get("guardrails"))
@@ -1015,6 +1017,25 @@ record = {
             runtime_action_execution_result_body.get("actionStatus"),
         )),
         "executionStatus": nullable_string(runtime_action_execution_result_body.get("executionStatus")),
+        "verificationStatus": nullable_string(first_not_none(
+            runtime_action_execution_result_verification.get("verificationStatus"),
+            runtime_action_execution_result_body.get("verificationStatus"),
+            runtime_action_execution_result_receipt.get("verificationStatus"),
+        )),
+        "pauseVerified": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("pauseVerified"),
+            runtime_action_execution_result_body.get("pauseVerified"),
+            runtime_action_execution_result_receipt.get("pauseVerified"),
+        )),
+        "postActionObserved": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("postActionObserved"),
+            runtime_action_execution_result_body.get("postActionObserved"),
+        )),
+        "desiredStateObserved": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("desiredStateObserved"),
+            runtime_action_execution_result_body.get("desiredStateObserved"),
+        )),
+        "afterObservationMode": nullable_string(runtime_action_execution_result_after_snapshot.get("observationMode")),
         "commandMode": nullable_string(runtime_action_execution_result_action.get("commandMode")),
         "commandExitCode": runtime_action_execution_result_action.get("commandExitCode"),
         "commandWillExecute": bool_or_none(runtime_action_execution_result_action.get("commandWillExecute")),
