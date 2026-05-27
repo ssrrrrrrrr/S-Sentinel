@@ -63,6 +63,14 @@ RESOURCE_SPECS = [
         "id_prefix": "pr-",
     },
     {
+        "object_type": "rolloutRuntimeInspect",
+        "glob": "rollout-runtime-inspect-*.json",
+        "latest": "rollout-runtime-inspect-latest.json",
+        "prefix": "rollout-runtime-inspect-",
+        "id_key": "rolloutRuntimeInspectId",
+        "id_prefix": "rti-",
+    },
+    {
         "object_type": "executionRequest",
         "glob": "execution-request-*.json",
         "latest": "execution-request-latest.json",
@@ -806,6 +814,34 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             request.get("willExecute"),
         ),
     }
+
+    if object_type == "rolloutRuntimeInspect":
+        target = as_dict(data.get("target"))
+        rollout = as_dict(data.get("rollout"))
+        analysis = as_dict(data.get("analysis"))
+        guardrails = as_dict(data.get("guardrails"))
+
+        result["rolloutName"] = first_non_empty(target.get("rolloutName"), rollout.get("name"))
+        result["namespace"] = first_non_empty(target.get("namespace"), rollout.get("namespace"))
+        result["service"] = first_non_empty(target.get("service"), release.get("service"))
+        result["env"] = first_non_empty(target.get("env"), release.get("env"))
+        result["rolloutPhase"] = rollout.get("phase")
+        result["strategy"] = rollout.get("strategy")
+        result["currentStepIndex"] = rollout.get("currentStepIndex")
+        result["replicas"] = rollout.get("replicas")
+        result["updatedReplicas"] = rollout.get("updatedReplicas")
+        result["readyReplicas"] = rollout.get("readyReplicas")
+        result["availableReplicas"] = rollout.get("availableReplicas")
+        result["desiredWeight"] = rollout.get("desiredWeight")
+        result["actualWeight"] = rollout.get("actualWeight")
+        result["paused"] = rollout.get("paused")
+        result["degraded"] = rollout.get("degraded")
+        result["analysisStatus"] = analysis.get("status")
+        result["analysisRunName"] = analysis.get("analysisRunName")
+        result["readOnly"] = guardrails.get("readOnly")
+        result["dryRunOnly"] = guardrails.get("dryRunOnly")
+        result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
 
     if object_type == "policyRuntimeResult":
         policy_decision = as_dict(data.get("policyDecision"))
