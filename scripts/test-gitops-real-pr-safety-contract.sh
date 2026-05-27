@@ -35,6 +35,7 @@ grep -q '"willExecute": True' "$LOCAL_COMMIT_SCRIPT"
 grep -q 'didCreateLocalCommit' "$LOCAL_COMMIT_SCRIPT"
 grep -q 'doesNotPush' "$LOCAL_COMMIT_SCRIPT"
 
+grep -q 'S_SENTINEL_ALLOW_GITHUB_WRITE' "$PUSH_BRANCH_SCRIPT"
 grep -q '"willExecute": True' "$PUSH_BRANCH_SCRIPT"
 grep -q 'didPushBranch' "$PUSH_BRANCH_SCRIPT"
 grep -q '"push", "-u", "origin"' "$PUSH_BRANCH_SCRIPT"

@@ -3,6 +3,11 @@ set -euo pipefail
 
 PUSH_PREFLIGHT_JSON="${1:-}"
 
+if [ "${S_SENTINEL_ALLOW_GITHUB_WRITE:-false}" != "true" ]; then
+  echo "ERROR: set S_SENTINEL_ALLOW_GITHUB_WRITE=true to push a real Git branch" >&2
+  exit 1
+fi
+
 if [ -z "$PUSH_PREFLIGHT_JSON" ] || [ ! -f "$PUSH_PREFLIGHT_JSON" ]; then
   echo "ERROR: push preflight json not found: ${PUSH_PREFLIGHT_JSON:-empty}" >&2
   exit 1
