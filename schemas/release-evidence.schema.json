@@ -368,6 +368,13 @@
             "null"
           ],
           "description": "Path to the generated runtime action request JSON."
+        },
+        "runtimeActionPreflight": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated runtime action preflight JSON."
         }
       }
     },

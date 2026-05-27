@@ -370,6 +370,15 @@ runtime_action_request_approval = as_dict(runtime_action_request.get("approval")
 runtime_action_request_evidence_refs = as_dict(runtime_action_request.get("evidenceRefs"))
 runtime_action_request_guardrails = as_dict(runtime_action_request.get("guardrails"))
 
+runtime_action_preflight_path = resolve_ref(artifacts.get("runtimeActionPreflight"), evidence_path)
+runtime_action_preflight = load_json(runtime_action_preflight_path)
+runtime_action_preflight_target = as_dict(runtime_action_preflight.get("target"))
+runtime_action_preflight_body = as_dict(runtime_action_preflight.get("request"))
+runtime_action_preflight_decision = as_dict(runtime_action_preflight.get("preflight"))
+runtime_action_preflight_snapshot = as_dict(runtime_action_preflight.get("runtimeSnapshot"))
+runtime_action_preflight_evidence_refs = as_dict(runtime_action_preflight.get("evidenceRefs"))
+runtime_action_preflight_guardrails = as_dict(runtime_action_preflight.get("guardrails"))
+
 gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
 gitops_patch_proposal = load_json(gitops_patch_proposal_path)
 gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
@@ -546,6 +555,7 @@ link_map = {
     "rolloutRuntimeInspect": artifacts.get("rolloutRuntimeInspect"),
     "runtimeActionRecommendation": artifacts.get("runtimeActionRecommendation"),
     "runtimeActionRequest": artifacts.get("runtimeActionRequest"),
+    "runtimeActionPreflight": artifacts.get("runtimeActionPreflight"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
     "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
@@ -603,6 +613,7 @@ artifact_defs = [
     ("rolloutRuntimeInspect", link_map["rolloutRuntimeInspect"], False),
     ("runtimeActionRecommendation", link_map["runtimeActionRecommendation"], False),
     ("runtimeActionRequest", link_map["runtimeActionRequest"], False),
+    ("runtimeActionPreflight", link_map["runtimeActionPreflight"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
     ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
@@ -937,6 +948,44 @@ record = {
         "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_request_evidence_refs.get("sourceRolloutRuntimeInspectId")),
         "sourceRuntimeActionRequest": nullable_string(link_map.get("runtimeActionRequest")),
         "guardrails": runtime_action_request_guardrails,
+    },
+    "runtimeActionPreflight": {
+        "runtimeActionPreflightId": nullable_string(runtime_action_preflight.get("runtimeActionPreflightId")),
+        "mode": nullable_string(runtime_action_preflight.get("mode")),
+        "sourceRuntimeActionRequestId": nullable_string(runtime_action_preflight.get("sourceRuntimeActionRequestId")),
+        "requestedAction": nullable_string(runtime_action_preflight_body.get("requestedAction")),
+        "requestStatus": nullable_string(runtime_action_preflight_body.get("requestStatus")),
+        "lifecycleStage": nullable_string(runtime_action_preflight_body.get("lifecycleStage")),
+        "riskLevel": nullable_string(runtime_action_preflight_body.get("riskLevel")),
+        "confidence": nullable_string(runtime_action_preflight_body.get("confidence")),
+        "approvalRequired": bool_or_none(runtime_action_preflight_body.get("approvalRequired")),
+        "approved": bool_or_none(runtime_action_preflight_body.get("approved")),
+        "allowedToRequest": bool_or_none(runtime_action_preflight_body.get("allowedToRequest")),
+        "preflightStatus": nullable_string(runtime_action_preflight_decision.get("preflightStatus")),
+        "eligibilityStatus": nullable_string(runtime_action_preflight_decision.get("eligibilityStatus")),
+        "blockingReasons": [str(item) for item in as_list(runtime_action_preflight_decision.get("blockingReasons"))],
+        "approvalReasons": [str(item) for item in as_list(runtime_action_preflight_decision.get("approvalReasons"))],
+        "warningReasons": [str(item) for item in as_list(runtime_action_preflight_decision.get("warningReasons"))],
+        "eligibleForExecution": bool_or_none(runtime_action_preflight_decision.get("eligibleForExecution")),
+        "readyToExecute": bool_or_none(runtime_action_preflight_decision.get("readyToExecute")),
+        "willExecute": bool_or_none(first_not_none(
+            runtime_action_preflight_decision.get("willExecute"),
+            runtime_action_preflight_body.get("willExecute"),
+            runtime_action_preflight_guardrails.get("willExecute"),
+        )),
+        "rolloutName": nullable_string(runtime_action_preflight_target.get("rolloutName")),
+        "namespace": nullable_string(runtime_action_preflight_target.get("namespace")),
+        "service": nullable_string(first_not_none(runtime_action_preflight_target.get("service"), service)),
+        "env": nullable_string(first_not_none(runtime_action_preflight_target.get("env"), env)),
+        "rolloutPhase": nullable_string(runtime_action_preflight_snapshot.get("rolloutPhase")),
+        "analysisStatus": nullable_string(runtime_action_preflight_snapshot.get("analysisStatus")),
+        "sourceRuntimeActionRequest": nullable_string(runtime_action_preflight_evidence_refs.get("runtimeActionRequest")),
+        "sourceRuntimeActionRecommendation": nullable_string(runtime_action_preflight_evidence_refs.get("runtimeActionRecommendation")),
+        "sourceRuntimeActionRecommendationId": nullable_string(runtime_action_preflight_evidence_refs.get("sourceRuntimeActionRecommendationId")),
+        "sourceRolloutRuntimeInspect": nullable_string(runtime_action_preflight_evidence_refs.get("rolloutRuntimeInspect")),
+        "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_preflight_evidence_refs.get("sourceRolloutRuntimeInspectId")),
+        "sourceRuntimeActionPreflight": nullable_string(link_map.get("runtimeActionPreflight")),
+        "guardrails": runtime_action_preflight_guardrails,
     },
     "gitopsPatchProposal": {
         "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),
