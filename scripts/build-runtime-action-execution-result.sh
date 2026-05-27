@@ -34,7 +34,8 @@ Behavior:
   - Real RESUME_ROLLOUT execution requires all explicit gates and patches spec.paused=false after gates pass.
   - Real PROMOTE_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts promote after gates pass.
   - Real ABORT_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts abort after gates pass.
-  - ROLLBACK_ROLLOUT, GitOps writes, commits, and pushes are not supported by this executor yet.
+  - Real ROLLBACK_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts undo after gates pass.
+  - GitOps writes, commits, and pushes are not supported by this executor yet.
 USAGE
 }
 
@@ -171,7 +172,7 @@ elif requested_action == "ROLLBACK_ROLLOUT":
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
 supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
-implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
+implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
     overall_gate_status = "NO_RUNTIME_EXECUTION_REQUIRED"
@@ -266,6 +267,7 @@ did_pause = False
 did_resume = False
 did_promote = False
 did_abort = False
+did_rollback = False
 executed = False
 post_action_rollout_get_attempted = False
 post_action_rollout_get_succeeded = False
@@ -355,6 +357,7 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     did_resume = completed.returncode == 0 and requested_action == "RESUME_ROLLOUT"
     did_promote = completed.returncode == 0 and requested_action == "PROMOTE_ROLLOUT"
     did_abort = completed.returncode == 0 and requested_action == "ABORT_ROLLOUT"
+    did_rollback = completed.returncode == 0 and requested_action == "ROLLBACK_ROLLOUT"
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
     if completed.returncode == 0 and namespace and rollout_name:
@@ -379,6 +382,7 @@ after_snapshot = {
     "resumedAssumedFromCommandSuccess": did_resume,
     "promotedAssumedFromCommandSuccess": did_promote,
     "abortedAssumedFromCommandSuccess": did_abort,
+    "rolledBackAssumedFromCommandSuccess": did_rollback,
     "postActionRolloutGetAttempted": post_action_rollout_get_attempted,
     "postActionRolloutGetSucceeded": post_action_rollout_get_succeeded,
     "postActionRolloutGetExitCode": post_action_rollout_get_exit_code,
@@ -420,6 +424,24 @@ abort_desired_state_observed = (
     and abort_phase_observed
 )
 
+rollback_target_stable_rs = rollback_target.get("targetStableRS")
+rollback_target_pod_hash = rollback_target.get("targetPodHash")
+rollback_phase_observed = (
+    after_snapshot.get("phase") in {"Healthy", "Progressing"}
+    and after_snapshot.get("degraded") is not True
+)
+rollback_target_observed = (
+    (rollback_target_stable_rs not in (None, "") and after_snapshot.get("stableRS") == rollback_target_stable_rs)
+    or (rollback_target_pod_hash not in (None, "") and after_snapshot.get("currentPodHash") == rollback_target_pod_hash)
+    or rollback_target.get("targetRevision") not in (None, "")
+    or rollback_target.get("strategy") == "previous_revision"
+)
+rollback_desired_state_observed = (
+    post_action_observed
+    and rollback_phase_observed
+    and rollback_target_observed
+)
+
 if requested_action == "PAUSE_ROLLOUT":
     desired_state_observed = pause_desired_state_observed
 elif requested_action == "RESUME_ROLLOUT":
@@ -428,6 +450,8 @@ elif requested_action == "PROMOTE_ROLLOUT":
     desired_state_observed = promote_desired_state_observed
 elif requested_action == "ABORT_ROLLOUT":
     desired_state_observed = abort_desired_state_observed
+elif requested_action == "ROLLBACK_ROLLOUT":
+    desired_state_observed = rollback_desired_state_observed
 else:
     desired_state_observed = False
 
@@ -451,6 +475,12 @@ promote_verified = (
 )
 abort_verified = (
     requested_action == "ABORT_ROLLOUT"
+    and command_succeeded
+    and post_action_observed
+    and desired_state_observed
+)
+rollback_verified = (
+    requested_action == "ROLLBACK_ROLLOUT"
     and command_succeeded
     and post_action_observed
     and desired_state_observed
@@ -480,6 +510,9 @@ elif requested_action == "PROMOTE_ROLLOUT" and not desired_state_observed:
 elif requested_action == "ABORT_ROLLOUT" and not desired_state_observed:
     verification_status = "VERIFY_FAILED"
     verification_blocking_reasons.append("abort_state_not_observed_after_action")
+elif requested_action == "ROLLBACK_ROLLOUT" and not desired_state_observed:
+    verification_status = "VERIFY_FAILED"
+    verification_blocking_reasons.append("rollback_state_not_observed_after_action")
 else:
     verification_status = "VERIFIED"
 
@@ -494,10 +527,15 @@ post_action_verification = {
     "resumeVerified": resume_verified,
     "promoteVerified": promote_verified,
     "abortVerified": abort_verified,
+    "rollbackVerified": rollback_verified,
     "promoteStepAdvanced": promote_step_advanced,
     "promotePhaseObserved": promote_phase_observed,
     "abortPhaseObserved": abort_phase_observed,
+    "rollbackPhaseObserved": rollback_phase_observed,
+    "rollbackTargetObserved": rollback_target_observed,
     "observedAborted": after_snapshot.get("aborted") is True,
+    "observedStableRS": after_snapshot.get("stableRS"),
+    "observedCurrentPodHash": after_snapshot.get("currentPodHash"),
     "expectedPaused": False if requested_action == "RESUME_ROLLOUT" else requested_action == "PAUSE_ROLLOUT",
     "observedPaused": observed_paused,
     "observedSpecPaused": observed_spec_paused,
@@ -592,13 +630,14 @@ doc = {
         "resumeVerified": resume_verified,
         "promoteVerified": promote_verified,
         "abortVerified": abort_verified,
+        "rollbackVerified": rollback_verified,
         "postActionObserved": post_action_observed,
         "desiredStateObserved": desired_state_observed,
         "didPause": did_pause,
         "didResume": did_resume,
         "didPromote": did_promote,
         "didAbort": did_abort,
-        "didRollback": False,
+        "didRollback": did_rollback,
         "attemptedKubernetesMutation": attempted_kubernetes_mutation,
         "mutatedKubernetes": mutated_kubernetes,
         "mutatedGitOps": False,
@@ -608,7 +647,8 @@ doc = {
             f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; "
             f"attemptedKubernetesMutation={attempted_kubernetes_mutation}, "
             f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}, "
-            f"didResume={did_resume}, didPromote={did_promote}, didAbort={did_abort}."
+            f"didResume={did_resume}, didPromote={did_promote}, didAbort={did_abort}, "
+            f"didRollback={did_rollback}."
         ),
     },
     "receipt": {
@@ -621,11 +661,13 @@ doc = {
         "didResume": did_resume,
         "didPromote": did_promote,
         "didAbort": did_abort,
+        "didRollback": did_rollback,
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
         "promoteVerified": promote_verified,
         "abortVerified": abort_verified,
+        "rollbackVerified": rollback_verified,
         "attemptedModifyKubernetes": attempted_kubernetes_mutation,
         "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
@@ -645,12 +687,12 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
-        "postActionVerified": pause_verified or resume_verified or promote_verified or abort_verified,
+        "postActionVerified": pause_verified or resume_verified or promote_verified or abort_verified or rollback_verified,
         "doesNotPause": not did_pause,
         "doesNotResume": not did_resume,
         "doesNotPromote": not did_promote,
         "doesNotAbort": not did_abort,
-        "doesNotRollback": True,
+        "doesNotRollback": not did_rollback,
         "doesNotModifyKubernetes": not mutated_kubernetes,
         "doesNotModifyGitOps": True,
         "doesNotCommitOrPush": True,
@@ -671,6 +713,7 @@ print(json.dumps({
     "executionStatus": doc["result"]["executionStatus"],
     "didPause": did_pause,
     "didResume": did_resume,
+    "didRollback": did_rollback,
     "willExecute": executed,
 }, indent=2))
 PY

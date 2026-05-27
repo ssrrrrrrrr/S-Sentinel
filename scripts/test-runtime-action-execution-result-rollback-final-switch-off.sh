@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TMP_DIR=".tmp/test-runtime-action-execution-result-rollback-not-implemented"
-RELEASE_ID="runtime-action-rollback-not-implemented-smoke"
+TMP_DIR=".tmp/test-runtime-action-execution-result-rollback-final-switch-off"
+RELEASE_ID="runtime-action-rollback-final-switch-off-smoke"
 
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
@@ -11,7 +11,7 @@ cat > "$TMP_DIR/runtime-action-recommendation-$RELEASE_ID.json" <<JSON
 {
   "schemaVersion": "runtime.action.recommendation/v1alpha1",
   "runtimeActionRecommendationId": "rar-$RELEASE_ID",
-  "generatedBy": "test-runtime-action-execution-result-rollback-not-implemented.sh",
+  "generatedBy": "test-runtime-action-execution-result-rollback-final-switch-off.sh",
   "generatedAt": "2026-05-27T09:09:09Z",
   "mode": "recommendation_only",
   "release": {
@@ -87,7 +87,7 @@ doc.setdefault("approval", {})
 doc["approval"]["required"] = True
 doc["approval"]["status"] = "APPROVED"
 doc["approval"]["approved"] = True
-doc["approval"]["approvedBy"] = "test-runtime-action-execution-result-rollback-not-implemented"
+doc["approval"]["approvedBy"] = "test-runtime-action-execution-result-rollback-final-switch-off"
 doc["approval"]["approvalDecision"] = "APPROVED_FOR_HIGH_RISK_ROLLBACK"
 doc["approval"]["readyToExecute"] = False
 doc["approval"]["willExecuteAfterApproval"] = False
@@ -104,7 +104,6 @@ RUNTIME_ACTION_PREFLIGHT_OUTPUT_DIR="$TMP_DIR" \
 S_SENTINEL_RUNTIME_EXECUTION_ENABLED=true \
 S_SENTINEL_ALLOW_RUNTIME_ROLLBACK=true \
 S_SENTINEL_RUNTIME_ACTION_APPROVED=true \
-S_SENTINEL_RUNTIME_ROLLBACK_EXECUTE=true \
 RUNTIME_ACTION_EXECUTION_RESULT_OUTPUT_DIR="$TMP_DIR" \
   bash scripts/build-runtime-action-execution-result.sh "$TMP_DIR/runtime-action-preflight-$RELEASE_ID.json"
 
@@ -117,8 +116,8 @@ doc = json.load(open(sys.argv[1], encoding="utf-8"))
 action = doc["action"]
 assert action["requestedAction"] == "ROLLBACK_ROLLOUT", doc
 assert action["supportedAction"] is True, doc
-assert action["implementedAction"] is False, doc
-assert action["actionStatus"] == "BLOCKED_EXECUTOR_NOT_IMPLEMENTED", doc
+assert action["implementedAction"] is True, doc
+assert action["actionStatus"] == "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF", doc
 assert action["commandWillExecute"] is False, doc
 assert action["commandMode"] == "kubectl_argo_rollouts_undo", doc
 assert action["commandPreviewArgs"] == ["kubectl", "argo", "rollouts", "undo", "demo-app", "-n", "slo-rollout"], doc
@@ -131,15 +130,15 @@ assert write_gate["operationGateEnabled"] is True, write_gate
 assert write_gate["rollbackGateEnabled"] is True, write_gate
 assert write_gate["approvalGateEnabled"] is True, write_gate
 assert write_gate["finalExecuteEnv"] == "S_SENTINEL_RUNTIME_ROLLBACK_EXECUTE", write_gate
-assert write_gate["finalExecuteEnabled"] is True, write_gate
-assert write_gate["overallGateStatus"] == "BLOCKED_EXECUTOR_NOT_IMPLEMENTED", write_gate
+assert write_gate["finalExecuteEnabled"] is False, write_gate
+assert write_gate["overallGateStatus"] == "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF", write_gate
 assert write_gate["writeAllowed"] is False, write_gate
 assert write_gate["willExecute"] is False, write_gate
 
 result = doc["result"]
 assert result["requestedAction"] == "ROLLBACK_ROLLOUT", result
 assert result["executionStatus"] == "NOT_EXECUTED", result
-assert result["actionStatus"] == "BLOCKED_EXECUTOR_NOT_IMPLEMENTED", result
+assert result["actionStatus"] == "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF", result
 assert result["readyForExecutor"] is False, result
 assert result["willExecute"] is False, result
 assert result["didPause"] is False, result
@@ -171,5 +170,5 @@ assert guardrails["doesNotModifyKubernetes"] is True, guardrails
 assert guardrails["doesNotModifyGitOps"] is True, guardrails
 assert guardrails["doesNotCommitOrPush"] is True, guardrails
 
-print("PASS runtime action execution result rollback not implemented")
+print("PASS runtime action execution result rollback final switch off")
 PYASSERT

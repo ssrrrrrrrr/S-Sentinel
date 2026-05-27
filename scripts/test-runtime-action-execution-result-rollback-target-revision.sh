@@ -108,7 +108,6 @@ RUNTIME_ACTION_PREFLIGHT_OUTPUT_DIR="$TMP_DIR" \
 S_SENTINEL_RUNTIME_EXECUTION_ENABLED=true \
 S_SENTINEL_ALLOW_RUNTIME_ROLLBACK=true \
 S_SENTINEL_RUNTIME_ACTION_APPROVED=true \
-S_SENTINEL_RUNTIME_ROLLBACK_EXECUTE=true \
 RUNTIME_ACTION_EXECUTION_RESULT_OUTPUT_DIR="$TMP_DIR" \
   bash scripts/build-runtime-action-execution-result.sh "$TMP_DIR/runtime-action-preflight-$RELEASE_ID.json"
 
@@ -132,8 +131,8 @@ for doc in [request_doc, preflight_doc, result_doc]:
 action = result_doc["action"]
 assert action["requestedAction"] == "ROLLBACK_ROLLOUT", result_doc
 assert action["supportedAction"] is True, result_doc
-assert action["implementedAction"] is False, result_doc
-assert action["actionStatus"] == "BLOCKED_EXECUTOR_NOT_IMPLEMENTED", result_doc
+assert action["implementedAction"] is True, result_doc
+assert action["actionStatus"] == "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF", result_doc
 assert action["commandMode"] == "kubectl_argo_rollouts_undo_to_revision", result_doc
 assert action["commandPreviewArgs"] == ["kubectl", "argo", "rollouts", "undo", "demo-app", "-n", "slo-rollout", "--to-revision=3"], result_doc
 assert result_doc["result"]["didRollback"] is False, result_doc
