@@ -49,6 +49,11 @@ assert data["mode"] == "live_readonly_rollout_runtime_inspect", data
 assert data["target"]["rolloutName"], data
 assert data["rollout"]["phase"], data
 assert data["rollout"]["strategy"] in ("Canary", "BlueGreen", "Unknown"), data
+assert isinstance(data["rollout"]["paused"], bool), data
+assert isinstance(data["rollout"]["specPaused"], bool), data
+assert isinstance(data["rollout"]["statusPaused"], bool), data
+assert isinstance(data["rollout"]["pauseConditions"], list), data
+assert data["rollout"]["paused"] == (data["rollout"]["specPaused"] or data["rollout"]["statusPaused"]), data
 assert data["guardrails"]["readOnly"] is True, data
 assert data["guardrails"]["dryRunOnly"] is True, data
 assert data["guardrails"]["willExecute"] is False, data

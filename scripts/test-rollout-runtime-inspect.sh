@@ -36,6 +36,10 @@ assert data["rolloutRuntimeInspectId"] == "rti-runtime-inspect-smoke", data
 assert data["target"]["rolloutName"] == "demo-app", data
 assert data["rollout"]["phase"] == "Progressing", data
 assert data["rollout"]["strategy"] == "Canary", data
+assert data["rollout"]["paused"] is False, data
+assert data["rollout"]["specPaused"] is False, data
+assert data["rollout"]["statusPaused"] is False, data
+assert data["rollout"]["pauseConditions"] == [], data
 assert data["analysis"]["status"] == "Running", data
 assert data["guardrails"]["readOnly"] is True, data
 assert data["guardrails"]["dryRunOnly"] is True, data

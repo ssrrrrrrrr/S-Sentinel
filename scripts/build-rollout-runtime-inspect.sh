@@ -145,6 +145,9 @@ if mode == "fixture":
             "desiredWeight": 20,
             "actualWeight": 20,
             "paused": False,
+            "specPaused": False,
+            "statusPaused": False,
+            "pauseConditions": [],
             "degraded": False,
             "message": "Fixture rollout inspect snapshot; no Kubernetes command executed.",
         },
@@ -196,7 +199,10 @@ else:
     ready_pods = [p for p in pods if pod_ready(p)]
 
     phase = status.get("phase") or "Unknown"
-    paused = paused_status == "True" or bool(status.get("pauseConditions"))
+    spec_paused = spec.get("paused") is True
+    pause_conditions = status.get("pauseConditions") or []
+    status_paused = paused_status == "True" or bool(pause_conditions)
+    paused = spec_paused or status_paused
     degraded = phase == "Degraded"
 
     doc = {
@@ -233,6 +239,9 @@ else:
             "desiredWeight": None,
             "actualWeight": None,
             "paused": paused,
+            "specPaused": spec_paused,
+            "statusPaused": status_paused,
+            "pauseConditions": pause_conditions,
             "degraded": degraded,
             "currentPodHash": status.get("currentPodHash"),
             "stableRS": status.get("stableRS"),
