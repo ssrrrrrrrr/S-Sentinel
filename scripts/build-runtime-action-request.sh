@@ -126,12 +126,18 @@ def derive_request(
             "blockingReasons": [],
         }
 
-    if recommended_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}:
+    if recommended_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}:
+        high_risk_runtime_action = recommended_action in {"PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
+        effective_approval_required = bool(
+            approval_required
+            or risk_level in {"high", "critical"}
+            or high_risk_runtime_action
+        )
         return {
             "requestedAction": recommended_action,
-            "requestStatus": "PENDING_APPROVAL" if approval_required else "READY_FOR_PREFLIGHT",
-            "lifecycleStage": "WAITING_APPROVAL" if approval_required else "READY_FOR_PREFLIGHT",
-            "approvalRequired": bool(approval_required or risk_level in {"high", "critical"}),
+            "requestStatus": "PENDING_APPROVAL" if effective_approval_required else "READY_FOR_PREFLIGHT",
+            "lifecycleStage": "WAITING_APPROVAL" if effective_approval_required else "READY_FOR_PREFLIGHT",
+            "approvalRequired": effective_approval_required,
             "readyToExecute": False,
             "allowedToRequest": True,
             "blockingReasons": [],

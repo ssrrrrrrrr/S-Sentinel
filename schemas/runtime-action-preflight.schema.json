@@ -44,7 +44,8 @@
             "NOOP",
             "REQUIRE_REVIEW",
             "PAUSE_ROLLOUT",
-            "RESUME_ROLLOUT"
+            "RESUME_ROLLOUT",
+            "PROMOTE_ROLLOUT"
           ]
         },
         "readyToExecute": {

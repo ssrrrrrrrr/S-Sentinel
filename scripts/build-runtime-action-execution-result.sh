@@ -147,7 +147,7 @@ elif requested_action == "RESUME_ROLLOUT":
     final_execute_env = "S_SENTINEL_RUNTIME_RESUME_EXECUTE"
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
-supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
+supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
 implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
@@ -172,23 +172,27 @@ else:
 rollout_name = target.get("rolloutName")
 namespace = target.get("namespace")
 
-paused_patch_value = "false" if requested_action == "RESUME_ROLLOUT" else "true"
-command_args = [
-    "kubectl",
-    "-n",
-    str(namespace or ""),
-    "patch",
-    "rollout",
-    str(rollout_name or ""),
-    "--type=merge",
-    "-p",
-    f'{{"spec":{{"paused":{paused_patch_value}}}}}',
-]
-command_mode = (
-    "kubectl_patch_rollout_spec_paused_false"
-    if requested_action == "RESUME_ROLLOUT"
-    else "kubectl_patch_rollout_spec_paused"
-)
+if requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}:
+    paused_patch_value = "false" if requested_action == "RESUME_ROLLOUT" else "true"
+    command_args = [
+        "kubectl",
+        "-n",
+        str(namespace or ""),
+        "patch",
+        "rollout",
+        str(rollout_name or ""),
+        "--type=merge",
+        "-p",
+        f'{{"spec":{{"paused":{paused_patch_value}}}}}',
+    ]
+    command_mode = (
+        "kubectl_patch_rollout_spec_paused_false"
+        if requested_action == "RESUME_ROLLOUT"
+        else "kubectl_patch_rollout_spec_paused"
+    )
+else:
+    command_args = []
+    command_mode = "unsupported_runtime_action_command"
 
 command_started_at = None
 command_finished_at = None
@@ -423,6 +427,7 @@ doc = {
     "action": {
         "requestedAction": requested_action,
         "supportedAction": supported_action,
+        "implementedAction": implemented_action,
         "actionStatus": overall_gate_status,
         "commandPreviewArgs": command_args,
         "commandMode": command_mode,
