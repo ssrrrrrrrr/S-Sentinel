@@ -71,6 +71,14 @@ RESOURCE_SPECS = [
         "id_prefix": "rti-",
     },
     {
+        "object_type": "runtimeActionRecommendation",
+        "glob": "runtime-action-recommendation-*.json",
+        "latest": "runtime-action-recommendation-latest.json",
+        "prefix": "runtime-action-recommendation-",
+        "id_key": "runtimeActionRecommendationId",
+        "id_prefix": "rar-",
+    },
+    {
         "object_type": "executionRequest",
         "glob": "execution-request-*.json",
         "latest": "execution-request-latest.json",
@@ -840,6 +848,32 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["analysisRunName"] = analysis.get("analysisRunName")
         result["readOnly"] = guardrails.get("readOnly")
         result["dryRunOnly"] = guardrails.get("dryRunOnly")
+        result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
+
+    if object_type == "runtimeActionRecommendation":
+        target = as_dict(data.get("target"))
+        runtime_snapshot = as_dict(data.get("runtimeSnapshot"))
+        evidence_refs = as_dict(data.get("evidenceRefs"))
+        guardrails = as_dict(data.get("guardrails"))
+
+        result["runtimeActionRecommendationId"] = data.get("runtimeActionRecommendationId")
+        result["recommendationStatus"] = recommendation.get("recommendationStatus")
+        result["recommendedAction"] = recommendation.get("recommendedAction")
+        result["riskLevel"] = recommendation.get("riskLevel")
+        result["confidence"] = recommendation.get("confidence")
+        result["approvalRequired"] = recommendation.get("approvalRequired")
+        result["reasons"] = recommendation.get("reasons") or []
+        result["rolloutName"] = target.get("rolloutName")
+        result["namespace"] = target.get("namespace")
+        result["service"] = first_non_empty(target.get("service"), release.get("service"))
+        result["env"] = first_non_empty(target.get("env"), release.get("env"))
+        result["rolloutPhase"] = runtime_snapshot.get("rolloutPhase")
+        result["analysisStatus"] = runtime_snapshot.get("analysisStatus")
+        result["sourceRolloutRuntimeInspectId"] = evidence_refs.get("sourceRolloutRuntimeInspectId")
+        result["sourceRolloutRuntimeInspect"] = evidence_refs.get("rolloutRuntimeInspect")
+        result["readOnly"] = guardrails.get("readOnly")
+        result["recommendationOnly"] = guardrails.get("recommendationOnly")
         result["willExecute"] = guardrails.get("willExecute")
         result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
 
