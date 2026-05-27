@@ -77,7 +77,8 @@
             "REQUIRE_REVIEW",
             "PAUSE_ROLLOUT",
             "RESUME_ROLLOUT",
-            "PROMOTE_ROLLOUT"
+            "PROMOTE_ROLLOUT",
+            "ABORT_ROLLOUT"
           ]
         },
         "commandWillExecute": {
@@ -107,7 +108,8 @@
           "enum": [
             "PAUSE_ROLLOUT",
             "RESUME_ROLLOUT",
-            "PROMOTE_ROLLOUT"
+            "PROMOTE_ROLLOUT",
+            "ABORT_ROLLOUT"
           ]
         },
         "overallGateStatus": {
@@ -233,7 +235,8 @@
             "REQUIRE_REVIEW",
             "PAUSE_ROLLOUT",
             "RESUME_ROLLOUT",
-            "PROMOTE_ROLLOUT"
+            "PROMOTE_ROLLOUT",
+            "ABORT_ROLLOUT"
           ]
         },
         "commandSucceeded": {

@@ -32,7 +32,8 @@ Behavior:
   - Real PAUSE_ROLLOUT execution requires all explicit gates and patches spec.paused=true after gates pass.
   - Real RESUME_ROLLOUT execution requires all explicit gates and patches spec.paused=false after gates pass.
   - Real PROMOTE_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts promote after gates pass.
-  - ABORT_ROLLOUT, ROLLBACK_ROLLOUT, GitOps writes, commits, and pushes are not supported by this executor yet.
+  - Real ABORT_ROLLOUT execution requires all explicit gates and runs kubectl argo rollouts abort after gates pass.
+  - ROLLBACK_ROLLOUT, GitOps writes, commits, and pushes are not supported by this executor yet.
 USAGE
 }
 
