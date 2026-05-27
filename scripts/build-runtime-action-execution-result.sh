@@ -17,10 +17,12 @@ Environment:
   S_SENTINEL_ALLOW_RUNTIME_PAUSE                PAUSE_ROLLOUT operation gate.
   S_SENTINEL_ALLOW_RUNTIME_RESUME               RESUME_ROLLOUT operation gate.
   S_SENTINEL_ALLOW_RUNTIME_PROMOTE              PROMOTE_ROLLOUT operation gate.
+  S_SENTINEL_ALLOW_RUNTIME_ABORT                ABORT_ROLLOUT operation gate.
   S_SENTINEL_RUNTIME_ACTION_APPROVED            Approval gate.
   S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit pause execution switch.
   S_SENTINEL_RUNTIME_RESUME_EXECUTE             Final explicit resume execution switch.
   S_SENTINEL_RUNTIME_PROMOTE_EXECUTE            Final explicit promote execution switch.
+  S_SENTINEL_RUNTIME_ABORT_EXECUTE              Reserved final abort execution switch; executor not implemented yet.
 
 Behavior:
   - Reads runtime-action-preflight-*.json.
@@ -135,6 +137,7 @@ global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
 pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
 resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
 promote_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PROMOTE")
+abort_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ABORT")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
 
 operation_gate_env = None
@@ -153,9 +156,13 @@ elif requested_action == "PROMOTE_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_PROMOTE"
     operation_gate_enabled = promote_gate_enabled
     final_execute_env = "S_SENTINEL_RUNTIME_PROMOTE_EXECUTE"
+elif requested_action == "ABORT_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ABORT"
+    operation_gate_enabled = abort_gate_enabled
+    final_execute_env = "S_SENTINEL_RUNTIME_ABORT_EXECUTE"
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
-supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
+supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
 implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
@@ -209,6 +216,17 @@ elif requested_action == "PROMOTE_ROLLOUT":
         str(namespace or ""),
     ]
     command_mode = "kubectl_argo_rollouts_promote"
+elif requested_action == "ABORT_ROLLOUT":
+    command_args = [
+        "kubectl",
+        "argo",
+        "rollouts",
+        "abort",
+        str(rollout_name or ""),
+        "-n",
+        str(namespace or ""),
+    ]
+    command_mode = "kubectl_argo_rollouts_abort"
 else:
     command_args = []
     command_mode = "unsupported_runtime_action_command"
@@ -223,6 +241,7 @@ mutated_kubernetes = False
 did_pause = False
 did_resume = False
 did_promote = False
+did_abort = False
 executed = False
 post_action_rollout_get_attempted = False
 post_action_rollout_get_succeeded = False
@@ -498,6 +517,8 @@ doc = {
         "operationGateEnabled": operation_gate_enabled,
         "pauseGateEnabled": pause_gate_enabled,
         "resumeGateEnabled": resume_gate_enabled,
+        "promoteGateEnabled": promote_gate_enabled,
+        "abortGateEnabled": abort_gate_enabled,
         "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
         "approvalGateEnabled": approval_gate_enabled,
         "finalExecuteEnv": final_execute_env,
@@ -523,7 +544,7 @@ doc = {
         "didPause": did_pause,
         "didResume": did_resume,
         "didPromote": did_promote,
-        "didAbort": False,
+        "didAbort": did_abort,
         "didRollback": False,
         "attemptedKubernetesMutation": attempted_kubernetes_mutation,
         "mutatedKubernetes": mutated_kubernetes,
@@ -534,7 +555,7 @@ doc = {
             f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; "
             f"attemptedKubernetesMutation={attempted_kubernetes_mutation}, "
             f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}, "
-            f"didResume={did_resume}, didPromote={did_promote}."
+            f"didResume={did_resume}, didPromote={did_promote}, didAbort={did_abort}."
         ),
     },
     "receipt": {
@@ -546,6 +567,7 @@ doc = {
         "didPause": did_pause,
         "didResume": did_resume,
         "didPromote": did_promote,
+        "didAbort": did_abort,
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
@@ -573,7 +595,7 @@ doc = {
         "doesNotPause": not did_pause,
         "doesNotResume": not did_resume,
         "doesNotPromote": not did_promote,
-        "doesNotAbort": True,
+        "doesNotAbort": not did_abort,
         "doesNotRollback": True,
         "doesNotModifyKubernetes": not mutated_kubernetes,
         "doesNotModifyGitOps": True,
