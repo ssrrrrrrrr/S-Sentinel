@@ -95,6 +95,14 @@ RESOURCE_SPECS = [
         "id_prefix": "rap-",
     },
     {
+        "object_type": "runtimeActionExecutionResult",
+        "glob": "runtime-action-execution-result-*.json",
+        "latest": "runtime-action-execution-result-latest.json",
+        "prefix": "runtime-action-execution-result-",
+        "id_key": "runtimeActionExecutionResultId",
+        "id_prefix": "raer-",
+    },
+    {
         "object_type": "executionRequest",
         "glob": "execution-request-*.json",
         "latest": "execution-request-latest.json",
@@ -973,6 +981,56 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["willExecute"] = guardrails.get("willExecute")
         result["doesNotPause"] = guardrails.get("doesNotPause")
         result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
+
+    if object_type == "runtimeActionExecutionResult":
+        action = as_dict(data.get("action"))
+        result_body = as_dict(data.get("result"))
+        target = as_dict(data.get("target"))
+        executor = as_dict(data.get("executor"))
+        write_gate = as_dict(data.get("writeGate"))
+        before_snapshot = as_dict(data.get("beforeSnapshot"))
+        after_snapshot = as_dict(data.get("afterSnapshot"))
+        receipt = as_dict(data.get("receipt"))
+        evidence_refs = as_dict(data.get("evidenceRefs"))
+        guardrails = as_dict(data.get("guardrails"))
+
+        result["runtimeActionExecutionResultId"] = data.get("runtimeActionExecutionResultId")
+        result["sourceRuntimeActionPreflightId"] = data.get("sourceRuntimeActionPreflightId")
+        result["sourceRuntimeActionRequestId"] = data.get("sourceRuntimeActionRequestId")
+        result["requestedAction"] = first_non_empty(action.get("requestedAction"), result_body.get("requestedAction"))
+        result["actionStatus"] = first_non_empty(action.get("actionStatus"), result_body.get("actionStatus"))
+        result["executionStatus"] = result_body.get("executionStatus")
+        result["commandMode"] = action.get("commandMode")
+        result["commandExitCode"] = action.get("commandExitCode")
+        result["commandWillExecute"] = action.get("commandWillExecute")
+        result["didPause"] = result_body.get("didPause")
+        result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
+        result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
+        result["mutatedGitOps"] = result_body.get("mutatedGitOps")
+        result["didModifyKubernetes"] = receipt.get("didModifyKubernetes")
+        result["didModifyGitOps"] = receipt.get("didModifyGitOps")
+        result["executorName"] = executor.get("executorName")
+        result["executorAdapter"] = executor.get("adapter")
+        result["rolloutName"] = target.get("rolloutName")
+        result["namespace"] = target.get("namespace")
+        result["service"] = first_non_empty(target.get("service"), release.get("service"))
+        result["env"] = first_non_empty(target.get("env"), release.get("env"))
+        result["rolloutPhase"] = before_snapshot.get("rolloutPhase")
+        result["analysisStatus"] = before_snapshot.get("analysisStatus")
+        result["afterObservationMode"] = after_snapshot.get("observationMode")
+        result["preflightStatus"] = write_gate.get("preflightStatus")
+        result["eligibilityStatus"] = write_gate.get("eligibilityStatus")
+        result["finalExecuteEnabled"] = write_gate.get("finalExecuteEnabled")
+        result["writeAllowed"] = write_gate.get("writeAllowed")
+        result["sourceRuntimeActionPreflight"] = evidence_refs.get("runtimeActionPreflight")
+        result["sourceRuntimeActionRequest"] = evidence_refs.get("runtimeActionRequest")
+        result["sourceRuntimeActionRecommendation"] = evidence_refs.get("runtimeActionRecommendation")
+        result["sourceRolloutRuntimeInspect"] = evidence_refs.get("rolloutRuntimeInspect")
+        result["sourceRolloutRuntimeInspectId"] = evidence_refs.get("sourceRolloutRuntimeInspectId")
+        result["readOnly"] = guardrails.get("readOnly")
+        result["dryRunOnly"] = guardrails.get("dryRunOnly")
+        result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotModifyGitOps"] = guardrails.get("doesNotModifyGitOps")
 
     if object_type == "policyRuntimeResult":
         policy_decision = as_dict(data.get("policyDecision"))
