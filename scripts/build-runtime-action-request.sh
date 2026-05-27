@@ -98,6 +98,40 @@ def first_not_empty(*values: Any) -> Any:
             return value
     return None
 
+def normalize_int_or_none(value):
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except Exception:
+        return None
+
+
+def derive_rollback_target(source: dict, snapshot: dict, requested_action: str) -> dict:
+    if requested_action != "ROLLBACK_ROLLOUT":
+        return {}
+
+    target_revision = normalize_int_or_none(source.get("targetRevision"))
+    strategy = str(source.get("strategy") or ("explicit_revision" if target_revision is not None else "previous_revision"))
+
+    return {
+        "strategy": strategy,
+        "targetRevision": target_revision,
+        "targetStableRS": first_not_empty(source.get("targetStableRS"), snapshot.get("stableRS")),
+        "targetPodHash": first_not_empty(source.get("targetPodHash"), snapshot.get("currentPodHash")),
+        "source": str(source.get("source") or "runtime_action_recommendation"),
+        "commandArgumentMode": "explicit_to_revision" if target_revision is not None else "default_previous_revision",
+        "usesArgoRolloutsUndo": True,
+        "usesGitOpsRollback": False,
+        "requiresGitOpsWrite": False,
+        "summary": (
+            f"Rollback target uses explicit revision {target_revision}."
+            if target_revision is not None
+            else "Rollback target defaults to previous rollout revision."
+        ),
+    }
+
+
 def derive_request(
     recommended_action: str,
     recommendation_status: str,
@@ -167,6 +201,8 @@ recommendation_status = str(recommendation.get("recommendationStatus") or "UNKNO
 risk_level = str(recommendation.get("riskLevel") or "unknown")
 approval_required = bool(recommendation.get("approvalRequired", False))
 
+rollback_target = derive_rollback_target(as_dict(recommendation_doc.get("rollbackTarget")), snapshot, recommended_action)
+
 derived = derive_request(
     recommended_action,
     recommendation_status,
@@ -198,6 +234,7 @@ doc = {
         "service": first_not_empty(target.get("service"), release.get("service")),
         "env": first_not_empty(target.get("env"), release.get("env")),
     },
+    "rollbackTarget": rollback_target,
     "request": {
         "requestedBy": requested_by,
         "requestedAction": derived["requestedAction"],

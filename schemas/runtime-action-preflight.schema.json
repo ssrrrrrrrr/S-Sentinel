@@ -163,6 +163,51 @@
           "const": false
         }
       }
+    },
+    "rollbackTarget": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "strategy": {
+          "type": "string"
+        },
+        "targetRevision": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "targetStableRS": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetPodHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "commandArgumentMode": {
+          "type": "string"
+        },
+        "usesArgoRolloutsUndo": {
+          "type": "boolean"
+        },
+        "usesGitOpsRollback": {
+          "type": "boolean"
+        },
+        "requiresGitOpsWrite": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
     }
   }
 }

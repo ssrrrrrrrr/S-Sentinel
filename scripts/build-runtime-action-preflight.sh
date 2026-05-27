@@ -123,6 +123,7 @@ approval = as_dict(request_doc.get("approval"))
 snapshot = as_dict(request_doc.get("runtimeSnapshot"))
 evidence_refs = as_dict(request_doc.get("evidenceRefs"))
 guardrails = as_dict(request_doc.get("guardrails"))
+rollback_target = as_dict(request_doc.get("rollbackTarget"))
 
 release_id = str(first_not_empty(
     release.get("releaseId"),
@@ -218,6 +219,15 @@ if requested_action == "PROMOTE_ROLLOUT" and (
     or snapshot_phase == "Degraded"
 ):
     blocking_reasons.append("rollout_degraded_not_promotable")
+
+if requested_action == "ROLLBACK_ROLLOUT":
+    target_revision = rollback_target.get("targetRevision")
+    if target_revision not in (None, ""):
+        try:
+            if int(target_revision) <= 0:
+                blocking_reasons.append("invalid_rollback_target_revision")
+        except Exception:
+            blocking_reasons.append("invalid_rollback_target_revision")
 
 if not allowed_to_request and requested_action not in {"NOOP"}:
     blocking_reasons.append("request_not_allowed_by_recommendation")
@@ -317,6 +327,7 @@ doc = {
         "service": first_not_empty(target.get("service"), release.get("service")),
         "env": first_not_empty(target.get("env"), release.get("env")),
     },
+    "rollbackTarget": rollback_target,
     "request": {
         "runtimeActionRequestId": request_doc.get("runtimeActionRequestId"),
         "requestedAction": requested_action,

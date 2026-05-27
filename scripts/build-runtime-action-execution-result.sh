@@ -115,6 +115,7 @@ target = as_dict(preflight_doc.get("target"))
 request = as_dict(preflight_doc.get("request"))
 preflight = as_dict(preflight_doc.get("preflight"))
 runtime_snapshot = as_dict(preflight_doc.get("runtimeSnapshot"))
+rollback_target = as_dict(preflight_doc.get("rollbackTarget"))
 evidence_refs = as_dict(preflight_doc.get("evidenceRefs"))
 source_guardrails = as_dict(preflight_doc.get("guardrails"))
 
@@ -244,7 +245,12 @@ elif requested_action == "ROLLBACK_ROLLOUT":
         "-n",
         str(namespace or ""),
     ]
-    command_mode = "kubectl_argo_rollouts_undo"
+    target_revision = rollback_target.get("targetRevision")
+    if target_revision not in (None, ""):
+        command_args.append(f"--to-revision={int(target_revision)}")
+        command_mode = "kubectl_argo_rollouts_undo_to_revision"
+    else:
+        command_mode = "kubectl_argo_rollouts_undo"
 else:
     command_args = []
     command_mode = "unsupported_runtime_action_command"
@@ -523,6 +529,7 @@ doc = {
         "service": first_not_empty(target.get("service"), release.get("service")),
         "env": first_not_empty(target.get("env"), release.get("env")),
     },
+    "rollbackTarget": rollback_target,
     "executor": {
         "executorName": "runtime-rollout-executor",
         "executorType": "controlled_runtime_executor",
