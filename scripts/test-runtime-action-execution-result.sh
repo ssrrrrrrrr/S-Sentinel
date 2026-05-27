@@ -81,7 +81,8 @@ assert doc["action"]["requestedAction"] == "PAUSE_ROLLOUT", doc
 assert doc["action"]["supportedAction"] is True, doc
 assert doc["action"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
 assert doc["action"]["commandWillExecute"] is False, doc
-assert doc["action"]["commandPreviewArgs"][:4] == ["kubectl", "argo", "rollouts", "pause"], doc
+assert doc["action"]["commandMode"] == "kubectl_patch_rollout_spec_paused", doc
+assert doc["action"]["commandPreviewArgs"][:6] == ["kubectl", "-n", "slo-rollout", "patch", "rollout", "demo-app"], doc
 
 assert doc["writeGate"]["preflightRequired"] is True, doc
 assert doc["writeGate"]["preflightStatus"] == "WAITING_APPROVAL", doc
@@ -108,6 +109,7 @@ assert doc["result"]["didResume"] is False, doc
 assert doc["result"]["didPromote"] is False, doc
 assert doc["result"]["didAbort"] is False, doc
 assert doc["result"]["didRollback"] is False, doc
+assert doc["result"]["attemptedKubernetesMutation"] is False, doc
 assert doc["result"]["mutatedKubernetes"] is False, doc
 assert doc["result"]["mutatedGitOps"] is False, doc
 assert doc["result"]["readyForExecutor"] is False, doc
@@ -117,6 +119,7 @@ assert doc["receipt"]["receiptType"] == "runtime_action_execution_result", doc
 assert doc["receipt"]["receiptStatus"] == "RECORDED", doc
 assert doc["receipt"]["wroteEvidence"] is True, doc
 assert doc["receipt"]["didPause"] is False, doc
+assert doc["receipt"]["attemptedModifyKubernetes"] is False, doc
 assert doc["receipt"]["didModifyKubernetes"] is False, doc
 assert doc["receipt"]["didModifyGitOps"] is False, doc
 

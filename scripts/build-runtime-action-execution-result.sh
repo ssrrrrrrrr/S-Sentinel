@@ -153,19 +153,25 @@ namespace = target.get("namespace")
 
 command_args = [
     "kubectl",
-    "argo",
-    "rollouts",
-    "pause",
-    str(rollout_name or ""),
     "-n",
     str(namespace or ""),
+    "patch",
+    "rollout",
+    str(rollout_name or ""),
+    "--type=merge",
+    "-p",
+    '{"spec":{"paused":true}}',
 ]
+command_mode = "kubectl_patch_rollout_spec_paused"
 
 command_started_at = None
 command_finished_at = None
 command_exit_code = None
 command_stdout = None
 command_stderr = None
+attempted_kubernetes_mutation = False
+mutated_kubernetes = False
+did_pause = False
 executed = False
 
 if overall_gate_status == "EXECUTION_ALLOWED":
@@ -181,6 +187,9 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     command_stdout = completed.stdout
     command_stderr = completed.stderr
     executed = True
+    attempted_kubernetes_mutation = True
+    mutated_kubernetes = completed.returncode == 0
+    did_pause = completed.returncode == 0
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
 doc = {
@@ -215,7 +224,7 @@ doc = {
         "dryRunOnly": not executed,
         "readOnly": not executed,
         "willExecute": executed,
-        "mutatesKubernetes": executed,
+        "mutatesKubernetes": mutated_kubernetes,
         "mutatesGitOps": False,
         "emitsExecutionEvidence": True,
     },
@@ -224,6 +233,7 @@ doc = {
         "supportedAction": supported_action,
         "actionStatus": overall_gate_status,
         "commandPreviewArgs": command_args,
+        "commandMode": command_mode,
         "commandStartedAt": command_started_at,
         "commandFinishedAt": command_finished_at,
         "commandExitCode": command_exit_code,
@@ -246,29 +256,34 @@ doc = {
         "finalExecuteEnabled": final_execute_enabled,
         "operation": "PAUSE_ROLLOUT",
         "overallGateStatus": overall_gate_status,
-        "writeAllowed": executed,
+        "writeAllowed": overall_gate_status in {"EXECUTION_ALLOWED", "EXECUTION_SUCCEEDED", "EXECUTION_FAILED"},
         "willExecute": executed,
     },
     "beforeSnapshot": runtime_snapshot,
     "afterSnapshot": {
         "observationMode": "command_result_only" if executed else "not_executed",
         "commandExitCode": command_exit_code,
-        "pausedAssumedFromCommandSuccess": True if executed and command_exit_code == 0 else False,
+        "pausedAssumedFromCommandSuccess": did_pause,
     },
     "result": {
         "executionStatus": "SUCCEEDED" if executed and command_exit_code == 0 else ("FAILED" if executed else "NOT_EXECUTED"),
         "actionStatus": overall_gate_status,
         "requestedAction": requested_action,
-        "didPause": True if executed and command_exit_code == 0 else False,
+        "didPause": did_pause,
         "didResume": False,
         "didPromote": False,
         "didAbort": False,
         "didRollback": False,
-        "mutatedKubernetes": executed,
+        "attemptedKubernetesMutation": attempted_kubernetes_mutation,
+        "mutatedKubernetes": mutated_kubernetes,
         "mutatedGitOps": False,
         "readyForExecutor": overall_gate_status in {"EXECUTION_ALLOWED", "EXECUTION_SUCCEEDED"},
         "willExecute": executed,
-        "summary": f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; no runtime mutation was performed.",
+        "summary": (
+            f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; "
+            f"attemptedKubernetesMutation={attempted_kubernetes_mutation}, "
+            f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}."
+        ),
     },
     "receipt": {
         "receiptType": "runtime_action_execution_result",
@@ -276,8 +291,9 @@ doc = {
         "wroteEvidence": True,
         "sourceRuntimeActionPreflight": str(input_path),
         "resultArtifact": str(output_json),
-        "didPause": True if executed and command_exit_code == 0 else False,
-        "didModifyKubernetes": executed,
+        "didPause": did_pause,
+        "attemptedModifyKubernetes": attempted_kubernetes_mutation,
+        "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
     },
     "evidenceRefs": {
@@ -295,12 +311,12 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
-        "doesNotPause": not executed,
+        "doesNotPause": not did_pause,
         "doesNotResume": True,
         "doesNotPromote": True,
         "doesNotAbort": True,
         "doesNotRollback": True,
-        "doesNotModifyKubernetes": not executed,
+        "doesNotModifyKubernetes": not mutated_kubernetes,
         "doesNotModifyGitOps": True,
         "doesNotCommitOrPush": True,
         "sourcePreflightWillExecute": source_guardrails.get("willExecute"),
@@ -318,7 +334,7 @@ print(json.dumps({
     "requestedAction": requested_action,
     "overallGateStatus": overall_gate_status,
     "executionStatus": doc["result"]["executionStatus"],
-    "didPause": True if executed and command_exit_code == 0 else False,
+    "didPause": did_pause,
     "willExecute": executed,
 }, indent=2))
 PY

@@ -14,8 +14,15 @@ cat > "$TMP_DIR/fake-bin/kubectl" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 echo "$*" >> "${S_SENTINEL_MOCK_KUBECTL_LOG}"
-if [ "$1 $2 $3 $4" = "argo rollouts pause demo-app" ]; then
-  echo "rollout 'demo-app' paused"
+if [ "$#" -ge 8 ] \
+  && [ "$1" = "-n" ] \
+  && [ "$2" = "slo-rollout" ] \
+  && [ "$3" = "patch" ] \
+  && [ "$4" = "rollout" ] \
+  && [ "$5" = "demo-app" ] \
+  && [ "$6" = "--type=merge" ] \
+  && [ "$7" = "-p" ]; then
+  echo "rollout.argoproj.io/demo-app patched"
   exit 0
 fi
 echo "unexpected kubectl args: $*" >&2
@@ -96,7 +103,7 @@ assert doc["action"]["requestedAction"] == "PAUSE_ROLLOUT", doc
 assert doc["action"]["actionStatus"] == "EXECUTION_SUCCEEDED", doc
 assert doc["action"]["commandWillExecute"] is True, doc
 assert doc["action"]["commandExitCode"] == 0, doc
-assert "paused" in doc["action"]["commandStdout"], doc
+assert "patched" in doc["action"]["commandStdout"], doc
 
 assert doc["writeGate"]["preflightPassed"] is True, doc
 assert doc["writeGate"]["globalGateEnabled"] is True, doc
@@ -108,11 +115,13 @@ assert doc["writeGate"]["willExecute"] is True, doc
 
 assert doc["result"]["executionStatus"] == "SUCCEEDED", doc
 assert doc["result"]["didPause"] is True, doc
+assert doc["result"]["attemptedKubernetesMutation"] is True, doc
 assert doc["result"]["mutatedKubernetes"] is True, doc
 assert doc["result"]["mutatedGitOps"] is False, doc
 assert doc["result"]["willExecute"] is True, doc
 
 assert doc["receipt"]["didPause"] is True, doc
+assert doc["receipt"]["attemptedModifyKubernetes"] is True, doc
 assert doc["receipt"]["didModifyKubernetes"] is True, doc
 assert doc["receipt"]["didModifyGitOps"] is False, doc
 
@@ -123,7 +132,7 @@ assert doc["guardrails"]["doesNotModifyGitOps"] is True, doc
 assert doc["guardrails"]["doesNotCommitOrPush"] is True, doc
 
 log = Path(".tmp/test-runtime-action-execution-result-mock-pause/kubectl.log").read_text(encoding="utf-8")
-assert "argo rollouts pause demo-app -n slo-rollout" in log, log
+assert "-n slo-rollout patch rollout demo-app --type=merge -p" in log, log
 
 print("PASS runtime action execution result mock pause")
 PY
