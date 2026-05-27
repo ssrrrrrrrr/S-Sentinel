@@ -34,7 +34,12 @@ cat > "$REPORT_DIR/gitops-real-pr-create-evidence-store-smoke.json" <<'JSON'
     "mergeStateStatus": "CLEAN"
   },
   "guardrails": {
+    "readOnly": false,
+    "dryRunOnly": false,
+    "willExecute": true,
     "didCreatePullRequest": true,
+    "doesNotCommit": true,
+    "doesNotPush": true,
     "doesNotMergePullRequest": true,
     "doesNotModifyKubernetes": true
   }
@@ -66,8 +71,13 @@ cat > "$REPORT_DIR/gitops-real-pr-cleanup-evidence-store-smoke.json" <<'JSON'
     "remoteHeads": []
   },
   "guardrails": {
+    "readOnly": false,
+    "dryRunOnly": false,
+    "willExecute": true,
     "didClosePullRequest": true,
     "didDeleteRemoteBranch": true,
+    "doesNotCommit": true,
+    "doesNotCreatePullRequest": true,
     "doesNotMergePullRequest": true,
     "doesNotModifyKubernetes": true
   }
@@ -119,11 +129,24 @@ assert create_summary.get("createStatus") == "PULL_REQUEST_CREATED", create_summ
 assert create_summary.get("pullRequestNumber") == 7, create_summary
 assert create_summary.get("pullRequestState") == "OPEN", create_summary
 assert create_summary.get("branchName") == "ssentinel/evidence-store-real-pr-smoke", create_summary
+assert create_summary.get("willExecute") is True, create_summary
+assert create_summary.get("readOnly") is False, create_summary
+assert create_summary.get("dryRunOnly") is False, create_summary
+assert create_summary.get("didCreatePullRequest") is True, create_summary
+assert create_summary.get("doesNotMergePullRequest") is True, create_summary
+assert create_summary.get("doesNotModifyKubernetes") is True, create_summary
 
 assert cleanup_summary.get("cleanupStatus") == "CLEANED_UP", cleanup_summary
 assert cleanup_summary.get("pullRequestState") == "CLOSED", cleanup_summary
 assert cleanup_summary.get("remoteBranchExists") is False, cleanup_summary
 assert cleanup_summary.get("branchName") == "ssentinel/evidence-store-real-pr-smoke", cleanup_summary
+assert cleanup_summary.get("willExecute") is True, cleanup_summary
+assert cleanup_summary.get("readOnly") is False, cleanup_summary
+assert cleanup_summary.get("dryRunOnly") is False, cleanup_summary
+assert cleanup_summary.get("didClosePullRequest") is True, cleanup_summary
+assert cleanup_summary.get("didDeleteRemoteBranch") is True, cleanup_summary
+assert cleanup_summary.get("doesNotMergePullRequest") is True, cleanup_summary
+assert cleanup_summary.get("doesNotModifyKubernetes") is True, cleanup_summary
 
 print("PASS evidence-store gitops real-pr import/search")
 PY

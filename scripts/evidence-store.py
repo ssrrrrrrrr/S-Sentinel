@@ -1262,6 +1262,26 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     source = as_dict(data.get("source"))
     guardrails = as_dict(data.get("guardrails"))
 
+    for guardrail_key in [
+        "readOnly",
+        "dryRunOnly",
+        "willExecute",
+        "doesNotCommit",
+        "doesNotPush",
+        "doesNotCreatePullRequest",
+        "didMaterializeFiles",
+        "didCreateLocalCommit",
+        "didPushBranch",
+        "didCreatePullRequest",
+        "didClosePullRequest",
+        "didDeleteRemoteBranch",
+        "doesNotMergePullRequest",
+        "doesNotModifyKubernetes",
+    ]:
+        guardrail_value = guardrails.get(guardrail_key)
+        if guardrail_value is not None:
+            result[guardrail_key] = guardrail_value
+
     trace_id = first_non_empty(
         data.get("traceId"),
         observability.get("traceId"),
