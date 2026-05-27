@@ -87,8 +87,8 @@ func TestRuntimeActionExecutionResultEvidenceStoreAndPortalLatestResource(t *tes
     "commandExitCode": 0
   },
   "executor": {
-    "executorName": "runtime-pause-executor",
-    "adapter": "runtime-pause"
+    "executorName": "runtime-rollout-executor",
+    "adapter": "runtime-rollout-control"
   },
   "writeGate": {
     "preflightStatus": "PREFLIGHT_PASSED",
@@ -288,8 +288,8 @@ func TestRuntimeActionExecutionResultResumeEvidenceStoreAndPortalLatestResource(
     "commandExitCode": 0
   },
   "executor": {
-    "executorName": "runtime-pause-executor",
-    "adapter": "runtime-pause"
+    "executorName": "runtime-rollout-executor",
+    "adapter": "runtime-rollout-control"
   },
   "writeGate": {
     "preflightStatus": "PREFLIGHT_PASSED",

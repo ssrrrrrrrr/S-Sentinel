@@ -69,7 +69,7 @@ assert doc["sourceRuntimeActionRequestId"] == "rarq-" + release_id, doc
 assert doc["target"]["namespace"] == "slo-rollout", doc
 assert doc["target"]["rolloutName"] == "demo-app", doc
 
-assert doc["executor"]["executorName"] == "runtime-pause-executor", doc
+assert doc["executor"]["executorName"] == "runtime-rollout-executor", doc
 assert doc["executor"]["executorType"] == "controlled_runtime_executor", doc
 assert doc["executor"]["dryRunOnly"] is True, doc
 assert doc["executor"]["readOnly"] is True, doc

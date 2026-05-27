@@ -26,7 +26,7 @@ Behavior:
   - Records a controlled runtime action execution result / receipt.
   - Default mode records evidence only.
   - Real PAUSE_ROLLOUT execution requires all explicit gates.
-  - RESUME_ROLLOUT execution result contract is recognized, but real resume execution is not implemented yet.
+  - RESUME_ROLLOUT is supported by the controlled rollout executor and patches spec.paused=false after gates pass.
   - Promote, abort, rollback, GitOps writes, commits, and pushes are not supported.
 USAGE
 }
@@ -408,9 +408,9 @@ doc = {
         "env": first_not_empty(target.get("env"), release.get("env")),
     },
     "executor": {
-        "executorName": "runtime-pause-executor",
+        "executorName": "runtime-rollout-executor",
         "executorType": "controlled_runtime_executor",
-        "adapter": "runtime-pause",
+        "adapter": "runtime-rollout-control",
         "adapterType": "local-script",
         "contractMode": False,
         "dryRunOnly": not executed,

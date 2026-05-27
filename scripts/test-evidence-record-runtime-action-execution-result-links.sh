@@ -86,8 +86,8 @@ assert execution["mutatedKubernetes"] is True, execution
 assert execution["mutatedGitOps"] is False, execution
 assert execution["didModifyKubernetes"] is True, execution
 assert execution["didModifyGitOps"] is False, execution
-assert execution["executorName"] == "runtime-pause-executor", execution
-assert execution["executorAdapter"] == "runtime-pause", execution
+assert execution["executorName"] == "runtime-rollout-executor", execution
+assert execution["executorAdapter"] == "runtime-rollout-control", execution
 assert execution["preflightStatus"] == "PREFLIGHT_PASSED", execution
 assert execution["eligibilityStatus"] == "ELIGIBLE_FOR_CONTROLLED_EXECUTOR", execution
 assert execution["finalExecuteEnabled"] is True, execution
