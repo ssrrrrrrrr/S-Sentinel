@@ -25,6 +25,45 @@ if [ "$#" -ge 8 ] \
   echo "rollout.argoproj.io/demo-app patched"
   exit 0
 fi
+
+if [ "$#" -eq 7 ] \
+  && [ "$1" = "-n" ] \
+  && [ "$2" = "slo-rollout" ] \
+  && [ "$3" = "get" ] \
+  && [ "$4" = "rollout" ] \
+  && [ "$5" = "demo-app" ] \
+  && [ "$6" = "-o" ] \
+  && [ "$7" = "json" ]; then
+  cat <<'JSON'
+{
+  "metadata": {
+    "name": "demo-app",
+    "namespace": "slo-rollout"
+  },
+  "spec": {
+    "replicas": 3,
+    "paused": true
+  },
+  "status": {
+    "phase": "Degraded",
+    "currentStepIndex": 0,
+    "replicas": 3,
+    "readyReplicas": 3,
+    "availableReplicas": 3,
+    "observedGeneration": 12,
+    "conditions": [
+      {
+        "type": "Paused",
+        "status": "False",
+        "reason": "RolloutSpecPaused"
+      }
+    ]
+  }
+}
+JSON
+  exit 0
+fi
+
 echo "unexpected kubectl args: $*" >&2
 exit 2
 MOCK
@@ -113,6 +152,13 @@ assert doc["writeGate"]["finalExecuteEnabled"] is True, doc
 assert doc["writeGate"]["writeAllowed"] is True, doc
 assert doc["writeGate"]["willExecute"] is True, doc
 
+assert doc["afterSnapshot"]["observationMode"] == "live_readonly_rollout_get_after_action", doc
+assert doc["afterSnapshot"]["postActionRolloutGetAttempted"] is True, doc
+assert doc["afterSnapshot"]["postActionRolloutGetSucceeded"] is True, doc
+assert doc["afterSnapshot"]["paused"] is True, doc
+assert doc["afterSnapshot"]["specPaused"] is True, doc
+assert doc["afterSnapshot"]["phase"] == "Degraded", doc
+
 assert doc["result"]["executionStatus"] == "SUCCEEDED", doc
 assert doc["result"]["didPause"] is True, doc
 assert doc["result"]["attemptedKubernetesMutation"] is True, doc
@@ -133,6 +179,7 @@ assert doc["guardrails"]["doesNotCommitOrPush"] is True, doc
 
 log = Path(".tmp/test-runtime-action-execution-result-mock-pause/kubectl.log").read_text(encoding="utf-8")
 assert "-n slo-rollout patch rollout demo-app --type=merge -p" in log, log
+assert "-n slo-rollout get rollout demo-app -o json" in log, log
 
 print("PASS runtime action execution result mock pause")
 PY

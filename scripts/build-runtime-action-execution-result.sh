@@ -173,6 +173,72 @@ attempted_kubernetes_mutation = False
 mutated_kubernetes = False
 did_pause = False
 executed = False
+post_action_rollout_get_attempted = False
+post_action_rollout_get_succeeded = False
+post_action_rollout_get_exit_code = None
+post_action_rollout_get_stdout = None
+post_action_rollout_get_stderr = None
+post_action_rollout_snapshot = {}
+
+def build_rollout_snapshot_from_live_json(raw: str) -> dict[str, Any]:
+    try:
+        rollout_obj = json.loads(raw)
+    except Exception as exc:
+        return {
+            "observationMode": "live_readonly_rollout_get_parse_failed",
+            "parseError": str(exc),
+        }
+
+    meta = as_dict(rollout_obj.get("metadata"))
+    spec = as_dict(rollout_obj.get("spec"))
+    status = as_dict(rollout_obj.get("status"))
+    conditions = status.get("conditions") if isinstance(status.get("conditions"), list) else []
+
+    paused_condition = {}
+    healthy_condition = {}
+    for item in conditions:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") == "Paused":
+            paused_condition = item
+        if item.get("type") == "Healthy":
+            healthy_condition = item
+
+    spec_paused = spec.get("paused") is True
+    pause_conditions = status.get("pauseConditions")
+    if not isinstance(pause_conditions, list):
+        pause_conditions = []
+    status_paused = paused_condition.get("status") == "True" or bool(pause_conditions)
+
+    return {
+        "observationMode": "live_readonly_rollout_get_after_action",
+        "name": meta.get("name") or rollout_name,
+        "namespace": meta.get("namespace") or namespace,
+        "phase": status.get("phase") or "Unknown",
+        "currentStepIndex": status.get("currentStepIndex"),
+        "replicas": first_not_empty(status.get("replicas"), spec.get("replicas")),
+        "updatedReplicas": status.get("updatedReplicas"),
+        "readyReplicas": status.get("readyReplicas"),
+        "availableReplicas": status.get("availableReplicas"),
+        "paused": spec_paused or status_paused,
+        "specPaused": spec_paused,
+        "statusPaused": status_paused,
+        "pauseConditions": pause_conditions,
+        "degraded": status.get("phase") == "Degraded",
+        "observedGeneration": status.get("observedGeneration"),
+        "currentPodHash": status.get("currentPodHash"),
+        "stableRS": status.get("stableRS"),
+        "pausedCondition": {
+            "status": paused_condition.get("status"),
+            "reason": paused_condition.get("reason"),
+            "message": paused_condition.get("message"),
+        },
+        "healthyCondition": {
+            "status": healthy_condition.get("status"),
+            "reason": healthy_condition.get("reason"),
+            "message": healthy_condition.get("message"),
+        },
+    }
 
 if overall_gate_status == "EXECUTION_ALLOWED":
     command_started_at = now()
@@ -191,6 +257,34 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     mutated_kubernetes = completed.returncode == 0
     did_pause = completed.returncode == 0
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
+
+    if completed.returncode == 0 and namespace and rollout_name:
+        post_action_rollout_get_attempted = True
+        rollout_get = subprocess.run(
+            ["kubectl", "-n", str(namespace), "get", "rollout", str(rollout_name), "-o", "json"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        post_action_rollout_get_exit_code = rollout_get.returncode
+        post_action_rollout_get_stdout = rollout_get.stdout
+        post_action_rollout_get_stderr = rollout_get.stderr
+        post_action_rollout_get_succeeded = rollout_get.returncode == 0
+        if rollout_get.returncode == 0:
+            post_action_rollout_snapshot = build_rollout_snapshot_from_live_json(rollout_get.stdout)
+
+after_snapshot = {
+    "observationMode": "command_result_only" if executed else "not_executed",
+    "commandExitCode": command_exit_code,
+    "pausedAssumedFromCommandSuccess": did_pause,
+    "postActionRolloutGetAttempted": post_action_rollout_get_attempted,
+    "postActionRolloutGetSucceeded": post_action_rollout_get_succeeded,
+    "postActionRolloutGetExitCode": post_action_rollout_get_exit_code,
+}
+if post_action_rollout_get_stderr not in (None, ""):
+    after_snapshot["postActionRolloutGetStderr"] = post_action_rollout_get_stderr
+if post_action_rollout_snapshot:
+    after_snapshot.update(post_action_rollout_snapshot)
 
 doc = {
     "schemaVersion": "runtime.action.execution.result/v1alpha1",
@@ -260,11 +354,7 @@ doc = {
         "willExecute": executed,
     },
     "beforeSnapshot": runtime_snapshot,
-    "afterSnapshot": {
-        "observationMode": "command_result_only" if executed else "not_executed",
-        "commandExitCode": command_exit_code,
-        "pausedAssumedFromCommandSuccess": did_pause,
-    },
+    "afterSnapshot": after_snapshot,
     "result": {
         "executionStatus": "SUCCEEDED" if executed and command_exit_code == 0 else ("FAILED" if executed else "NOT_EXECUTED"),
         "actionStatus": overall_gate_status,
