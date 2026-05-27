@@ -124,7 +124,7 @@ assert preflight["guardrails"]["willExecute"] is False, preflight
 assert preflight["guardrails"]["doesNotPause"] is True, preflight
 assert preflight["guardrails"]["doesNotModifyKubernetes"] is True, preflight
 
-assert record["coverage"]["total"] == 58, record["coverage"]
+assert record["coverage"]["total"] == 59, record["coverage"]
 
 print("PASS evidence-record runtime action preflight links")
 PY

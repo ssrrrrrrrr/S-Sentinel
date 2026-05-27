@@ -238,6 +238,14 @@
           ],
           "additionalProperties": true,
           "description": "Resolved artifact metadata for the runtime action preflight JSON."
+        },
+        "runtimeActionExecutionResult": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "description": "Resolved artifact metadata for the runtime action execution result JSON."
         }
       }
     },
@@ -601,6 +609,13 @@
             "null"
           ],
           "description": "Path to the generated runtime action preflight JSON."
+        },
+        "runtimeActionExecutionResult": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated runtime action execution result JSON."
         }
       }
     },
@@ -3643,6 +3658,220 @@
           ]
         },
         "sourceRuntimeActionPreflight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "runtimeActionExecutionResult": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "runtimeActionExecutionResultId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionPreflightId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionRequestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requestedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actionStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executionStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commandMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commandExitCode": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "commandWillExecute": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "didPause": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "attemptedKubernetesMutation": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "mutatedKubernetes": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "mutatedGitOps": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "didModifyKubernetes": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "didModifyGitOps": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "executorName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executorAdapter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preflightStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "eligibilityStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "finalExecuteEnabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "writeAllowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rolloutName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rolloutPhase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysisStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionPreflight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionRequest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionRecommendation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRolloutRuntimeInspect": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRolloutRuntimeInspectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionExecutionResult": {
           "type": [
             "string",
             "null"

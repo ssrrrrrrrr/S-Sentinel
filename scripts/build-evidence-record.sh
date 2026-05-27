@@ -379,6 +379,18 @@ runtime_action_preflight_snapshot = as_dict(runtime_action_preflight.get("runtim
 runtime_action_preflight_evidence_refs = as_dict(runtime_action_preflight.get("evidenceRefs"))
 runtime_action_preflight_guardrails = as_dict(runtime_action_preflight.get("guardrails"))
 
+runtime_action_execution_result_path = resolve_ref(artifacts.get("runtimeActionExecutionResult"), evidence_path)
+runtime_action_execution_result = load_json(runtime_action_execution_result_path)
+runtime_action_execution_result_target = as_dict(runtime_action_execution_result.get("target"))
+runtime_action_execution_result_action = as_dict(runtime_action_execution_result.get("action"))
+runtime_action_execution_result_body = as_dict(runtime_action_execution_result.get("result"))
+runtime_action_execution_result_executor = as_dict(runtime_action_execution_result.get("executor"))
+runtime_action_execution_result_write_gate = as_dict(runtime_action_execution_result.get("writeGate"))
+runtime_action_execution_result_before_snapshot = as_dict(runtime_action_execution_result.get("beforeSnapshot"))
+runtime_action_execution_result_receipt = as_dict(runtime_action_execution_result.get("receipt"))
+runtime_action_execution_result_evidence_refs = as_dict(runtime_action_execution_result.get("evidenceRefs"))
+runtime_action_execution_result_guardrails = as_dict(runtime_action_execution_result.get("guardrails"))
+
 gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
 gitops_patch_proposal = load_json(gitops_patch_proposal_path)
 gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
@@ -556,6 +568,7 @@ link_map = {
     "runtimeActionRecommendation": artifacts.get("runtimeActionRecommendation"),
     "runtimeActionRequest": artifacts.get("runtimeActionRequest"),
     "runtimeActionPreflight": artifacts.get("runtimeActionPreflight"),
+    "runtimeActionExecutionResult": artifacts.get("runtimeActionExecutionResult"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
     "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
@@ -614,6 +627,7 @@ artifact_defs = [
     ("runtimeActionRecommendation", link_map["runtimeActionRecommendation"], False),
     ("runtimeActionRequest", link_map["runtimeActionRequest"], False),
     ("runtimeActionPreflight", link_map["runtimeActionPreflight"], False),
+    ("runtimeActionExecutionResult", link_map["runtimeActionExecutionResult"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
     ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
@@ -986,6 +1000,49 @@ record = {
         "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_preflight_evidence_refs.get("sourceRolloutRuntimeInspectId")),
         "sourceRuntimeActionPreflight": nullable_string(link_map.get("runtimeActionPreflight")),
         "guardrails": runtime_action_preflight_guardrails,
+    },
+    "runtimeActionExecutionResult": {
+        "runtimeActionExecutionResultId": nullable_string(runtime_action_execution_result.get("runtimeActionExecutionResultId")),
+        "mode": nullable_string(runtime_action_execution_result.get("mode")),
+        "sourceRuntimeActionPreflightId": nullable_string(runtime_action_execution_result.get("sourceRuntimeActionPreflightId")),
+        "sourceRuntimeActionRequestId": nullable_string(runtime_action_execution_result.get("sourceRuntimeActionRequestId")),
+        "requestedAction": nullable_string(first_not_none(
+            runtime_action_execution_result_action.get("requestedAction"),
+            runtime_action_execution_result_body.get("requestedAction"),
+        )),
+        "actionStatus": nullable_string(first_not_none(
+            runtime_action_execution_result_action.get("actionStatus"),
+            runtime_action_execution_result_body.get("actionStatus"),
+        )),
+        "executionStatus": nullable_string(runtime_action_execution_result_body.get("executionStatus")),
+        "commandMode": nullable_string(runtime_action_execution_result_action.get("commandMode")),
+        "commandExitCode": runtime_action_execution_result_action.get("commandExitCode"),
+        "commandWillExecute": bool_or_none(runtime_action_execution_result_action.get("commandWillExecute")),
+        "didPause": bool_or_none(runtime_action_execution_result_body.get("didPause")),
+        "attemptedKubernetesMutation": bool_or_none(runtime_action_execution_result_body.get("attemptedKubernetesMutation")),
+        "mutatedKubernetes": bool_or_none(runtime_action_execution_result_body.get("mutatedKubernetes")),
+        "mutatedGitOps": bool_or_none(runtime_action_execution_result_body.get("mutatedGitOps")),
+        "didModifyKubernetes": bool_or_none(runtime_action_execution_result_receipt.get("didModifyKubernetes")),
+        "didModifyGitOps": bool_or_none(runtime_action_execution_result_receipt.get("didModifyGitOps")),
+        "executorName": nullable_string(runtime_action_execution_result_executor.get("executorName")),
+        "executorAdapter": nullable_string(runtime_action_execution_result_executor.get("adapter")),
+        "preflightStatus": nullable_string(runtime_action_execution_result_write_gate.get("preflightStatus")),
+        "eligibilityStatus": nullable_string(runtime_action_execution_result_write_gate.get("eligibilityStatus")),
+        "finalExecuteEnabled": bool_or_none(runtime_action_execution_result_write_gate.get("finalExecuteEnabled")),
+        "writeAllowed": bool_or_none(runtime_action_execution_result_write_gate.get("writeAllowed")),
+        "rolloutName": nullable_string(runtime_action_execution_result_target.get("rolloutName")),
+        "namespace": nullable_string(runtime_action_execution_result_target.get("namespace")),
+        "service": nullable_string(first_not_none(runtime_action_execution_result_target.get("service"), service)),
+        "env": nullable_string(first_not_none(runtime_action_execution_result_target.get("env"), env)),
+        "rolloutPhase": nullable_string(runtime_action_execution_result_before_snapshot.get("rolloutPhase")),
+        "analysisStatus": nullable_string(runtime_action_execution_result_before_snapshot.get("analysisStatus")),
+        "sourceRuntimeActionPreflight": nullable_string(runtime_action_execution_result_evidence_refs.get("runtimeActionPreflight")),
+        "sourceRuntimeActionRequest": nullable_string(runtime_action_execution_result_evidence_refs.get("runtimeActionRequest")),
+        "sourceRuntimeActionRecommendation": nullable_string(runtime_action_execution_result_evidence_refs.get("runtimeActionRecommendation")),
+        "sourceRolloutRuntimeInspect": nullable_string(runtime_action_execution_result_evidence_refs.get("rolloutRuntimeInspect")),
+        "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_execution_result_evidence_refs.get("sourceRolloutRuntimeInspectId")),
+        "sourceRuntimeActionExecutionResult": nullable_string(link_map.get("runtimeActionExecutionResult")),
+        "guardrails": runtime_action_execution_result_guardrails,
     },
     "gitopsPatchProposal": {
         "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),

@@ -118,7 +118,7 @@ assert request["guardrails"]["willExecute"] is False, request
 assert request["guardrails"]["doesNotPause"] is True, request
 assert request["guardrails"]["doesNotModifyKubernetes"] is True, request
 
-assert record["coverage"]["total"] == 58, record["coverage"]
+assert record["coverage"]["total"] == 59, record["coverage"]
 
 print("PASS evidence-record runtime action request links")
 PY
