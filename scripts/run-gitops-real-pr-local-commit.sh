@@ -84,7 +84,8 @@ out = {
     "guardrails": {
         "readOnly": False,
         "dryRunOnly": False,
-        "willExecute": False,
+        "willExecute": True,
+        "didCreateLocalCommit": True,
         "doesNotPush": True,
         "doesNotCreatePullRequest": True,
         "doesNotModifyKubernetes": True

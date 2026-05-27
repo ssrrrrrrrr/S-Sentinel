@@ -86,8 +86,13 @@ out = {
         "remoteHeads": remote
     },
     "guardrails": {
+        "readOnly": False,
+        "dryRunOnly": False,
+        "willExecute": True,
         "didClosePullRequest": True,
         "didDeleteRemoteBranch": True,
+        "doesNotCommit": True,
+        "doesNotCreatePullRequest": True,
         "doesNotMergePullRequest": True,
         "doesNotModifyKubernetes": True
     }

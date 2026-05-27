@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+MATERIALIZE_SCRIPT="scripts/run-gitops-real-pr-materialize-files.sh"
+LOCAL_COMMIT_SCRIPT="scripts/run-gitops-real-pr-local-commit.sh"
+PUSH_BRANCH_SCRIPT="scripts/run-gitops-real-pr-push-branch.sh"
 CREATE_SCRIPT="scripts/run-gitops-real-pr-create.sh"
 CLEANUP_SCRIPT="scripts/run-gitops-real-pr-cleanup.sh"
 
@@ -23,7 +26,22 @@ for script in "$CREATE_SCRIPT" "$CLEANUP_SCRIPT"; do
   fi
 done
 
+grep -q '"willExecute": True' "$MATERIALIZE_SCRIPT"
+grep -q 'didMaterializeFiles' "$MATERIALIZE_SCRIPT"
+grep -q 'doesNotCommit' "$MATERIALIZE_SCRIPT"
+grep -q 'doesNotPush' "$MATERIALIZE_SCRIPT"
+
+grep -q '"willExecute": True' "$LOCAL_COMMIT_SCRIPT"
+grep -q 'didCreateLocalCommit' "$LOCAL_COMMIT_SCRIPT"
+grep -q 'doesNotPush' "$LOCAL_COMMIT_SCRIPT"
+
+grep -q '"willExecute": True' "$PUSH_BRANCH_SCRIPT"
+grep -q 'didPushBranch' "$PUSH_BRANCH_SCRIPT"
+grep -q '"push", "-u", "origin"' "$PUSH_BRANCH_SCRIPT"
+grep -q 'doesNotCreatePullRequest' "$PUSH_BRANCH_SCRIPT"
+
 grep -q '"gh", "pr", "create"' "$CREATE_SCRIPT"
+grep -q '"willExecute": True' "$CREATE_SCRIPT"
 grep -q 'didCreatePullRequest' "$CREATE_SCRIPT"
 grep -q 'target_owner' "$CREATE_SCRIPT"
 grep -q 'target_base_branch' "$CREATE_SCRIPT"
@@ -40,6 +58,7 @@ fi
 
 grep -q '"gh", "pr", "close"' "$CLEANUP_SCRIPT"
 grep -q '"push", "origin", "--delete"' "$CLEANUP_SCRIPT"
+grep -q '"willExecute": True' "$CLEANUP_SCRIPT"
 grep -q 'didClosePullRequest' "$CLEANUP_SCRIPT"
 grep -q 'didDeleteRemoteBranch' "$CLEANUP_SCRIPT"
 

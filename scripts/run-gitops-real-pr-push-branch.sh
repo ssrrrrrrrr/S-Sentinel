@@ -68,7 +68,8 @@ out = {
     "guardrails": {
         "readOnly": False,
         "dryRunOnly": False,
-        "willExecute": False,
+        "willExecute": True,
+        "didPushBranch": True,
         "doesNotCreatePullRequest": True,
         "doesNotModifyKubernetes": True
     }

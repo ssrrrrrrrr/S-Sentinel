@@ -138,6 +138,19 @@ assert commit["localCommit"]["commitStatus"] == "LOCAL_COMMIT_CREATED"
 assert push_pf["pushPreflight"]["preflightStatus"] == "READY_TO_PUSH_BRANCH"
 assert push_pf["pushPreflight"]["remoteBranchExists"] is False
 
+assert files["guardrails"]["willExecute"] is True
+assert files["guardrails"]["didMaterializeFiles"] is True
+assert files["guardrails"]["doesNotCommit"] is True
+assert files["guardrails"]["doesNotPush"] is True
+
+assert commit["guardrails"]["willExecute"] is True
+assert commit["guardrails"]["didCreateLocalCommit"] is True
+assert commit["guardrails"]["doesNotPush"] is True
+assert commit["guardrails"]["doesNotCreatePullRequest"] is True
+
+assert push_pf["guardrails"]["willExecute"] is False
+assert push_pf["guardrails"]["doesNotPush"] is True
+
 for name, obj in [
     ("plan", plan),
     ("materialization", mat),

@@ -110,7 +110,12 @@ out = {
         "createdAt": pr.get("createdAt")
     },
     "guardrails": {
+        "readOnly": False,
+        "dryRunOnly": False,
+        "willExecute": True,
         "didCreatePullRequest": True,
+        "doesNotCommit": True,
+        "doesNotPush": True,
         "doesNotMergePullRequest": True,
         "doesNotModifyKubernetes": True
     }
