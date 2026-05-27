@@ -148,7 +148,7 @@ elif requested_action == "RESUME_ROLLOUT":
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
 supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
-implemented_action = requested_action == "PAUSE_ROLLOUT"
+implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
     overall_gate_status = "NO_RUNTIME_EXECUTION_REQUIRED"
@@ -282,7 +282,8 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     executed = True
     attempted_kubernetes_mutation = True
     mutated_kubernetes = completed.returncode == 0
-    did_pause = completed.returncode == 0
+    did_pause = completed.returncode == 0 and requested_action == "PAUSE_ROLLOUT"
+    did_resume = completed.returncode == 0 and requested_action == "RESUME_ROLLOUT"
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
     if completed.returncode == 0 and namespace and rollout_name:
@@ -304,6 +305,7 @@ after_snapshot = {
     "observationMode": "command_result_only" if executed else "not_executed",
     "commandExitCode": command_exit_code,
     "pausedAssumedFromCommandSuccess": did_pause,
+    "resumedAssumedFromCommandSuccess": did_resume,
     "postActionRolloutGetAttempted": post_action_rollout_get_attempted,
     "postActionRolloutGetSucceeded": post_action_rollout_get_succeeded,
     "postActionRolloutGetExitCode": post_action_rollout_get_exit_code,
