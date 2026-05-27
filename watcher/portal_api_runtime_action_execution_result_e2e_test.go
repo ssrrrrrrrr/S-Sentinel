@@ -980,6 +980,16 @@ func TestRuntimeActionExecutionResultRollbackEvidenceStoreAndPortalLatestResourc
     "finalExecuteEnabled": true,
     "writeAllowed": true
   },
+  "gateSummary": {
+    "preflight": "passed",
+    "global": "enabled",
+    "operation": "enabled",
+    "approval": "enabled",
+    "finalExecute": "enabled",
+    "overall": "EXECUTION_SUCCEEDED",
+    "writeAllowed": true,
+    "willExecute": true
+  },
   "beforeSnapshot": {
     "rolloutPhase": "Degraded",
     "analysisStatus": "Failed",
@@ -1016,6 +1026,40 @@ func TestRuntimeActionExecutionResultRollbackEvidenceStoreAndPortalLatestResourc
     "observedCurrentPodHash": "demo-app-stable",
     "blockingReasons": [],
     "warningReasons": []
+  },
+  "verificationSummary": {
+    "status": "VERIFIED",
+    "verified": true,
+    "commandSucceeded": true,
+    "postActionObserved": true,
+    "desiredStateObserved": true,
+    "actionVerified": true,
+    "blockingReasonCount": 0,
+    "warningReasonCount": 0
+  },
+  "riskSummary": {
+    "riskLevel": "high",
+    "requiresApproval": true,
+    "requiresFinalExecute": true,
+    "defaultOff": true,
+    "mutationTarget": "kubernetes",
+    "canMutateKubernetes": true,
+    "mutatedKubernetes": true,
+    "mutatesGitOps": false
+  },
+  "executionSummary": {
+    "requestedAction": "ROLLBACK_ROLLOUT",
+    "didExecute": true,
+    "willExecute": true,
+    "verified": true,
+    "verificationStatus": "VERIFIED",
+    "executionStatus": "SUCCEEDED",
+    "actionStatus": "EXECUTION_SUCCEEDED",
+    "commandMode": "kubectl_argo_rollouts_undo_to_revision",
+    "mutationTarget": "kubernetes",
+    "mutatedKubernetes": true,
+    "mutatedGitOps": false,
+    "riskLevel": "high"
   },
   "result": {
     "requestedAction": "ROLLBACK_ROLLOUT",
@@ -1100,7 +1144,14 @@ func TestRuntimeActionExecutionResultRollbackEvidenceStoreAndPortalLatestResourc
 	requireB4JSONContains(t, latestResult, "ROLLBACK_ROLLOUT")
 	requireB4JSONContains(t, latestResult, "kubectl_argo_rollouts_undo_to_revision")
 	requireB4JSONContains(t, latestResult, "explicit_to_revision")
-	requireB4JSONContains(t, latestResult, "live_readonly_rollout_get_after_action")
+	requireB4JSONContains(t, latestResult, "executionSummary")
+	requireB4JSONContains(t, latestResult, "gateSummary")
+	requireB4JSONContains(t, latestResult, "verificationSummary")
+	requireB4JSONContains(t, latestResult, "riskSummary")
+	requireB4JSONContains(t, latestResult, "didExecute")
+	requireB4JSONContains(t, latestResult, "actionVerified")
+	requireB4JSONContains(t, latestResult, "riskLevel")
+	requireB4JSONContains(t, latestResult, "defaultOff")
 
 	refresh := callB4PortalJSON(t, api.handleEvidenceStoreRefresh, http.MethodPost, "/api/evidence-store/refresh", http.StatusOK)
 	requireB4String(t, refresh, "schemaVersion", "evidence.store.refresh/v1alpha1")
@@ -1121,6 +1172,24 @@ func TestRuntimeActionExecutionResultRollbackEvidenceStoreAndPortalLatestResourc
 	requireB4JSONContains(t, resultObject, "explicit_to_revision")
 	requireB4JSONContains(t, resultObject, "postActionObserved")
 	requireB4JSONContains(t, resultObject, "live_readonly_rollout_get_after_action")
+	requireB4JSONContains(t, resultObject, "executionSummary")
+	requireB4JSONContains(t, resultObject, "gateSummary")
+	requireB4JSONContains(t, resultObject, "verificationSummary")
+	requireB4JSONContains(t, resultObject, "riskSummary")
+	requireB4JSONContains(t, resultObject, "didExecute")
+	requireB4JSONContains(t, resultObject, "gateOverall")
+	requireB4JSONContains(t, resultObject, "actionVerified")
+	requireB4JSONContains(t, resultObject, "runtimeRiskLevel")
+
+	resultObjectSummaryOnly := callB4PortalJSON(t, api.handleEvidenceStoreObjectDetail, http.MethodGet, "/api/evidence/objects/runtimeActionExecutionResult/"+resultID+"?releaseId="+releaseID, http.StatusOK)
+	requireB4JSONContains(t, resultObjectSummaryOnly, "executionSummary")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "gateSummary")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "verificationSummary")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "riskSummary")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "didExecute")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "gateOverall")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "actionVerified")
+	requireB4JSONContains(t, resultObjectSummaryOnly, "runtimeRiskLevel")
 
 	releaseDetail := callB4PortalJSON(t, api.handleEvidenceStoreReleaseDetail, http.MethodGet, "/api/evidence/releases/"+releaseID+"?includeRaw=true", http.StatusOK)
 	requireB4String(t, releaseDetail, "schemaVersion", "evidence.store.release/v1alpha1")
@@ -1134,4 +1203,12 @@ func TestRuntimeActionExecutionResultRollbackEvidenceStoreAndPortalLatestResourc
 	requireB4JSONContains(t, releaseDetail, "rollbackTarget")
 	requireB4JSONContains(t, releaseDetail, "targetRevision")
 	requireB4JSONContains(t, releaseDetail, "explicit_to_revision")
+	requireB4JSONContains(t, releaseDetail, "executionSummary")
+	requireB4JSONContains(t, releaseDetail, "gateSummary")
+	requireB4JSONContains(t, releaseDetail, "verificationSummary")
+	requireB4JSONContains(t, releaseDetail, "riskSummary")
+	requireB4JSONContains(t, releaseDetail, "didExecute")
+	requireB4JSONContains(t, releaseDetail, "gateOverall")
+	requireB4JSONContains(t, releaseDetail, "actionVerified")
+	requireB4JSONContains(t, releaseDetail, "runtimeRiskLevel")
 }
