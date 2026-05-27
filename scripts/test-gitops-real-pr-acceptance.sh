@@ -16,6 +16,7 @@ echo "===== syntax checks ====="
 bash -n scripts/test-gitops-real-pr.sh
 bash -n scripts/test-gitops-real-pr-safety-contract.sh
 bash -n scripts/test-gitops-real-pr-safety-summary.sh
+bash -n scripts/test-gitops-real-pr-productization-contract.sh
 bash -n scripts/test-evidence-store-gitops-real-pr.sh
 bash -n scripts/test-evidence-store-gitops-real-pr-local-flow.sh
 bash -n scripts/test-evidence-record-gitops-real-pr-links.sh
@@ -26,6 +27,9 @@ timeout 180s bash scripts/test-gitops-real-pr.sh
 
 echo "===== real PR safety summary ====="
 bash scripts/test-gitops-real-pr-safety-summary.sh
+
+echo "===== real PR productization contract ====="
+bash scripts/test-gitops-real-pr-productization-contract.sh
 
 echo "===== real PR evidence completeness ====="
 bash scripts/test-gitops-real-pr-evidence-completeness.sh
