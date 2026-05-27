@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/runtime-action-execution-result.schema.json",
+  "title": "S Sentinel Runtime Action Execution Result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "runtimeActionExecutionResultId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "sourceRuntimeActionPreflightId",
+    "release",
+    "target",
+    "executor",
+    "action",
+    "writeGate",
+    "beforeSnapshot",
+    "result",
+    "receipt",
+    "evidenceRefs",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "runtime.action.execution.result/v1alpha1"
+    },
+    "runtimeActionExecutionResultId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "const": "controlled_runtime_action_result"
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "executorName",
+        "executorType",
+        "adapter",
+        "adapterType",
+        "dryRunOnly",
+        "readOnly",
+        "willExecute",
+        "mutatesKubernetes",
+        "mutatesGitOps"
+      ],
+      "properties": {
+        "willExecute": {
+          "type": "boolean"
+        },
+        "mutatesKubernetes": {
+          "type": "boolean"
+        },
+        "mutatesGitOps": {
+          "type": "boolean"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "requestedAction",
+        "supportedAction",
+        "actionStatus",
+        "commandWillExecute"
+      ],
+      "properties": {
+        "requestedAction": {
+          "enum": [
+            "NOOP",
+            "REQUIRE_REVIEW",
+            "PAUSE_ROLLOUT"
+          ]
+        },
+        "commandWillExecute": {
+          "type": "boolean"
+        }
+      }
+    },
+    "writeGate": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "preflightRequired",
+        "preflightStatus",
+        "eligibilityStatus",
+        "preflightPassed",
+        "globalGateEnv",
+        "globalGateEnabled",
+        "operationGateEnv",
+        "operationGateEnabled",
+        "operation",
+        "overallGateStatus",
+        "writeAllowed",
+        "willExecute"
+      ],
+      "properties": {
+        "operation": {
+          "const": "PAUSE_ROLLOUT"
+        },
+        "overallGateStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "writeAllowed": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "executionStatus",
+        "actionStatus",
+        "requestedAction",
+        "didPause",
+        "didResume",
+        "didPromote",
+        "didAbort",
+        "didRollback",
+        "mutatedKubernetes",
+        "mutatedGitOps",
+        "readyForExecutor",
+        "willExecute",
+        "summary"
+      ],
+      "properties": {
+        "executionStatus": {
+          "enum": [
+            "NOT_EXECUTED",
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "didPause": {
+          "type": "boolean"
+        },
+        "mutatedKubernetes": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "receiptType",
+        "receiptStatus",
+        "wroteEvidence",
+        "didPause",
+        "didModifyKubernetes",
+        "didModifyGitOps"
+      ]
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "contractOnly",
+        "readOnly",
+        "dryRunOnly",
+        "willExecute",
+        "doesNotModifyKubernetes",
+        "doesNotModifyGitOps",
+        "doesNotCommitOrPush"
+      ]
+    }
+  }
+}
