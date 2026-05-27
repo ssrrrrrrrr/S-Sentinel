@@ -119,6 +119,150 @@ function matchesSearch(row: EvidenceStoreObjectRow, query: string) {
   ].some((value) => value.toLowerCase().includes(normalized))
 }
 
+type CanonicalSummarySection = {
+  title: string
+  description: string
+  rows: Array<{ label: string; value: string }>
+}
+
+function objectDetailRecord(payload: EvidenceStoreJson | undefined) {
+  const root = asRecord(payload)
+  if (!root) return undefined
+
+  const object = asRecord(root.object)
+  const record = asRecord(root.record)
+  const item = asRecord(root.item)
+  const data = asRecord(root.data)
+
+  return (
+    asRecord(root.raw) ??
+    asRecord(object?.raw) ??
+    asRecord(object?.summary) ??
+    object ??
+    asRecord(record?.raw) ??
+    asRecord(record?.summary) ??
+    record ??
+    asRecord(item?.raw) ??
+    asRecord(item?.summary) ??
+    item ??
+    asRecord(data?.raw) ??
+    asRecord(data?.summary) ??
+    data ??
+    root
+  )
+}
+
+function canonicalField(record: JsonRecord | undefined, names: string[]) {
+  return record ? field(record, names) : "-"
+}
+
+function buildRuntimeActionCanonicalSections(
+  payload: EvidenceStoreJson | undefined,
+  selectedObject: EvidenceStoreObjectRow | undefined,
+): CanonicalSummarySection[] {
+  if (!selectedObject?.objectType.toLowerCase().includes("runtimeactionexecutionresult")) return []
+
+  const record = objectDetailRecord(payload)
+  if (!record) return []
+
+  const executionSummary = asRecord(record.executionSummary)
+  const gateSummary = asRecord(record.gateSummary)
+  const verificationSummary = asRecord(record.verificationSummary)
+  const riskSummary = asRecord(record.riskSummary)
+
+  if (!executionSummary && !gateSummary && !verificationSummary && !riskSummary) return []
+
+  return [
+    {
+      title: "Execution",
+      description: "Canonical execution summary",
+      rows: [
+        { label: "Action", value: canonicalField(executionSummary ?? record, ["requestedAction"]) },
+        { label: "Status", value: canonicalField(executionSummary ?? record, ["executionStatus", "actionStatus"]) },
+        { label: "Command", value: canonicalField(executionSummary ?? record, ["commandMode"]) },
+        { label: "Did Execute", value: canonicalField(executionSummary ?? record, ["didExecute"]) },
+        { label: "Verified", value: canonicalField(executionSummary ?? record, ["verified", "executionVerified"]) },
+      ],
+    },
+    {
+      title: "Gate",
+      description: "Canonical execution summary",
+      rows: [
+        { label: "Overall", value: canonicalField(gateSummary ?? record, ["overall", "gateOverall"]) },
+        { label: "Preflight", value: canonicalField(gateSummary ?? record, ["preflight"]) },
+        { label: "Operation", value: canonicalField(gateSummary ?? record, ["operation"]) },
+        { label: "Final Execute", value: canonicalField(gateSummary ?? record, ["finalExecute", "gateFinalExecute"]) },
+        { label: "Will Execute", value: canonicalField(gateSummary ?? record, ["willExecute"]) },
+      ],
+    },
+    {
+      title: "Verification",
+      description: "Canonical execution summary",
+      rows: [
+        { label: "Status", value: canonicalField(verificationSummary ?? record, ["status", "verificationSummaryStatus"]) },
+        { label: "Action Verified", value: canonicalField(verificationSummary ?? record, ["actionVerified"]) },
+        { label: "Command OK", value: canonicalField(verificationSummary ?? record, ["commandSucceeded"]) },
+        { label: "Observed", value: canonicalField(verificationSummary ?? record, ["postActionObserved"]) },
+        { label: "Blocking", value: canonicalField(verificationSummary ?? record, ["blockingReasonCount"]) },
+      ],
+    },
+    {
+      title: "Risk",
+      description: "Canonical execution summary",
+      rows: [
+        { label: "Risk", value: canonicalField(riskSummary ?? record, ["riskLevel", "runtimeRiskLevel"]) },
+        { label: "Default Off", value: canonicalField(riskSummary ?? record, ["defaultOff", "runtimeDefaultOff"]) },
+        { label: "Approval", value: canonicalField(riskSummary ?? record, ["requiresApproval"]) },
+        { label: "Target", value: canonicalField(riskSummary ?? record, ["mutationTarget"]) },
+        { label: "GitOps", value: canonicalField(riskSummary ?? record, ["mutatesGitOps"]) },
+      ],
+    },
+  ]
+}
+
+function RuntimeActionCanonicalSummary({
+  sections,
+}: {
+  sections: CanonicalSummarySection[]
+}) {
+  if (sections.length === 0) return null
+
+  return (
+    <div className="mb-4 rounded-2xl border border-[#35517a] bg-[#101a29] p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
+          Runtime Action Canonical Summary
+        </p>
+        <h4 className="mt-1 text-base font-semibold text-slate-100">
+          Execution / Gate / Verification / Risk
+        </h4>
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Prefer canonical summaries for runtime action review while keeping raw JSON available for audit compatibility.
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-3 xl:grid-cols-4">
+        {sections.map((section) => (
+          <div key={section.title} className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
+            <p className="text-sm font-semibold text-slate-100">{section.title}</p>
+            <p className="mt-1 text-xs text-slate-500">{section.description}</p>
+            <div className="mt-3 space-y-2">
+              {section.rows.map((row) => (
+                <div key={row.label} className="flex items-start justify-between gap-3 text-xs">
+                  <span className="shrink-0 text-slate-500">{row.label}</span>
+                  <span className="break-all text-right font-mono font-semibold text-slate-200">
+                    {shortValue(row.value, 36)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function queryErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "unknown error"
 }
@@ -219,6 +363,11 @@ export function EvidenceStorePanel({
   const releaseIndexMissing = releaseQuery.isError && isNotFoundError(releaseQuery.error)
   const releaseDBNotReady = releaseQuery.isError && isNotReadyError(releaseQuery.error)
   const releaseQueryErrorMessage = releaseQuery.isError ? queryErrorMessage(releaseQuery.error) : ""
+
+  const runtimeActionCanonicalSections = useMemo(
+    () => buildRuntimeActionCanonicalSections(detailQuery.data, selectedObject),
+    [detailQuery.data, selectedObject],
+  )
 
   return (
     <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
@@ -486,10 +635,13 @@ export function EvidenceStorePanel({
                     {queryErrorMessage(detailQuery.error)}
                   </div>
                 ) : detailQuery.data ? (
-                  <RawResourceViewer
-                    contentType="application/json; charset=utf-8"
-                    body={JSON.stringify(detailQuery.data, null, 2)}
-                  />
+                  <>
+                    <RuntimeActionCanonicalSummary sections={runtimeActionCanonicalSections} />
+                    <RawResourceViewer
+                      contentType="application/json; charset=utf-8"
+                      body={JSON.stringify(detailQuery.data, null, 2)}
+                    />
+                  </>
                 ) : releaseQuery.data ? (
                   <RawResourceViewer
                     contentType="application/json; charset=utf-8"
