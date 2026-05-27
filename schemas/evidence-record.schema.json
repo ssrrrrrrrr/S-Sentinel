@@ -214,6 +214,14 @@
           ],
           "additionalProperties": true,
           "description": "Resolved artifact metadata for the read-only rollout runtime inspect JSON."
+        },
+        "runtimeActionRecommendation": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "description": "Resolved artifact metadata for the runtime action recommendation JSON."
         }
       }
     },
@@ -556,6 +564,13 @@
             "null"
           ],
           "description": "Path to the generated read-only rollout runtime inspect JSON."
+        },
+        "runtimeActionRecommendation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated runtime action recommendation JSON."
         }
       }
     },
@@ -3100,6 +3115,124 @@
           ]
         },
         "sourceRolloutRuntimeInspect": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardrails": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "runtimeActionRecommendation": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "runtimeActionRecommendationId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendationStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recommendedAction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "riskLevel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalRequired": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rolloutName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "env": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rolloutPhase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analysisStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRolloutRuntimeInspectId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRolloutRuntimeInspect": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceRuntimeActionRecommendation": {
           "type": [
             "string",
             "null"

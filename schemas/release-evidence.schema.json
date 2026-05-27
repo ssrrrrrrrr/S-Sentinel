@@ -354,6 +354,13 @@
             "null"
           ],
           "description": "Path to the generated read-only rollout runtime inspect JSON."
+        },
+        "runtimeActionRecommendation": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the generated runtime action recommendation JSON."
         }
       }
     },
