@@ -18,6 +18,7 @@ Environment:
   S_SENTINEL_ALLOW_RUNTIME_RESUME               RESUME_ROLLOUT operation gate.
   S_SENTINEL_ALLOW_RUNTIME_PROMOTE              PROMOTE_ROLLOUT operation gate.
   S_SENTINEL_ALLOW_RUNTIME_ABORT                ABORT_ROLLOUT operation gate.
+  S_SENTINEL_ALLOW_RUNTIME_ROLLBACK             ROLLBACK_ROLLOUT operation gate.
   S_SENTINEL_RUNTIME_ACTION_APPROVED            Approval gate.
   S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit pause execution switch.
   S_SENTINEL_RUNTIME_RESUME_EXECUTE             Final explicit resume execution switch.
@@ -139,6 +140,7 @@ pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
 resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
 promote_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PROMOTE")
 abort_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ABORT")
+rollback_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ROLLBACK")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
 
 operation_gate_env = None
@@ -161,9 +163,13 @@ elif requested_action == "ABORT_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ABORT"
     operation_gate_enabled = abort_gate_enabled
     final_execute_env = "S_SENTINEL_RUNTIME_ABORT_EXECUTE"
+elif requested_action == "ROLLBACK_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ROLLBACK"
+    operation_gate_enabled = rollback_gate_enabled
+    final_execute_env = "S_SENTINEL_RUNTIME_ROLLBACK_EXECUTE"
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
-supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
+supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
 implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
@@ -228,6 +234,17 @@ elif requested_action == "ABORT_ROLLOUT":
         str(namespace or ""),
     ]
     command_mode = "kubectl_argo_rollouts_abort"
+elif requested_action == "ROLLBACK_ROLLOUT":
+    command_args = [
+        "kubectl",
+        "argo",
+        "rollouts",
+        "undo",
+        str(rollout_name or ""),
+        "-n",
+        str(namespace or ""),
+    ]
+    command_mode = "kubectl_argo_rollouts_undo"
 else:
     command_args = []
     command_mode = "unsupported_runtime_action_command"
@@ -546,6 +563,7 @@ doc = {
         "resumeGateEnabled": resume_gate_enabled,
         "promoteGateEnabled": promote_gate_enabled,
         "abortGateEnabled": abort_gate_enabled,
+        "rollbackGateEnabled": rollback_gate_enabled,
         "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
         "approvalGateEnabled": approval_gate_enabled,
         "finalExecuteEnv": final_execute_env,

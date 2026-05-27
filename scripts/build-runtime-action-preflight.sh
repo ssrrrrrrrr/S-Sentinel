@@ -141,6 +141,7 @@ pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
 resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
 promote_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PROMOTE")
 abort_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ABORT")
+rollback_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_ROLLBACK")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
 
 operation_gate_env = None
@@ -159,7 +160,7 @@ elif requested_action == "ABORT_ROLLOUT":
     operation_gate_enabled = abort_gate_enabled
 elif requested_action == "ROLLBACK_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ROLLBACK"
-    operation_gate_enabled = env_enabled(operation_gate_env)
+    operation_gate_enabled = rollback_gate_enabled
 
 manual_pause_gate_enabled = (
     requested_action == "PAUSE_ROLLOUT"
@@ -185,11 +186,18 @@ manual_abort_gate_enabled = (
     and abort_gate_enabled
     and approval_gate_enabled
 )
+manual_rollback_gate_enabled = (
+    requested_action == "ROLLBACK_ROLLOUT"
+    and global_gate_enabled
+    and rollback_gate_enabled
+    and approval_gate_enabled
+)
 manual_operation_gate_enabled = (
     manual_pause_gate_enabled
     or manual_resume_gate_enabled
     or manual_promote_gate_enabled
     or manual_abort_gate_enabled
+    or manual_rollback_gate_enabled
 )
 
 blocking_reasons = unique_strings(as_list(binding.get("blockingReasons")))
@@ -331,12 +339,14 @@ doc = {
         "resumeGateEnabled": resume_gate_enabled,
         "promoteGateEnabled": promote_gate_enabled,
         "abortGateEnabled": abort_gate_enabled,
+        "rollbackGateEnabled": rollback_gate_enabled,
         "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
         "approvalGateEnabled": approval_gate_enabled,
         "manualPauseGateEnabled": manual_pause_gate_enabled,
         "manualResumeGateEnabled": manual_resume_gate_enabled,
         "manualPromoteGateEnabled": manual_promote_gate_enabled,
         "manualAbortGateEnabled": manual_abort_gate_enabled,
+        "manualRollbackGateEnabled": manual_rollback_gate_enabled,
         "manualOperationGateEnabled": manual_operation_gate_enabled,
         "readyForControlledExecutor": ready_to_execute,
         "willExecute": False,
