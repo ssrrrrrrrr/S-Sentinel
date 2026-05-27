@@ -47,7 +47,7 @@
           ]
         },
         "readyToExecute": {
-          "const": false
+          "type": "boolean"
         },
         "willExecute": {
           "const": false
@@ -97,10 +97,10 @@
           }
         },
         "eligibleForExecution": {
-          "const": false
+          "type": "boolean"
         },
         "readyToExecute": {
-          "const": false
+          "type": "boolean"
         },
         "willExecute": {
           "const": false
@@ -135,6 +135,30 @@
         }
       },
       "additionalProperties": true
+    },
+    "executionGate": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "globalGateEnabled": {
+          "type": "boolean"
+        },
+        "operationGateEnabled": {
+          "type": "boolean"
+        },
+        "approvalGateEnabled": {
+          "type": "boolean"
+        },
+        "manualPauseGateEnabled": {
+          "type": "boolean"
+        },
+        "readyForControlledExecutor": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "const": false
+        }
+      }
     }
   }
 }

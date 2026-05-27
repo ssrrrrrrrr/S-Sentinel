@@ -61,6 +61,7 @@ python3 - "$INPUT_FILE" "$OUTPUT_JSON" "$LATEST_JSON" <<'PY'
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -110,6 +111,9 @@ def bool_value(value: Any, default: bool = False) -> bool:
         return value
     return default
 
+def env_enabled(name: str) -> bool:
+    return str(os.environ.get(name, "")).strip().lower() in {"1", "true", "yes", "y", "on"}
+
 request_doc = load_json(input_path)
 release = as_dict(request_doc.get("release"))
 target = as_dict(request_doc.get("target"))
@@ -131,6 +135,16 @@ lifecycle_stage = str(request_body.get("lifecycleStage") or "UNKNOWN")
 approval_required = bool_value(request_body.get("approvalRequired"), bool_value(approval.get("required"), False))
 approved = bool_value(approval.get("approved"), False)
 allowed_to_request = bool_value(binding.get("allowedToRequest"), False)
+
+global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
+pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
+approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
+manual_pause_gate_enabled = (
+    requested_action == "PAUSE_ROLLOUT"
+    and global_gate_enabled
+    and pause_gate_enabled
+    and approval_gate_enabled
+)
 
 blocking_reasons = unique_strings(as_list(binding.get("blockingReasons")))
 approval_reasons: list[str] = []
@@ -178,6 +192,16 @@ elif approval_required and not approved:
 else:
     preflight_status = "PREFLIGHT_PASSED"
     eligibility_status = "ELIGIBLE_FOR_CONTROLLED_EXECUTOR"
+
+eligible_for_execution = (
+    preflight_status == "PREFLIGHT_PASSED"
+    and eligibility_status == "ELIGIBLE_FOR_CONTROLLED_EXECUTOR"
+    and requested_action == "PAUSE_ROLLOUT"
+    and approved
+    and manual_pause_gate_enabled
+)
+
+ready_to_execute = eligible_for_execution
 
 checks = [
     {
@@ -239,7 +263,18 @@ doc = {
         "approvalRequired": approval_required,
         "approved": approved,
         "allowedToRequest": allowed_to_request,
-        "readyToExecute": False,
+        "readyToExecute": ready_to_execute,
+        "willExecute": False,
+    },
+    "executionGate": {
+        "globalGateEnv": "S_SENTINEL_RUNTIME_EXECUTION_ENABLED",
+        "globalGateEnabled": global_gate_enabled,
+        "operationGateEnv": "S_SENTINEL_ALLOW_RUNTIME_PAUSE",
+        "operationGateEnabled": pause_gate_enabled,
+        "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
+        "approvalGateEnabled": approval_gate_enabled,
+        "manualPauseGateEnabled": manual_pause_gate_enabled,
+        "readyForControlledExecutor": ready_to_execute,
         "willExecute": False,
     },
     "preflight": {
@@ -249,8 +284,8 @@ doc = {
         "blockingReasons": blocking_reasons,
         "approvalReasons": approval_reasons,
         "warningReasons": warning_reasons,
-        "eligibleForExecution": False,
-        "readyToExecute": False,
+        "eligibleForExecution": eligible_for_execution,
+        "readyToExecute": ready_to_execute,
         "willExecute": False,
         "summary": f"Runtime action preflight status is {preflight_status} for {requested_action}.",
     },
@@ -302,7 +337,7 @@ print(json.dumps({
     "requestedAction": requested_action,
     "preflightStatus": preflight_status,
     "eligibilityStatus": eligibility_status,
-    "readyToExecute": False,
+    "readyToExecute": ready_to_execute,
     "willExecute": False,
 }, indent=2))
 PY
