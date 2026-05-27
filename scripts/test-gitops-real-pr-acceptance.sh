@@ -16,6 +16,7 @@ echo "===== syntax checks ====="
 bash -n scripts/test-gitops-real-pr.sh
 bash -n scripts/test-gitops-real-pr-safety-contract.sh
 bash -n scripts/test-evidence-store-gitops-real-pr.sh
+bash -n scripts/test-evidence-store-gitops-real-pr-local-flow.sh
 bash -n scripts/test-evidence-record-gitops-real-pr-links.sh
 bash -n scripts/test-gitops-real-pr-evidence-completeness.sh
 
@@ -27,6 +28,9 @@ bash scripts/test-gitops-real-pr-evidence-completeness.sh
 
 echo "===== real PR EvidenceStore indexing ====="
 bash scripts/test-evidence-store-gitops-real-pr.sh
+
+echo "===== real PR local-flow EvidenceStore indexing ====="
+bash scripts/test-evidence-store-gitops-real-pr-local-flow.sh
 
 echo "===== real PR EvidenceRecord links ====="
 bash scripts/test-evidence-record-gitops-real-pr-links.sh
