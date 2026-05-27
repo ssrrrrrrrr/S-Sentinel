@@ -46,7 +46,8 @@
             "PAUSE_ROLLOUT",
             "RESUME_ROLLOUT",
             "PROMOTE_ROLLOUT",
-            "ABORT_ROLLOUT"
+            "ABORT_ROLLOUT",
+            "ROLLBACK_ROLLOUT"
           ]
         },
         "readyToExecute": {

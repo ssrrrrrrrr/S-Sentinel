@@ -157,6 +157,9 @@ elif requested_action == "PROMOTE_ROLLOUT":
 elif requested_action == "ABORT_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ABORT"
     operation_gate_enabled = abort_gate_enabled
+elif requested_action == "ROLLBACK_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_ROLLBACK"
+    operation_gate_enabled = env_enabled(operation_gate_env)
 
 manual_pause_gate_enabled = (
     requested_action == "PAUSE_ROLLOUT"
@@ -193,7 +196,7 @@ blocking_reasons = unique_strings(as_list(binding.get("blockingReasons")))
 approval_reasons: list[str] = []
 warning_reasons: list[str] = []
 
-supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
+supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
 
 if requested_action not in supported_actions:
     blocking_reasons.append("unsupported_runtime_action")
@@ -249,7 +252,7 @@ else:
 eligible_for_execution = (
     preflight_status == "PREFLIGHT_PASSED"
     and eligibility_status == "ELIGIBLE_FOR_CONTROLLED_EXECUTOR"
-    and requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
+    and requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
     and approved
     and manual_operation_gate_enabled
 )

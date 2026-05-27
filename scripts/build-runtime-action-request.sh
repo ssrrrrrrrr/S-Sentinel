@@ -126,7 +126,7 @@ def derive_request(
             "blockingReasons": [],
         }
 
-    if recommended_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}:
+    if recommended_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}:
         high_risk_runtime_action = recommended_action in {"PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
         effective_approval_required = bool(
             approval_required
