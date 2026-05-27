@@ -1027,6 +1027,11 @@ record = {
             runtime_action_execution_result_body.get("pauseVerified"),
             runtime_action_execution_result_receipt.get("pauseVerified"),
         )),
+        "resumeVerified": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("resumeVerified"),
+            runtime_action_execution_result_body.get("resumeVerified"),
+            runtime_action_execution_result_receipt.get("resumeVerified"),
+        )),
         "postActionObserved": bool_or_none(first_not_none(
             runtime_action_execution_result_verification.get("postActionObserved"),
             runtime_action_execution_result_body.get("postActionObserved"),
@@ -1040,6 +1045,7 @@ record = {
         "commandExitCode": runtime_action_execution_result_action.get("commandExitCode"),
         "commandWillExecute": bool_or_none(runtime_action_execution_result_action.get("commandWillExecute")),
         "didPause": bool_or_none(runtime_action_execution_result_body.get("didPause")),
+        "didResume": bool_or_none(runtime_action_execution_result_body.get("didResume")),
         "attemptedKubernetesMutation": bool_or_none(runtime_action_execution_result_body.get("attemptedKubernetesMutation")),
         "mutatedKubernetes": bool_or_none(runtime_action_execution_result_body.get("mutatedKubernetes")),
         "mutatedGitOps": bool_or_none(runtime_action_execution_result_body.get("mutatedGitOps")),

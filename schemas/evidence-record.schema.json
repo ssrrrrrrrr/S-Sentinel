@@ -3739,6 +3739,12 @@
             "null"
           ]
         },
+        "didResume": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "attemptedKubernetesMutation": {
           "type": [
             "boolean",
@@ -3888,6 +3894,12 @@
           ]
         },
         "pauseVerified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "resumeVerified": {
           "type": [
             "boolean",
             "null"

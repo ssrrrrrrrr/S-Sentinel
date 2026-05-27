@@ -1005,6 +1005,11 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             pause_verified = result_body.get("pauseVerified")
         if pause_verified is None:
             pause_verified = receipt.get("pauseVerified")
+        resume_verified = post_action_verification.get("resumeVerified")
+        if resume_verified is None:
+            resume_verified = result_body.get("resumeVerified")
+        if resume_verified is None:
+            resume_verified = receipt.get("resumeVerified")
         post_action_observed = post_action_verification.get("postActionObserved")
         if post_action_observed is None:
             post_action_observed = result_body.get("postActionObserved")
@@ -1022,6 +1027,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["commandExitCode"] = action.get("commandExitCode")
         result["commandWillExecute"] = action.get("commandWillExecute")
         result["didPause"] = result_body.get("didPause")
+        result["didResume"] = result_body.get("didResume")
         result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
         result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
         result["mutatedGitOps"] = result_body.get("mutatedGitOps")
@@ -1038,6 +1044,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["afterObservationMode"] = after_snapshot.get("observationMode")
         result["verificationStatus"] = verification_status
         result["pauseVerified"] = pause_verified
+        result["resumeVerified"] = resume_verified
         result["postActionObserved"] = post_action_observed
         result["desiredStateObserved"] = desired_state_observed
         result["preflightStatus"] = write_gate.get("preflightStatus")
