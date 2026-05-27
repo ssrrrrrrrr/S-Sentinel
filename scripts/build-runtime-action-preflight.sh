@@ -190,6 +190,13 @@ if requested_action not in supported_actions:
 if requested_action == "RESUME_ROLLOUT" and not bool_value(snapshot.get("paused"), False):
     blocking_reasons.append("rollout_not_paused")
 
+snapshot_phase = str(snapshot.get("rolloutPhase") or snapshot.get("phase") or "")
+if requested_action == "PROMOTE_ROLLOUT" and (
+    bool_value(snapshot.get("degraded"), False)
+    or snapshot_phase == "Degraded"
+):
+    blocking_reasons.append("rollout_degraded_not_promotable")
+
 if not allowed_to_request and requested_action not in {"NOOP"}:
     blocking_reasons.append("request_not_allowed_by_recommendation")
 

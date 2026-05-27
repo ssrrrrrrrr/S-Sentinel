@@ -155,7 +155,7 @@ elif requested_action == "PROMOTE_ROLLOUT":
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
 supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
-implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
+implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
     overall_gate_status = "NO_RUNTIME_EXECUTION_REQUIRED"
@@ -197,6 +197,17 @@ if requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}:
         if requested_action == "RESUME_ROLLOUT"
         else "kubectl_patch_rollout_spec_paused"
     )
+elif requested_action == "PROMOTE_ROLLOUT":
+    command_args = [
+        "kubectl",
+        "argo",
+        "rollouts",
+        "promote",
+        str(rollout_name or ""),
+        "-n",
+        str(namespace or ""),
+    ]
+    command_mode = "kubectl_argo_rollouts_promote"
 else:
     command_args = []
     command_mode = "unsupported_runtime_action_command"
@@ -210,6 +221,7 @@ attempted_kubernetes_mutation = False
 mutated_kubernetes = False
 did_pause = False
 did_resume = False
+did_promote = False
 executed = False
 post_action_rollout_get_attempted = False
 post_action_rollout_get_succeeded = False
@@ -295,6 +307,7 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     mutated_kubernetes = completed.returncode == 0
     did_pause = completed.returncode == 0 and requested_action == "PAUSE_ROLLOUT"
     did_resume = completed.returncode == 0 and requested_action == "RESUME_ROLLOUT"
+    did_promote = completed.returncode == 0 and requested_action == "PROMOTE_ROLLOUT"
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
     if completed.returncode == 0 and namespace and rollout_name:
@@ -317,6 +330,7 @@ after_snapshot = {
     "commandExitCode": command_exit_code,
     "pausedAssumedFromCommandSuccess": did_pause,
     "resumedAssumedFromCommandSuccess": did_resume,
+    "promotedAssumedFromCommandSuccess": did_promote,
     "postActionRolloutGetAttempted": post_action_rollout_get_attempted,
     "postActionRolloutGetSucceeded": post_action_rollout_get_succeeded,
     "postActionRolloutGetExitCode": post_action_rollout_get_exit_code,
@@ -336,11 +350,26 @@ resume_desired_state_observed = (
     after_snapshot.get("paused") is False
     or after_snapshot.get("specPaused") is False
 )
+before_step_index = runtime_snapshot.get("currentStepIndex")
+after_step_index = after_snapshot.get("currentStepIndex")
+promote_step_advanced = (
+    isinstance(before_step_index, int)
+    and isinstance(after_step_index, int)
+    and after_step_index > before_step_index
+)
+promote_phase_observed = after_snapshot.get("phase") in {"Healthy", "Progressing"}
+promote_desired_state_observed = (
+    post_action_observed
+    and after_snapshot.get("degraded") is not True
+    and (promote_step_advanced or promote_phase_observed)
+)
 
 if requested_action == "PAUSE_ROLLOUT":
     desired_state_observed = pause_desired_state_observed
 elif requested_action == "RESUME_ROLLOUT":
     desired_state_observed = resume_desired_state_observed
+elif requested_action == "PROMOTE_ROLLOUT":
+    desired_state_observed = promote_desired_state_observed
 else:
     desired_state_observed = False
 
@@ -352,6 +381,12 @@ pause_verified = (
 )
 resume_verified = (
     requested_action == "RESUME_ROLLOUT"
+    and command_succeeded
+    and post_action_observed
+    and desired_state_observed
+)
+promote_verified = (
+    requested_action == "PROMOTE_ROLLOUT"
     and command_succeeded
     and post_action_observed
     and desired_state_observed
@@ -375,6 +410,9 @@ elif requested_action == "PAUSE_ROLLOUT" and not desired_state_observed:
 elif requested_action == "RESUME_ROLLOUT" and not desired_state_observed:
     verification_status = "VERIFY_FAILED"
     verification_blocking_reasons.append("resume_state_not_observed_after_action")
+elif requested_action == "PROMOTE_ROLLOUT" and not desired_state_observed:
+    verification_status = "VERIFY_FAILED"
+    verification_blocking_reasons.append("promote_state_not_observed_after_action")
 else:
     verification_status = "VERIFIED"
 
@@ -387,6 +425,9 @@ post_action_verification = {
     "desiredStateObserved": desired_state_observed,
     "pauseVerified": pause_verified,
     "resumeVerified": resume_verified,
+    "promoteVerified": promote_verified,
+    "promoteStepAdvanced": promote_step_advanced,
+    "promotePhaseObserved": promote_phase_observed,
     "expectedPaused": False if requested_action == "RESUME_ROLLOUT" else requested_action == "PAUSE_ROLLOUT",
     "observedPaused": observed_paused,
     "observedSpecPaused": observed_spec_paused,
@@ -475,11 +516,12 @@ doc = {
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
+        "promoteVerified": promote_verified,
         "postActionObserved": post_action_observed,
         "desiredStateObserved": desired_state_observed,
         "didPause": did_pause,
         "didResume": did_resume,
-        "didPromote": False,
+        "didPromote": did_promote,
         "didAbort": False,
         "didRollback": False,
         "attemptedKubernetesMutation": attempted_kubernetes_mutation,
@@ -490,7 +532,8 @@ doc = {
         "summary": (
             f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; "
             f"attemptedKubernetesMutation={attempted_kubernetes_mutation}, "
-            f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}, didResume={did_resume}."
+            f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}, "
+            f"didResume={did_resume}, didPromote={did_promote}."
         ),
     },
     "receipt": {
@@ -501,9 +544,11 @@ doc = {
         "resultArtifact": str(output_json),
         "didPause": did_pause,
         "didResume": did_resume,
+        "didPromote": did_promote,
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
+        "promoteVerified": promote_verified,
         "attemptedModifyKubernetes": attempted_kubernetes_mutation,
         "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
@@ -523,10 +568,10 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
-        "postActionVerified": pause_verified or resume_verified,
+        "postActionVerified": pause_verified or resume_verified or promote_verified,
         "doesNotPause": not did_pause,
         "doesNotResume": not did_resume,
-        "doesNotPromote": True,
+        "doesNotPromote": not did_promote,
         "doesNotAbort": True,
         "doesNotRollback": True,
         "doesNotModifyKubernetes": not mutated_kubernetes,

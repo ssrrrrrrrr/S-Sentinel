@@ -86,11 +86,11 @@ doc = json.load(open(sys.argv[1], encoding="utf-8"))
 
 assert doc["action"]["requestedAction"] == "PROMOTE_ROLLOUT", doc
 assert doc["action"]["supportedAction"] is True, doc
-assert doc["action"]["implementedAction"] is False, doc
+assert doc["action"]["implementedAction"] is True, doc
 assert doc["action"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
 assert doc["action"]["commandWillExecute"] is False, doc
-assert doc["action"]["commandMode"] == "unsupported_runtime_action_command", doc
-assert doc["action"]["commandPreviewArgs"] == [], doc
+assert doc["action"]["commandMode"] == "kubectl_argo_rollouts_promote", doc
+assert doc["action"]["commandPreviewArgs"] == ["kubectl", "argo", "rollouts", "promote", "demo-app", "-n", "slo-rollout"], doc
 
 write_gate = doc["writeGate"]
 assert write_gate["operation"] == "PROMOTE_ROLLOUT", write_gate
