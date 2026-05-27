@@ -15,8 +15,10 @@ Environment:
   RUNTIME_ACTION_EXECUTION_RESULT_OUTPUT_DIR    Optional output directory.
   S_SENTINEL_RUNTIME_EXECUTION_ENABLED          Global execution gate.
   S_SENTINEL_ALLOW_RUNTIME_PAUSE                PAUSE_ROLLOUT operation gate.
+  S_SENTINEL_ALLOW_RUNTIME_RESUME               RESUME_ROLLOUT operation gate.
   S_SENTINEL_RUNTIME_ACTION_APPROVED            Approval gate.
-  S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit execution switch.
+  S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit pause execution switch.
+  S_SENTINEL_RUNTIME_RESUME_EXECUTE             Final explicit resume execution switch.
 
 Behavior:
   - Reads runtime-action-preflight-*.json.
@@ -24,7 +26,8 @@ Behavior:
   - Records a controlled runtime action execution result / receipt.
   - Default mode records evidence only.
   - Real PAUSE_ROLLOUT execution requires all explicit gates.
-  - Only PAUSE_ROLLOUT is supported; resume, promote, abort, rollback, GitOps writes, commits, and pushes are not supported.
+  - RESUME_ROLLOUT execution result contract is recognized, but real resume execution is not implemented yet.
+  - Promote, abort, rollback, GitOps writes, commits, and pushes are not supported.
 USAGE
 }
 
@@ -127,9 +130,25 @@ preflight_passed = (
 
 global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
 pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
+resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
-final_execute_enabled = env_enabled("S_SENTINEL_RUNTIME_PAUSE_EXECUTE")
-supported_action = requested_action == "PAUSE_ROLLOUT"
+
+operation_gate_env = None
+operation_gate_enabled = False
+final_execute_env = None
+
+if requested_action == "PAUSE_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_PAUSE"
+    operation_gate_enabled = pause_gate_enabled
+    final_execute_env = "S_SENTINEL_RUNTIME_PAUSE_EXECUTE"
+elif requested_action == "RESUME_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_RESUME"
+    operation_gate_enabled = resume_gate_enabled
+    final_execute_env = "S_SENTINEL_RUNTIME_RESUME_EXECUTE"
+
+final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
+supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
+implemented_action = requested_action == "PAUSE_ROLLOUT"
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
     overall_gate_status = "NO_RUNTIME_EXECUTION_REQUIRED"
@@ -139,18 +158,21 @@ elif not preflight_passed:
     overall_gate_status = "BLOCKED_BY_PREFLIGHT"
 elif not global_gate_enabled:
     overall_gate_status = "BLOCKED_BY_GLOBAL_GATE"
-elif not pause_gate_enabled:
+elif not operation_gate_enabled:
     overall_gate_status = "BLOCKED_BY_OPERATION_GATE"
 elif not approval_gate_enabled:
     overall_gate_status = "BLOCKED_BY_APPROVAL_GATE"
 elif not final_execute_enabled:
     overall_gate_status = "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF"
+elif not implemented_action:
+    overall_gate_status = "BLOCKED_EXECUTOR_NOT_IMPLEMENTED"
 else:
     overall_gate_status = "EXECUTION_ALLOWED"
 
 rollout_name = target.get("rolloutName")
 namespace = target.get("namespace")
 
+paused_patch_value = "false" if requested_action == "RESUME_ROLLOUT" else "true"
 command_args = [
     "kubectl",
     "-n",
@@ -160,9 +182,13 @@ command_args = [
     str(rollout_name or ""),
     "--type=merge",
     "-p",
-    '{"spec":{"paused":true}}',
+    f'{{"spec":{{"paused":{paused_patch_value}}}}}',
 ]
-command_mode = "kubectl_patch_rollout_spec_paused"
+command_mode = (
+    "kubectl_patch_rollout_spec_paused_false"
+    if requested_action == "RESUME_ROLLOUT"
+    else "kubectl_patch_rollout_spec_paused"
+)
 
 command_started_at = None
 command_finished_at = None
@@ -172,6 +198,7 @@ command_stderr = None
 attempted_kubernetes_mutation = False
 mutated_kubernetes = False
 did_pause = False
+did_resume = False
 executed = False
 post_action_rollout_get_attempted = False
 post_action_rollout_get_succeeded = False
@@ -291,9 +318,27 @@ post_action_observed = post_action_rollout_get_succeeded is True
 observed_paused = after_snapshot.get("paused") is True
 observed_spec_paused = after_snapshot.get("specPaused") is True
 observed_status_paused = after_snapshot.get("statusPaused") is True
-desired_state_observed = observed_paused or observed_spec_paused
+pause_desired_state_observed = observed_paused or observed_spec_paused
+resume_desired_state_observed = (
+    after_snapshot.get("paused") is False
+    or after_snapshot.get("specPaused") is False
+)
+
+if requested_action == "PAUSE_ROLLOUT":
+    desired_state_observed = pause_desired_state_observed
+elif requested_action == "RESUME_ROLLOUT":
+    desired_state_observed = resume_desired_state_observed
+else:
+    desired_state_observed = False
+
 pause_verified = (
     requested_action == "PAUSE_ROLLOUT"
+    and command_succeeded
+    and post_action_observed
+    and desired_state_observed
+)
+resume_verified = (
+    requested_action == "RESUME_ROLLOUT"
     and command_succeeded
     and post_action_observed
     and desired_state_observed
@@ -314,6 +359,9 @@ elif not post_action_observed:
 elif requested_action == "PAUSE_ROLLOUT" and not desired_state_observed:
     verification_status = "VERIFY_FAILED"
     verification_blocking_reasons.append("pause_state_not_observed_after_action")
+elif requested_action == "RESUME_ROLLOUT" and not desired_state_observed:
+    verification_status = "VERIFY_FAILED"
+    verification_blocking_reasons.append("resume_state_not_observed_after_action")
 else:
     verification_status = "VERIFIED"
 
@@ -325,7 +373,8 @@ post_action_verification = {
     "postActionObserved": post_action_observed,
     "desiredStateObserved": desired_state_observed,
     "pauseVerified": pause_verified,
-    "expectedPaused": requested_action == "PAUSE_ROLLOUT",
+    "resumeVerified": resume_verified,
+    "expectedPaused": False if requested_action == "RESUME_ROLLOUT" else requested_action == "PAUSE_ROLLOUT",
     "observedPaused": observed_paused,
     "observedSpecPaused": observed_spec_paused,
     "observedStatusPaused": observed_status_paused,
@@ -389,13 +438,15 @@ doc = {
         "preflightPassed": preflight_passed,
         "globalGateEnv": "S_SENTINEL_RUNTIME_EXECUTION_ENABLED",
         "globalGateEnabled": global_gate_enabled,
-        "operationGateEnv": "S_SENTINEL_ALLOW_RUNTIME_PAUSE",
-        "operationGateEnabled": pause_gate_enabled,
+        "operationGateEnv": operation_gate_env,
+        "operationGateEnabled": operation_gate_enabled,
+        "pauseGateEnabled": pause_gate_enabled,
+        "resumeGateEnabled": resume_gate_enabled,
         "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
         "approvalGateEnabled": approval_gate_enabled,
-        "finalExecuteEnv": "S_SENTINEL_RUNTIME_PAUSE_EXECUTE",
+        "finalExecuteEnv": final_execute_env,
         "finalExecuteEnabled": final_execute_enabled,
-        "operation": "PAUSE_ROLLOUT",
+        "operation": requested_action,
         "overallGateStatus": overall_gate_status,
         "writeAllowed": overall_gate_status in {"EXECUTION_ALLOWED", "EXECUTION_SUCCEEDED", "EXECUTION_FAILED"},
         "willExecute": executed,
@@ -409,10 +460,11 @@ doc = {
         "requestedAction": requested_action,
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
+        "resumeVerified": resume_verified,
         "postActionObserved": post_action_observed,
         "desiredStateObserved": desired_state_observed,
         "didPause": did_pause,
-        "didResume": False,
+        "didResume": did_resume,
         "didPromote": False,
         "didAbort": False,
         "didRollback": False,
@@ -424,7 +476,7 @@ doc = {
         "summary": (
             f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; "
             f"attemptedKubernetesMutation={attempted_kubernetes_mutation}, "
-            f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}."
+            f"mutatedKubernetes={mutated_kubernetes}, didPause={did_pause}, didResume={did_resume}."
         ),
     },
     "receipt": {
@@ -434,8 +486,10 @@ doc = {
         "sourceRuntimeActionPreflight": str(input_path),
         "resultArtifact": str(output_json),
         "didPause": did_pause,
+        "didResume": did_resume,
         "verificationStatus": verification_status,
         "pauseVerified": pause_verified,
+        "resumeVerified": resume_verified,
         "attemptedModifyKubernetes": attempted_kubernetes_mutation,
         "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
@@ -455,9 +509,9 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
-        "postActionVerified": pause_verified,
+        "postActionVerified": pause_verified or resume_verified,
         "doesNotPause": not did_pause,
-        "doesNotResume": True,
+        "doesNotResume": not did_resume,
         "doesNotPromote": True,
         "doesNotAbort": True,
         "doesNotRollback": True,
@@ -480,6 +534,7 @@ print(json.dumps({
     "overallGateStatus": overall_gate_status,
     "executionStatus": doc["result"]["executionStatus"],
     "didPause": did_pause,
+    "didResume": did_resume,
     "willExecute": executed,
 }, indent=2))
 PY
