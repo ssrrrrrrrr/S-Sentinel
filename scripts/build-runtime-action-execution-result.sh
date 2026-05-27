@@ -631,6 +631,16 @@ doc = {
     "beforeSnapshot": runtime_snapshot,
     "afterSnapshot": after_snapshot,
     "postActionVerification": post_action_verification,
+    "verificationSummary": {
+        "status": verification_status,
+        "verified": verification_status == "VERIFIED",
+        "commandSucceeded": command_exit_code == 0 if executed else False,
+        "postActionObserved": post_action_observed,
+        "desiredStateObserved": desired_state_observed,
+        "actionVerified": pause_verified or resume_verified or promote_verified or abort_verified or rollback_verified,
+        "blockingReasonCount": len(verification_blocking_reasons),
+        "warningReasonCount": len(verification_warning_reasons),
+    },
     "executionSummary": {
         "requestedAction": requested_action,
         "didExecute": did_pause or did_resume or did_promote or did_abort or did_rollback,

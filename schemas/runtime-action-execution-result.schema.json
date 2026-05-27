@@ -440,6 +440,49 @@
           "type": "boolean"
         }
       }
+    },
+    "verificationSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "verified",
+        "commandSucceeded",
+        "postActionObserved",
+        "desiredStateObserved",
+        "actionVerified",
+        "blockingReasonCount",
+        "warningReasonCount"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "commandSucceeded": {
+          "type": "boolean"
+        },
+        "postActionObserved": {
+          "type": "boolean"
+        },
+        "desiredStateObserved": {
+          "type": "boolean"
+        },
+        "actionVerified": {
+          "type": "boolean"
+        },
+        "blockingReasonCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningReasonCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }

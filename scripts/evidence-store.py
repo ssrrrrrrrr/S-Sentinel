@@ -1059,6 +1059,12 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             result["gateSummary"] = gate_summary
             result["gateOverall"] = gate_summary.get("overall")
             result["gateFinalExecute"] = gate_summary.get("finalExecute")
+
+        verification_summary = as_dict(data.get("verificationSummary"))
+        if verification_summary:
+            result["verificationSummary"] = verification_summary
+            result["verificationSummaryStatus"] = verification_summary.get("status")
+            result["actionVerified"] = verification_summary.get("actionVerified")
         result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
         result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
         result["mutatedGitOps"] = result_body.get("mutatedGitOps")
