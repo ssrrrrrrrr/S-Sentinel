@@ -344,6 +344,14 @@ execution_result_executor = as_dict(execution_result.get("executor"))
 execution_result_evidence = as_dict(execution_result_body.get("evidenceArtifacts"))
 execution_result_guardrails = as_dict(execution_result.get("guardrails"))
 
+rollout_runtime_inspect_path = resolve_ref(artifacts.get("rolloutRuntimeInspect"), evidence_path)
+rollout_runtime_inspect = load_json(rollout_runtime_inspect_path)
+rollout_runtime_target = as_dict(rollout_runtime_inspect.get("target"))
+rollout_runtime_rollout = as_dict(rollout_runtime_inspect.get("rollout"))
+rollout_runtime_analysis = as_dict(rollout_runtime_inspect.get("analysis"))
+rollout_runtime_pods = as_dict(rollout_runtime_inspect.get("pods"))
+rollout_runtime_guardrails = as_dict(rollout_runtime_inspect.get("guardrails"))
+
 gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
 gitops_patch_proposal = load_json(gitops_patch_proposal_path)
 gitops_patch_proposal_body = as_dict(gitops_patch_proposal.get("proposal"))
@@ -517,6 +525,7 @@ link_map = {
     "executionEligibility": artifacts.get("executionEligibility"),
     "executionPreview": artifacts.get("executionPreview"),
     "executionResult": artifacts.get("executionResult"),
+    "rolloutRuntimeInspect": artifacts.get("rolloutRuntimeInspect"),
     "gitopsPatchProposal": artifacts.get("gitopsPatchProposal"),
     "gitopsPRBundle": artifacts.get("gitopsPRBundle"),
     "gitopsHandoffBundle": artifacts.get("gitopsHandoffBundle"),
@@ -571,6 +580,7 @@ artifact_defs = [
     ("executionEligibility", link_map["executionEligibility"], False),
     ("executionPreview", link_map["executionPreview"], False),
     ("executionResult", link_map["executionResult"], False),
+    ("rolloutRuntimeInspect", link_map["rolloutRuntimeInspect"], False),
     ("gitopsPatchProposal", link_map["gitopsPatchProposal"], False),
     ("gitopsPRBundle", link_map["gitopsPRBundle"], False),
     ("gitopsHandoffBundle", link_map["gitopsHandoffBundle"], False),
@@ -812,6 +822,42 @@ record = {
         "sourceExecutionResult": nullable_string(link_map.get("executionResult")),
         "sourceExecutionPreview": nullable_string(execution_result_evidence.get("sourceExecutionPreview")),
         "guardrails": execution_result_guardrails,
+    },
+    "rolloutRuntimeInspect": {
+        "rolloutRuntimeInspectId": nullable_string(rollout_runtime_inspect.get("rolloutRuntimeInspectId")),
+        "mode": nullable_string(rollout_runtime_inspect.get("mode")),
+        "rolloutName": nullable_string(first_not_none(
+            rollout_runtime_target.get("rolloutName"),
+            rollout_runtime_rollout.get("name"),
+        )),
+        "namespace": nullable_string(first_not_none(
+            rollout_runtime_target.get("namespace"),
+            rollout_runtime_rollout.get("namespace"),
+        )),
+        "service": nullable_string(first_not_none(
+            rollout_runtime_target.get("service"),
+            service,
+        )),
+        "env": nullable_string(first_not_none(
+            rollout_runtime_target.get("env"),
+            env,
+        )),
+        "rolloutPhase": nullable_string(rollout_runtime_rollout.get("phase")),
+        "strategy": nullable_string(rollout_runtime_rollout.get("strategy")),
+        "currentStepIndex": rollout_runtime_rollout.get("currentStepIndex"),
+        "replicas": rollout_runtime_rollout.get("replicas"),
+        "updatedReplicas": rollout_runtime_rollout.get("updatedReplicas"),
+        "readyReplicas": rollout_runtime_rollout.get("readyReplicas"),
+        "availableReplicas": rollout_runtime_rollout.get("availableReplicas"),
+        "paused": bool_or_none(rollout_runtime_rollout.get("paused")),
+        "degraded": bool_or_none(rollout_runtime_rollout.get("degraded")),
+        "analysisRunName": nullable_string(rollout_runtime_analysis.get("analysisRunName")),
+        "analysisStatus": nullable_string(rollout_runtime_analysis.get("status")),
+        "podCount": rollout_runtime_pods.get("podCount"),
+        "readyPodCount": rollout_runtime_pods.get("readyPodCount"),
+        "runningPodCount": rollout_runtime_pods.get("runningPodCount"),
+        "sourceRolloutRuntimeInspect": nullable_string(link_map.get("rolloutRuntimeInspect")),
+        "guardrails": rollout_runtime_guardrails,
     },
     "gitopsPatchProposal": {
         "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),
