@@ -1065,6 +1065,12 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             result["verificationSummary"] = verification_summary
             result["verificationSummaryStatus"] = verification_summary.get("status")
             result["actionVerified"] = verification_summary.get("actionVerified")
+
+        risk_summary = as_dict(data.get("riskSummary"))
+        if risk_summary:
+            result["riskSummary"] = risk_summary
+            result["runtimeRiskLevel"] = risk_summary.get("riskLevel")
+            result["runtimeDefaultOff"] = risk_summary.get("defaultOff")
         result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
         result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
         result["mutatedGitOps"] = result_body.get("mutatedGitOps")

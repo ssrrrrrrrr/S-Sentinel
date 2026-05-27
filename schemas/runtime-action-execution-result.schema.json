@@ -483,6 +483,48 @@
           "minimum": 0
         }
       }
+    },
+    "riskSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "riskLevel",
+        "requiresApproval",
+        "requiresFinalExecute",
+        "defaultOff",
+        "mutationTarget",
+        "canMutateKubernetes",
+        "mutatedKubernetes",
+        "mutatesGitOps"
+      ],
+      "properties": {
+        "riskLevel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requiresApproval": {
+          "type": "boolean"
+        },
+        "requiresFinalExecute": {
+          "type": "boolean"
+        },
+        "defaultOff": {
+          "type": "boolean"
+        },
+        "mutationTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canMutateKubernetes": {
+          "type": "boolean"
+        },
+        "mutatedKubernetes": {
+          "type": "boolean"
+        },
+        "mutatesGitOps": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

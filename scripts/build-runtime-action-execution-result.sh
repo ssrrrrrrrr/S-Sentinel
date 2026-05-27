@@ -641,6 +641,16 @@ doc = {
         "blockingReasonCount": len(verification_blocking_reasons),
         "warningReasonCount": len(verification_warning_reasons),
     },
+    "riskSummary": {
+        "riskLevel": "high" if requested_action in {"PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"} else ("medium_high" if requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"} else "unknown"),
+        "requiresApproval": supported_action,
+        "requiresFinalExecute": bool(final_execute_env),
+        "defaultOff": True,
+        "mutationTarget": "kubernetes" if attempted_kubernetes_mutation else "none",
+        "canMutateKubernetes": attempted_kubernetes_mutation,
+        "mutatedKubernetes": mutated_kubernetes,
+        "mutatesGitOps": False,
+    },
     "executionSummary": {
         "requestedAction": requested_action,
         "didExecute": did_pause or did_resume or did_promote or did_abort or did_rollback,
