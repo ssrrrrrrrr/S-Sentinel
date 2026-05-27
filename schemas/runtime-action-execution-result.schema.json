@@ -328,6 +328,72 @@
           "type": "string"
         }
       }
+    },
+    "executionSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "requestedAction",
+        "didExecute",
+        "willExecute",
+        "verified",
+        "verificationStatus",
+        "executionStatus",
+        "actionStatus",
+        "commandMode",
+        "mutationTarget",
+        "mutatedKubernetes",
+        "mutatedGitOps",
+        "riskLevel"
+      ],
+      "properties": {
+        "requestedAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "didExecute": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionStatus": {
+          "enum": [
+            "NOT_EXECUTED",
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "actionStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commandMode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mutationTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mutatedKubernetes": {
+          "type": "boolean"
+        },
+        "mutatedGitOps": {
+          "type": "boolean"
+        },
+        "riskLevel": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }
