@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/runtime-action-request.schema.json",
+  "title": "S Sentinel Runtime Action Request",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "runtimeActionRequestId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "release",
+    "target",
+    "request",
+    "recommendationBinding",
+    "runtimeSnapshot",
+    "approval",
+    "evidenceRefs",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "runtime.action.request/v1alpha1"
+    },
+    "runtimeActionRequestId": {
+      "type": "string"
+    },
+    "mode": {
+      "const": "request_only"
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "requestedBy",
+        "requestedAction",
+        "requestStatus",
+        "lifecycleStage",
+        "approvalRequired",
+        "readyToExecute",
+        "willExecute"
+      ],
+      "properties": {
+        "requestedAction": {
+          "enum": [
+            "NOOP",
+            "REQUIRE_REVIEW",
+            "PAUSE_ROLLOUT"
+          ]
+        },
+        "requestStatus": {
+          "enum": [
+            "NO_ACTION_REQUESTED",
+            "REVIEW_REQUIRED",
+            "PENDING_APPROVAL",
+            "READY_FOR_PREFLIGHT",
+            "UNSUPPORTED_ACTION"
+          ]
+        },
+        "lifecycleStage": {
+          "enum": [
+            "NO_ACTION_REQUESTED",
+            "WAITING_REVIEW",
+            "WAITING_APPROVAL",
+            "READY_FOR_PREFLIGHT",
+            "BLOCKED"
+          ]
+        },
+        "approvalRequired": {
+          "type": "boolean"
+        },
+        "readyToExecute": {
+          "const": false
+        },
+        "willExecute": {
+          "const": false
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": [
+        "required",
+        "status",
+        "approved",
+        "readyToExecute"
+      ],
+      "properties": {
+        "approved": {
+          "const": false
+        },
+        "readyToExecute": {
+          "const": false
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "requestOnly",
+        "readOnly",
+        "willExecute",
+        "doesNotModifyKubernetes"
+      ],
+      "properties": {
+        "requestOnly": {
+          "const": true
+        },
+        "readOnly": {
+          "const": true
+        },
+        "willExecute": {
+          "const": false
+        },
+        "doesNotModifyKubernetes": {
+          "const": true
+        }
+      }
+    }
+  }
+}
