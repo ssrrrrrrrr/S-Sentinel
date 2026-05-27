@@ -394,6 +394,52 @@
           "minLength": 1
         }
       }
+    },
+    "gateSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "preflight",
+        "global",
+        "operation",
+        "approval",
+        "finalExecute",
+        "overall",
+        "writeAllowed",
+        "willExecute"
+      ],
+      "properties": {
+        "preflight": {
+          "type": "string",
+          "minLength": 1
+        },
+        "global": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approval": {
+          "type": "string",
+          "minLength": 1
+        },
+        "finalExecute": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overall": {
+          "type": "string",
+          "minLength": 1
+        },
+        "writeAllowed": {
+          "type": "boolean"
+        },
+        "willExecute": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }
