@@ -23,7 +23,7 @@ Environment:
   S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit pause execution switch.
   S_SENTINEL_RUNTIME_RESUME_EXECUTE             Final explicit resume execution switch.
   S_SENTINEL_RUNTIME_PROMOTE_EXECUTE            Final explicit promote execution switch.
-  S_SENTINEL_RUNTIME_ABORT_EXECUTE              Reserved final abort execution switch; executor not implemented yet.
+  S_SENTINEL_RUNTIME_ABORT_EXECUTE              Final explicit abort execution switch.
 
 Behavior:
   - Reads runtime-action-preflight-*.json.
