@@ -1037,6 +1037,11 @@ record = {
             runtime_action_execution_result_body.get("promoteVerified"),
             runtime_action_execution_result_receipt.get("promoteVerified"),
         )),
+        "abortVerified": bool_or_none(first_not_none(
+            runtime_action_execution_result_verification.get("abortVerified"),
+            runtime_action_execution_result_body.get("abortVerified"),
+            runtime_action_execution_result_receipt.get("abortVerified"),
+        )),
         "postActionObserved": bool_or_none(first_not_none(
             runtime_action_execution_result_verification.get("postActionObserved"),
             runtime_action_execution_result_body.get("postActionObserved"),
@@ -1052,6 +1057,7 @@ record = {
         "didPause": bool_or_none(runtime_action_execution_result_body.get("didPause")),
         "didResume": bool_or_none(runtime_action_execution_result_body.get("didResume")),
         "didPromote": bool_or_none(runtime_action_execution_result_body.get("didPromote")),
+        "didAbort": bool_or_none(runtime_action_execution_result_body.get("didAbort")),
         "attemptedKubernetesMutation": bool_or_none(runtime_action_execution_result_body.get("attemptedKubernetesMutation")),
         "mutatedKubernetes": bool_or_none(runtime_action_execution_result_body.get("mutatedKubernetes")),
         "mutatedGitOps": bool_or_none(runtime_action_execution_result_body.get("mutatedGitOps")),

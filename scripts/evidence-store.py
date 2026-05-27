@@ -1015,6 +1015,11 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
             promote_verified = result_body.get("promoteVerified")
         if promote_verified is None:
             promote_verified = receipt.get("promoteVerified")
+        abort_verified = post_action_verification.get("abortVerified")
+        if abort_verified is None:
+            abort_verified = result_body.get("abortVerified")
+        if abort_verified is None:
+            abort_verified = receipt.get("abortVerified")
         post_action_observed = post_action_verification.get("postActionObserved")
         if post_action_observed is None:
             post_action_observed = result_body.get("postActionObserved")
@@ -1034,6 +1039,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["didPause"] = result_body.get("didPause")
         result["didResume"] = result_body.get("didResume")
         result["didPromote"] = result_body.get("didPromote")
+        result["didAbort"] = result_body.get("didAbort")
         result["attemptedKubernetesMutation"] = result_body.get("attemptedKubernetesMutation")
         result["mutatedKubernetes"] = result_body.get("mutatedKubernetes")
         result["mutatedGitOps"] = result_body.get("mutatedGitOps")
@@ -1052,6 +1058,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["pauseVerified"] = pause_verified
         result["resumeVerified"] = resume_verified
         result["promoteVerified"] = promote_verified
+        result["abortVerified"] = abort_verified
         result["postActionObserved"] = post_action_observed
         result["desiredStateObserved"] = desired_state_observed
         result["preflightStatus"] = write_gate.get("preflightStatus")
