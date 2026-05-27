@@ -20,6 +20,7 @@ fi
 
 python3 - "$PR_PREFLIGHT_JSON" <<'PY'
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -32,6 +33,14 @@ release = pf.get("release") or {}
 inputs = pf.get("inputs") or {}
 preflight = pf.get("prCreatePreflight") or {}
 target_repository = pf.get("targetRepository") or {}
+write_gate = {
+    "enabled": True,
+    "allowEnv": "S_SENTINEL_ALLOW_GITHUB_WRITE",
+    "allowValue": "true",
+    "operationEnv": "S_SENTINEL_GITHUB_WRITE_OPERATION",
+    "requiredOperation": "create-pr",
+    "operation": os.environ.get("S_SENTINEL_GITHUB_WRITE_OPERATION"),
+}
 
 target_owner = target_repository.get("owner") or preflight.get("headOwner")
 target_base_branch = target_repository.get("baseBranch") or preflight.get("baseBranch")
@@ -100,6 +109,7 @@ out = {
         "pullRequestBodyPath": str(body_path)
     },
     "targetRepository": target_repository,
+    "writeGate": write_gate,
     "pullRequest": {
         "createStatus": "PULL_REQUEST_CREATED",
         "repo": preflight.get("repo"),

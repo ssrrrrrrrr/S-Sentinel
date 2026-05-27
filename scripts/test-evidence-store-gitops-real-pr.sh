@@ -42,6 +42,14 @@ cat > "$REPORT_DIR/gitops-real-pr-create-evidence-store-smoke.json" <<'JSON'
     "doesNotPush": true,
     "doesNotMergePullRequest": true,
     "doesNotModifyKubernetes": true
+  },
+  "writeGate": {
+    "enabled": true,
+    "allowEnv": "S_SENTINEL_ALLOW_GITHUB_WRITE",
+    "allowValue": "true",
+    "operationEnv": "S_SENTINEL_GITHUB_WRITE_OPERATION",
+    "requiredOperation": "create-pr",
+    "operation": "create-pr"
   }
 }
 JSON
@@ -80,6 +88,14 @@ cat > "$REPORT_DIR/gitops-real-pr-cleanup-evidence-store-smoke.json" <<'JSON'
     "doesNotCreatePullRequest": true,
     "doesNotMergePullRequest": true,
     "doesNotModifyKubernetes": true
+  },
+  "writeGate": {
+    "enabled": true,
+    "allowEnv": "S_SENTINEL_ALLOW_GITHUB_WRITE",
+    "allowValue": "true",
+    "operationEnv": "S_SENTINEL_GITHUB_WRITE_OPERATION",
+    "requiredOperation": "cleanup-pr",
+    "operation": "cleanup-pr"
   }
 }
 JSON
@@ -135,6 +151,9 @@ assert create_summary.get("dryRunOnly") is False, create_summary
 assert create_summary.get("didCreatePullRequest") is True, create_summary
 assert create_summary.get("doesNotMergePullRequest") is True, create_summary
 assert create_summary.get("doesNotModifyKubernetes") is True, create_summary
+assert create_summary.get("writeGateEnabled") is True, create_summary
+assert create_summary.get("writeGateRequiredOperation") == "create-pr", create_summary
+assert create_summary.get("writeGateOperation") == "create-pr", create_summary
 
 assert cleanup_summary.get("cleanupStatus") == "CLEANED_UP", cleanup_summary
 assert cleanup_summary.get("pullRequestState") == "CLOSED", cleanup_summary
@@ -147,6 +166,9 @@ assert cleanup_summary.get("didClosePullRequest") is True, cleanup_summary
 assert cleanup_summary.get("didDeleteRemoteBranch") is True, cleanup_summary
 assert cleanup_summary.get("doesNotMergePullRequest") is True, cleanup_summary
 assert cleanup_summary.get("doesNotModifyKubernetes") is True, cleanup_summary
+assert cleanup_summary.get("writeGateEnabled") is True, cleanup_summary
+assert cleanup_summary.get("writeGateRequiredOperation") == "cleanup-pr", cleanup_summary
+assert cleanup_summary.get("writeGateOperation") == "cleanup-pr", cleanup_summary
 
 print("PASS evidence-store gitops real-pr import/search")
 PY

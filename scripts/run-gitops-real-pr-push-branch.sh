@@ -20,6 +20,7 @@ fi
 
 python3 - "$PUSH_PREFLIGHT_JSON" <<'PY'
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -32,6 +33,14 @@ release = pf.get("release") or {}
 inputs = pf.get("inputs") or {}
 push_pf = pf.get("pushPreflight") or {}
 target_repository = pf.get("targetRepository") or {}
+write_gate = {
+    "enabled": True,
+    "allowEnv": "S_SENTINEL_ALLOW_GITHUB_WRITE",
+    "allowValue": "true",
+    "operationEnv": "S_SENTINEL_GITHUB_WRITE_OPERATION",
+    "requiredOperation": "push-branch",
+    "operation": os.environ.get("S_SENTINEL_GITHUB_WRITE_OPERATION"),
+}
 
 if push_pf.get("preflightStatus") != "READY_TO_PUSH_BRANCH":
     raise SystemExit("ERROR: push preflight is not READY_TO_PUSH_BRANCH")
@@ -66,6 +75,7 @@ out = {
         "repoDir": str(repo_dir)
     },
     "targetRepository": target_repository,
+    "writeGate": write_gate,
     "branchPush": {
         "pushStatus": "BRANCH_PUSHED",
         "branchName": branch,

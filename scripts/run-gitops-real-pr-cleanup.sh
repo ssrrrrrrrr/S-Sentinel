@@ -20,6 +20,7 @@ fi
 
 python3 - "$PR_CREATE_JSON" <<'PY'
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -32,6 +33,14 @@ release = data.get("release") or {}
 inputs = data.get("inputs") or {}
 pr = data.get("pullRequest") or {}
 target_repository = data.get("targetRepository") or {}
+write_gate = {
+    "enabled": True,
+    "allowEnv": "S_SENTINEL_ALLOW_GITHUB_WRITE",
+    "allowValue": "true",
+    "operationEnv": "S_SENTINEL_GITHUB_WRITE_OPERATION",
+    "requiredOperation": "cleanup-pr",
+    "operation": os.environ.get("S_SENTINEL_GITHUB_WRITE_OPERATION"),
+}
 
 repo_dir = Path(inputs["repoDir"])
 number = pr.get("number")
@@ -84,6 +93,7 @@ out = {
         "repoDir": str(repo_dir)
     },
     "targetRepository": target_repository,
+    "writeGate": write_gate,
     "cleanup": {
         "cleanupStatus": "CLEANED_UP" if pr_after.get("state") == "CLOSED" and not remote else "NEEDS_ATTENTION",
         "pullRequest": pr_after,

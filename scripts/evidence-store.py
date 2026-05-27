@@ -1261,6 +1261,7 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
     observability = as_dict(data.get("observability"))
     source = as_dict(data.get("source"))
     guardrails = as_dict(data.get("guardrails"))
+    write_gate = as_dict(data.get("writeGate"))
 
     for guardrail_key in [
         "readOnly",
@@ -1281,6 +1282,18 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         guardrail_value = guardrails.get(guardrail_key)
         if guardrail_value is not None:
             result[guardrail_key] = guardrail_value
+
+    for source_key, result_key in [
+        ("enabled", "writeGateEnabled"),
+        ("allowEnv", "writeGateAllowEnv"),
+        ("allowValue", "writeGateAllowValue"),
+        ("operationEnv", "writeGateOperationEnv"),
+        ("requiredOperation", "writeGateRequiredOperation"),
+        ("operation", "writeGateOperation"),
+    ]:
+        write_gate_value = write_gate.get(source_key)
+        if write_gate_value is not None and write_gate_value != "":
+            result[result_key] = write_gate_value
 
     trace_id = first_non_empty(
         data.get("traceId"),
