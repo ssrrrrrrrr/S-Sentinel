@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/runtime-action-recommendation.schema.json",
+  "title": "S Sentinel Runtime Action Recommendation",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "runtimeActionRecommendationId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "release",
+    "target",
+    "recommendation",
+    "runtimeSnapshot",
+    "evidenceRefs",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "runtime.action.recommendation/v1alpha1"
+    },
+    "runtimeActionRecommendationId": {
+      "type": "string"
+    },
+    "mode": {
+      "const": "recommendation_only"
+    },
+    "recommendation": {
+      "type": "object",
+      "required": [
+        "recommendationStatus",
+        "recommendedAction",
+        "riskLevel",
+        "confidence",
+        "approvalRequired",
+        "reasons",
+        "summary"
+      ],
+      "properties": {
+        "recommendationStatus": {
+          "enum": [
+            "NO_ACTION_REQUIRED",
+            "REVIEW_RECOMMENDED",
+            "ACTION_RECOMMENDED"
+          ]
+        },
+        "recommendedAction": {
+          "enum": [
+            "NOOP",
+            "REQUIRE_REVIEW",
+            "PAUSE_ROLLOUT"
+          ]
+        },
+        "riskLevel": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "approvalRequired": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "readOnly",
+        "recommendationOnly",
+        "willExecute",
+        "doesNotModifyKubernetes"
+      ],
+      "properties": {
+        "readOnly": {
+          "const": true
+        },
+        "recommendationOnly": {
+          "const": true
+        },
+        "willExecute": {
+          "const": false
+        },
+        "doesNotModifyKubernetes": {
+          "const": true
+        }
+      }
+    }
+  }
+}
