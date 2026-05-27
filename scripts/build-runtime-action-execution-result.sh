@@ -286,6 +286,53 @@ if post_action_rollout_get_stderr not in (None, ""):
 if post_action_rollout_snapshot:
     after_snapshot.update(post_action_rollout_snapshot)
 
+command_succeeded = executed and command_exit_code == 0
+post_action_observed = post_action_rollout_get_succeeded is True
+observed_paused = after_snapshot.get("paused") is True
+observed_spec_paused = after_snapshot.get("specPaused") is True
+observed_status_paused = after_snapshot.get("statusPaused") is True
+desired_state_observed = observed_paused or observed_spec_paused
+pause_verified = (
+    requested_action == "PAUSE_ROLLOUT"
+    and command_succeeded
+    and post_action_observed
+    and desired_state_observed
+)
+
+verification_blocking_reasons = []
+verification_warning_reasons = []
+
+if not executed:
+    verification_status = "NOT_RUN"
+    verification_blocking_reasons.append("runtime_action_not_executed")
+elif not command_succeeded:
+    verification_status = "COMMAND_FAILED"
+    verification_blocking_reasons.append("runtime_action_command_failed")
+elif not post_action_observed:
+    verification_status = "OBSERVATION_FAILED"
+    verification_blocking_reasons.append("post_action_rollout_get_failed")
+elif requested_action == "PAUSE_ROLLOUT" and not desired_state_observed:
+    verification_status = "VERIFY_FAILED"
+    verification_blocking_reasons.append("pause_state_not_observed_after_action")
+else:
+    verification_status = "VERIFIED"
+
+post_action_verification = {
+    "verificationType": "runtime_action_post_action_verification",
+    "verificationStatus": verification_status,
+    "requestedAction": requested_action,
+    "commandSucceeded": command_succeeded,
+    "postActionObserved": post_action_observed,
+    "desiredStateObserved": desired_state_observed,
+    "pauseVerified": pause_verified,
+    "expectedPaused": requested_action == "PAUSE_ROLLOUT",
+    "observedPaused": observed_paused,
+    "observedSpecPaused": observed_spec_paused,
+    "observedStatusPaused": observed_status_paused,
+    "blockingReasons": verification_blocking_reasons,
+    "warningReasons": verification_warning_reasons,
+}
+
 doc = {
     "schemaVersion": "runtime.action.execution.result/v1alpha1",
     "runtimeActionExecutionResultId": "raer-" + release_id,
@@ -355,10 +402,15 @@ doc = {
     },
     "beforeSnapshot": runtime_snapshot,
     "afterSnapshot": after_snapshot,
+    "postActionVerification": post_action_verification,
     "result": {
         "executionStatus": "SUCCEEDED" if executed and command_exit_code == 0 else ("FAILED" if executed else "NOT_EXECUTED"),
         "actionStatus": overall_gate_status,
         "requestedAction": requested_action,
+        "verificationStatus": verification_status,
+        "pauseVerified": pause_verified,
+        "postActionObserved": post_action_observed,
+        "desiredStateObserved": desired_state_observed,
         "didPause": did_pause,
         "didResume": False,
         "didPromote": False,
@@ -382,6 +434,8 @@ doc = {
         "sourceRuntimeActionPreflight": str(input_path),
         "resultArtifact": str(output_json),
         "didPause": did_pause,
+        "verificationStatus": verification_status,
+        "pauseVerified": pause_verified,
         "attemptedModifyKubernetes": attempted_kubernetes_mutation,
         "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
@@ -401,6 +455,7 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
+        "postActionVerified": pause_verified,
         "doesNotPause": not did_pause,
         "doesNotResume": True,
         "doesNotPromote": True,

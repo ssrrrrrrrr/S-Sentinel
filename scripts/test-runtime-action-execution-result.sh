@@ -100,10 +100,31 @@ assert doc["beforeSnapshot"]["analysisStatus"] == "Failed", doc
 assert doc["afterSnapshot"]["observationMode"] == "not_executed", doc
 assert doc["afterSnapshot"]["commandExitCode"] is None, doc
 assert doc["afterSnapshot"]["pausedAssumedFromCommandSuccess"] is False, doc
+assert doc["afterSnapshot"]["postActionRolloutGetAttempted"] is False, doc
+assert doc["afterSnapshot"]["postActionRolloutGetSucceeded"] is False, doc
+
+verification = doc["postActionVerification"]
+assert verification["verificationType"] == "runtime_action_post_action_verification", doc
+assert verification["verificationStatus"] == "NOT_RUN", doc
+assert verification["requestedAction"] == "PAUSE_ROLLOUT", doc
+assert verification["commandSucceeded"] is False, doc
+assert verification["postActionObserved"] is False, doc
+assert verification["desiredStateObserved"] is False, doc
+assert verification["pauseVerified"] is False, doc
+assert verification["expectedPaused"] is True, doc
+assert verification["observedPaused"] is False, doc
+assert verification["observedSpecPaused"] is False, doc
+assert verification["observedStatusPaused"] is False, doc
+assert "runtime_action_not_executed" in verification["blockingReasons"], doc
+assert verification["warningReasons"] == [], doc
 
 assert doc["result"]["executionStatus"] == "NOT_EXECUTED", doc
 assert doc["result"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
 assert doc["result"]["requestedAction"] == "PAUSE_ROLLOUT", doc
+assert doc["result"]["verificationStatus"] == "NOT_RUN", doc
+assert doc["result"]["pauseVerified"] is False, doc
+assert doc["result"]["postActionObserved"] is False, doc
+assert doc["result"]["desiredStateObserved"] is False, doc
 assert doc["result"]["didPause"] is False, doc
 assert doc["result"]["didResume"] is False, doc
 assert doc["result"]["didPromote"] is False, doc
@@ -119,6 +140,8 @@ assert doc["receipt"]["receiptType"] == "runtime_action_execution_result", doc
 assert doc["receipt"]["receiptStatus"] == "RECORDED", doc
 assert doc["receipt"]["wroteEvidence"] is True, doc
 assert doc["receipt"]["didPause"] is False, doc
+assert doc["receipt"]["verificationStatus"] == "NOT_RUN", doc
+assert doc["receipt"]["pauseVerified"] is False, doc
 assert doc["receipt"]["attemptedModifyKubernetes"] is False, doc
 assert doc["receipt"]["didModifyKubernetes"] is False, doc
 assert doc["receipt"]["didModifyGitOps"] is False, doc
@@ -132,6 +155,7 @@ assert doc["guardrails"]["contractOnly"] is False, doc
 assert doc["guardrails"]["readOnly"] is True, doc
 assert doc["guardrails"]["dryRunOnly"] is True, doc
 assert doc["guardrails"]["willExecute"] is False, doc
+assert doc["guardrails"]["postActionVerified"] is False, doc
 assert doc["guardrails"]["doesNotPause"] is True, doc
 assert doc["guardrails"]["doesNotModifyKubernetes"] is True, doc
 assert doc["guardrails"]["doesNotModifyGitOps"] is True, doc

@@ -159,7 +159,26 @@ assert doc["afterSnapshot"]["paused"] is True, doc
 assert doc["afterSnapshot"]["specPaused"] is True, doc
 assert doc["afterSnapshot"]["phase"] == "Degraded", doc
 
+verification = doc["postActionVerification"]
+assert verification["verificationType"] == "runtime_action_post_action_verification", doc
+assert verification["verificationStatus"] == "VERIFIED", doc
+assert verification["requestedAction"] == "PAUSE_ROLLOUT", doc
+assert verification["commandSucceeded"] is True, doc
+assert verification["postActionObserved"] is True, doc
+assert verification["desiredStateObserved"] is True, doc
+assert verification["pauseVerified"] is True, doc
+assert verification["expectedPaused"] is True, doc
+assert verification["observedPaused"] is True, doc
+assert verification["observedSpecPaused"] is True, doc
+assert verification["observedStatusPaused"] is False, doc
+assert verification["blockingReasons"] == [], doc
+assert verification["warningReasons"] == [], doc
+
 assert doc["result"]["executionStatus"] == "SUCCEEDED", doc
+assert doc["result"]["verificationStatus"] == "VERIFIED", doc
+assert doc["result"]["pauseVerified"] is True, doc
+assert doc["result"]["postActionObserved"] is True, doc
+assert doc["result"]["desiredStateObserved"] is True, doc
 assert doc["result"]["didPause"] is True, doc
 assert doc["result"]["attemptedKubernetesMutation"] is True, doc
 assert doc["result"]["mutatedKubernetes"] is True, doc
@@ -167,11 +186,14 @@ assert doc["result"]["mutatedGitOps"] is False, doc
 assert doc["result"]["willExecute"] is True, doc
 
 assert doc["receipt"]["didPause"] is True, doc
+assert doc["receipt"]["verificationStatus"] == "VERIFIED", doc
+assert doc["receipt"]["pauseVerified"] is True, doc
 assert doc["receipt"]["attemptedModifyKubernetes"] is True, doc
 assert doc["receipt"]["didModifyKubernetes"] is True, doc
 assert doc["receipt"]["didModifyGitOps"] is False, doc
 
 assert doc["guardrails"]["willExecute"] is True, doc
+assert doc["guardrails"]["postActionVerified"] is True, doc
 assert doc["guardrails"]["doesNotPause"] is False, doc
 assert doc["guardrails"]["doesNotModifyKubernetes"] is False, doc
 assert doc["guardrails"]["doesNotModifyGitOps"] is True, doc

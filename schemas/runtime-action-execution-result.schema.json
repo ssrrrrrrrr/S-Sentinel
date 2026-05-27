@@ -17,10 +17,12 @@
     "action",
     "writeGate",
     "beforeSnapshot",
+    "afterSnapshot",
     "result",
     "receipt",
     "evidenceRefs",
-    "guardrails"
+    "guardrails",
+    "postActionVerification"
   ],
   "properties": {
     "schemaVersion": {
@@ -130,7 +132,9 @@
         "mutatedGitOps",
         "readyForExecutor",
         "willExecute",
-        "summary"
+        "summary",
+        "verificationStatus",
+        "pauseVerified"
       ],
       "properties": {
         "executionStatus": {
@@ -148,6 +152,13 @@
         },
         "willExecute": {
           "type": "boolean"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pauseVerified": {
+          "type": "boolean"
         }
       }
     },
@@ -160,7 +171,9 @@
         "wroteEvidence",
         "didPause",
         "didModifyKubernetes",
-        "didModifyGitOps"
+        "didModifyGitOps",
+        "verificationStatus",
+        "pauseVerified"
       ]
     },
     "guardrails": {
@@ -173,8 +186,89 @@
         "willExecute",
         "doesNotModifyKubernetes",
         "doesNotModifyGitOps",
-        "doesNotCommitOrPush"
+        "doesNotCommitOrPush",
+        "postActionVerified"
       ]
+    },
+    "postActionVerification": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "verificationType",
+        "verificationStatus",
+        "requestedAction",
+        "commandSucceeded",
+        "postActionObserved",
+        "desiredStateObserved",
+        "pauseVerified",
+        "expectedPaused",
+        "observedPaused",
+        "observedSpecPaused",
+        "observedStatusPaused",
+        "blockingReasons",
+        "warningReasons"
+      ],
+      "properties": {
+        "verificationType": {
+          "const": "runtime_action_post_action_verification"
+        },
+        "verificationStatus": {
+          "enum": [
+            "NOT_RUN",
+            "COMMAND_FAILED",
+            "OBSERVATION_FAILED",
+            "VERIFY_FAILED",
+            "VERIFIED"
+          ]
+        },
+        "requestedAction": {
+          "enum": [
+            "NOOP",
+            "REQUIRE_REVIEW",
+            "PAUSE_ROLLOUT"
+          ]
+        },
+        "commandSucceeded": {
+          "type": "boolean"
+        },
+        "postActionObserved": {
+          "type": "boolean"
+        },
+        "desiredStateObserved": {
+          "type": "boolean"
+        },
+        "pauseVerified": {
+          "type": "boolean"
+        },
+        "expectedPaused": {
+          "type": "boolean"
+        },
+        "observedPaused": {
+          "type": "boolean"
+        },
+        "observedSpecPaused": {
+          "type": "boolean"
+        },
+        "observedStatusPaused": {
+          "type": "boolean"
+        },
+        "blockingReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warningReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "afterSnapshot": {
+      "type": "object",
+      "additionalProperties": true
     }
   }
 }
