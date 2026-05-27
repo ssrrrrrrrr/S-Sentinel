@@ -79,6 +79,14 @@ RESOURCE_SPECS = [
         "id_prefix": "rar-",
     },
     {
+        "object_type": "runtimeActionRequest",
+        "glob": "runtime-action-request-*.json",
+        "latest": "runtime-action-request-latest.json",
+        "prefix": "runtime-action-request-",
+        "id_key": "runtimeActionRequestId",
+        "id_prefix": "rarq-",
+    },
+    {
         "object_type": "executionRequest",
         "glob": "execution-request-*.json",
         "latest": "execution-request-latest.json",
@@ -875,6 +883,45 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["readOnly"] = guardrails.get("readOnly")
         result["recommendationOnly"] = guardrails.get("recommendationOnly")
         result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
+
+    if object_type == "runtimeActionRequest":
+        request_body = as_dict(data.get("request"))
+        recommendation_binding = as_dict(data.get("recommendationBinding"))
+        runtime_snapshot = as_dict(data.get("runtimeSnapshot"))
+        approval = as_dict(data.get("approval"))
+        target = as_dict(data.get("target"))
+        evidence_refs = as_dict(data.get("evidenceRefs"))
+        guardrails = as_dict(data.get("guardrails"))
+
+        result["runtimeActionRequestId"] = data.get("runtimeActionRequestId")
+        result["sourceRuntimeActionRecommendationId"] = data.get("sourceRuntimeActionRecommendationId")
+        result["requestedAction"] = request_body.get("requestedAction")
+        result["requestStatus"] = request_body.get("requestStatus")
+        result["lifecycleStage"] = request_body.get("lifecycleStage")
+        result["riskLevel"] = request_body.get("riskLevel")
+        result["confidence"] = request_body.get("confidence")
+        result["approvalRequired"] = request_body.get("approvalRequired")
+        result["readyToExecute"] = request_body.get("readyToExecute")
+        result["recommendationStatus"] = recommendation_binding.get("recommendationStatus")
+        result["recommendedAction"] = recommendation_binding.get("recommendedAction")
+        result["allowedToRequest"] = recommendation_binding.get("allowedToRequest")
+        result["blockingReasons"] = recommendation_binding.get("blockingReasons") or []
+        result["approvalStatus"] = approval.get("status")
+        result["approved"] = approval.get("approved")
+        result["rolloutName"] = target.get("rolloutName")
+        result["namespace"] = target.get("namespace")
+        result["service"] = first_non_empty(target.get("service"), release.get("service"))
+        result["env"] = first_non_empty(target.get("env"), release.get("env"))
+        result["rolloutPhase"] = runtime_snapshot.get("rolloutPhase")
+        result["analysisStatus"] = runtime_snapshot.get("analysisStatus")
+        result["sourceRuntimeActionRecommendation"] = evidence_refs.get("runtimeActionRecommendation")
+        result["sourceRolloutRuntimeInspect"] = evidence_refs.get("rolloutRuntimeInspect")
+        result["sourceRolloutRuntimeInspectId"] = evidence_refs.get("sourceRolloutRuntimeInspectId")
+        result["requestOnly"] = guardrails.get("requestOnly")
+        result["readOnly"] = guardrails.get("readOnly")
+        result["willExecute"] = guardrails.get("willExecute")
+        result["doesNotPause"] = guardrails.get("doesNotPause")
         result["doesNotModifyKubernetes"] = guardrails.get("doesNotModifyKubernetes")
 
     if object_type == "policyRuntimeResult":
