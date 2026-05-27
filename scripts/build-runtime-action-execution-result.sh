@@ -163,7 +163,7 @@ elif requested_action == "ABORT_ROLLOUT":
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
 supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
-implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
+implemented_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT"}
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
     overall_gate_status = "NO_RUNTIME_EXECUTION_REQUIRED"
@@ -285,6 +285,7 @@ def build_rollout_snapshot_from_live_json(raw: str) -> dict[str, Any]:
         "name": meta.get("name") or rollout_name,
         "namespace": meta.get("namespace") or namespace,
         "phase": status.get("phase") or "Unknown",
+        "message": status.get("message"),
         "currentStepIndex": status.get("currentStepIndex"),
         "replicas": first_not_empty(status.get("replicas"), spec.get("replicas")),
         "updatedReplicas": status.get("updatedReplicas"),
@@ -295,6 +296,7 @@ def build_rollout_snapshot_from_live_json(raw: str) -> dict[str, Any]:
         "statusPaused": status_paused,
         "pauseConditions": pause_conditions,
         "degraded": status.get("phase") == "Degraded",
+        "aborted": "abort" in str(status.get("message") or status.get("phase") or "").lower(),
         "observedGeneration": status.get("observedGeneration"),
         "currentPodHash": status.get("currentPodHash"),
         "stableRS": status.get("stableRS"),
@@ -328,6 +330,7 @@ if overall_gate_status == "EXECUTION_ALLOWED":
     did_pause = completed.returncode == 0 and requested_action == "PAUSE_ROLLOUT"
     did_resume = completed.returncode == 0 and requested_action == "RESUME_ROLLOUT"
     did_promote = completed.returncode == 0 and requested_action == "PROMOTE_ROLLOUT"
+    did_abort = completed.returncode == 0 and requested_action == "ABORT_ROLLOUT"
     overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
     if completed.returncode == 0 and namespace and rollout_name:
@@ -351,6 +354,7 @@ after_snapshot = {
     "pausedAssumedFromCommandSuccess": did_pause,
     "resumedAssumedFromCommandSuccess": did_resume,
     "promotedAssumedFromCommandSuccess": did_promote,
+    "abortedAssumedFromCommandSuccess": did_abort,
     "postActionRolloutGetAttempted": post_action_rollout_get_attempted,
     "postActionRolloutGetSucceeded": post_action_rollout_get_succeeded,
     "postActionRolloutGetExitCode": post_action_rollout_get_exit_code,
@@ -383,6 +387,14 @@ promote_desired_state_observed = (
     and after_snapshot.get("degraded") is not True
     and (promote_step_advanced or promote_phase_observed)
 )
+abort_phase_observed = (
+    after_snapshot.get("phase") == "Degraded"
+    or after_snapshot.get("aborted") is True
+)
+abort_desired_state_observed = (
+    post_action_observed
+    and abort_phase_observed
+)
 
 if requested_action == "PAUSE_ROLLOUT":
     desired_state_observed = pause_desired_state_observed
@@ -390,6 +402,8 @@ elif requested_action == "RESUME_ROLLOUT":
     desired_state_observed = resume_desired_state_observed
 elif requested_action == "PROMOTE_ROLLOUT":
     desired_state_observed = promote_desired_state_observed
+elif requested_action == "ABORT_ROLLOUT":
+    desired_state_observed = abort_desired_state_observed
 else:
     desired_state_observed = False
 
@@ -407,6 +421,12 @@ resume_verified = (
 )
 promote_verified = (
     requested_action == "PROMOTE_ROLLOUT"
+    and command_succeeded
+    and post_action_observed
+    and desired_state_observed
+)
+abort_verified = (
+    requested_action == "ABORT_ROLLOUT"
     and command_succeeded
     and post_action_observed
     and desired_state_observed
@@ -433,6 +453,9 @@ elif requested_action == "RESUME_ROLLOUT" and not desired_state_observed:
 elif requested_action == "PROMOTE_ROLLOUT" and not desired_state_observed:
     verification_status = "VERIFY_FAILED"
     verification_blocking_reasons.append("promote_state_not_observed_after_action")
+elif requested_action == "ABORT_ROLLOUT" and not desired_state_observed:
+    verification_status = "VERIFY_FAILED"
+    verification_blocking_reasons.append("abort_state_not_observed_after_action")
 else:
     verification_status = "VERIFIED"
 
@@ -446,8 +469,11 @@ post_action_verification = {
     "pauseVerified": pause_verified,
     "resumeVerified": resume_verified,
     "promoteVerified": promote_verified,
+    "abortVerified": abort_verified,
     "promoteStepAdvanced": promote_step_advanced,
     "promotePhaseObserved": promote_phase_observed,
+    "abortPhaseObserved": abort_phase_observed,
+    "observedAborted": after_snapshot.get("aborted") is True,
     "expectedPaused": False if requested_action == "RESUME_ROLLOUT" else requested_action == "PAUSE_ROLLOUT",
     "observedPaused": observed_paused,
     "observedSpecPaused": observed_spec_paused,
@@ -539,6 +565,7 @@ doc = {
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
         "promoteVerified": promote_verified,
+        "abortVerified": abort_verified,
         "postActionObserved": post_action_observed,
         "desiredStateObserved": desired_state_observed,
         "didPause": did_pause,
@@ -572,6 +599,7 @@ doc = {
         "pauseVerified": pause_verified,
         "resumeVerified": resume_verified,
         "promoteVerified": promote_verified,
+        "abortVerified": abort_verified,
         "attemptedModifyKubernetes": attempted_kubernetes_mutation,
         "didModifyKubernetes": mutated_kubernetes,
         "didModifyGitOps": False,
@@ -591,7 +619,7 @@ doc = {
         "readOnly": not executed,
         "dryRunOnly": not executed,
         "willExecute": executed,
-        "postActionVerified": pause_verified or resume_verified or promote_verified,
+        "postActionVerified": pause_verified or resume_verified or promote_verified or abort_verified,
         "doesNotPause": not did_pause,
         "doesNotResume": not did_resume,
         "doesNotPromote": not did_promote,
