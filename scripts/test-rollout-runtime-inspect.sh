@@ -12,6 +12,7 @@ rm -f "$DB_PATH"
 mkdir -p "$TMP_DIR"
 
 echo "===== build rollout runtime inspect fixture ====="
+S_SENTINEL_ROLLOUT_INSPECT_MODE="fixture" \
 S_SENTINEL_RELEASE_ID="runtime-inspect-smoke" \
 S_SENTINEL_SERVICE="demo-app" \
 S_SENTINEL_ENV="dev" \
@@ -30,6 +31,7 @@ p = Path(".tmp/test-rollout-runtime-inspect/rollout-runtime-inspect-runtime-insp
 data = json.loads(p.read_text())
 
 assert data["schemaVersion"] == "runtime.rollout.inspect/v1alpha1", data
+assert data["mode"] == "fixture_rollout_runtime_inspect", data
 assert data["rolloutRuntimeInspectId"] == "rti-runtime-inspect-smoke", data
 assert data["target"]["rolloutName"] == "demo-app", data
 assert data["rollout"]["phase"] == "Progressing", data
