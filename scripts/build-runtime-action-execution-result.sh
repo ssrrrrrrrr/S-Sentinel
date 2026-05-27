@@ -16,9 +16,11 @@ Environment:
   S_SENTINEL_RUNTIME_EXECUTION_ENABLED          Global execution gate.
   S_SENTINEL_ALLOW_RUNTIME_PAUSE                PAUSE_ROLLOUT operation gate.
   S_SENTINEL_ALLOW_RUNTIME_RESUME               RESUME_ROLLOUT operation gate.
+  S_SENTINEL_ALLOW_RUNTIME_PROMOTE              PROMOTE_ROLLOUT operation gate.
   S_SENTINEL_RUNTIME_ACTION_APPROVED            Approval gate.
   S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit pause execution switch.
   S_SENTINEL_RUNTIME_RESUME_EXECUTE             Final explicit resume execution switch.
+  S_SENTINEL_RUNTIME_PROMOTE_EXECUTE            Final explicit promote execution switch.
 
 Behavior:
   - Reads runtime-action-preflight-*.json.
@@ -131,6 +133,7 @@ preflight_passed = (
 global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
 pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
 resume_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_RESUME")
+promote_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PROMOTE")
 approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
 
 operation_gate_env = None
@@ -145,6 +148,10 @@ elif requested_action == "RESUME_ROLLOUT":
     operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_RESUME"
     operation_gate_enabled = resume_gate_enabled
     final_execute_env = "S_SENTINEL_RUNTIME_RESUME_EXECUTE"
+elif requested_action == "PROMOTE_ROLLOUT":
+    operation_gate_env = "S_SENTINEL_ALLOW_RUNTIME_PROMOTE"
+    operation_gate_enabled = promote_gate_enabled
+    final_execute_env = "S_SENTINEL_RUNTIME_PROMOTE_EXECUTE"
 
 final_execute_enabled = env_enabled(final_execute_env) if final_execute_env else False
 supported_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT"}
