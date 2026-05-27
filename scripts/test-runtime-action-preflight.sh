@@ -60,6 +60,60 @@ echo "===== build pause preflight ====="
 RUNTIME_ACTION_PREFLIGHT_OUTPUT_DIR="$TMP_DIR" \
 bash scripts/build-runtime-action-preflight.sh "$TMP_DIR/runtime-action-request-runtime-action-pause-preflight-smoke.json"
 
+echo "===== create contract-only resume recommendation/request ====="
+cat > "$TMP_DIR/runtime-action-recommendation-runtime-action-resume-preflight-smoke.json" <<'JSON'
+{
+  "schemaVersion": "runtime.action.recommendation/v1alpha1",
+  "runtimeActionRecommendationId": "rar-runtime-action-resume-preflight-smoke",
+  "generatedBy": "test-runtime-action-preflight.sh",
+  "release": {
+    "releaseId": "runtime-action-resume-preflight-smoke",
+    "service": "demo-app",
+    "namespace": "slo-rollout",
+    "env": "dev"
+  },
+  "target": {
+    "cluster": "local-dev",
+    "namespace": "slo-rollout",
+    "rolloutName": "demo-app",
+    "service": "demo-app",
+    "env": "dev"
+  },
+  "recommendation": {
+    "recommendationStatus": "ACTION_RECOMMENDED",
+    "recommendedAction": "RESUME_ROLLOUT",
+    "riskLevel": "medium",
+    "confidence": "medium",
+    "approvalRequired": true,
+    "reasons": ["rollout_paused_resume_requested"],
+    "summary": "Contract-only resume action recommendation fixture."
+  },
+  "runtimeSnapshot": {
+    "rolloutPhase": "Paused",
+    "analysisStatus": "Unknown",
+    "paused": true
+  },
+  "evidenceRefs": {
+    "rolloutRuntimeInspect": "rollout-runtime-inspect-runtime-action-resume-preflight-smoke.json",
+    "sourceRolloutRuntimeInspectId": "rti-runtime-action-resume-preflight-smoke"
+  },
+  "guardrails": {
+    "readOnly": true,
+    "recommendationOnly": true,
+    "willExecute": false,
+    "doesNotModifyKubernetes": true
+  }
+}
+JSON
+
+RUNTIME_ACTION_REQUEST_OUTPUT_DIR="$TMP_DIR" \
+REQUESTED_BY="test-runtime-controller" \
+bash scripts/build-runtime-action-request.sh "$TMP_DIR/runtime-action-recommendation-runtime-action-resume-preflight-smoke.json"
+
+echo "===== build contract-only resume preflight ====="
+RUNTIME_ACTION_PREFLIGHT_OUTPUT_DIR="$TMP_DIR" \
+bash scripts/build-runtime-action-preflight.sh "$TMP_DIR/runtime-action-request-runtime-action-resume-preflight-smoke.json"
+
 echo "===== assert runtime action preflights ====="
 python3 - <<'PY'
 import json
@@ -67,6 +121,7 @@ from pathlib import Path
 
 review = json.loads(Path(".tmp/test-runtime-action-preflight/runtime-action-preflight-runtime-action-review-preflight-smoke.json").read_text())
 pause = json.loads(Path(".tmp/test-runtime-action-preflight/runtime-action-preflight-runtime-action-pause-preflight-smoke.json").read_text())
+resume = json.loads(Path(".tmp/test-runtime-action-preflight/runtime-action-preflight-runtime-action-resume-preflight-smoke.json").read_text())
 
 assert review["schemaVersion"] == "runtime.action.preflight/v1alpha1", review
 assert review["runtimeActionPreflightId"] == "rap-runtime-action-review-preflight-smoke", review
@@ -105,6 +160,25 @@ assert pause["guardrails"]["preflightOnly"] is True, pause
 assert pause["guardrails"]["willExecute"] is False, pause
 assert pause["guardrails"]["doesNotPause"] is True, pause
 assert pause["guardrails"]["doesNotModifyKubernetes"] is True, pause
+
+assert resume["runtimeActionPreflightId"] == "rap-runtime-action-resume-preflight-smoke", resume
+assert resume["sourceRuntimeActionRequestId"] == "rarq-runtime-action-resume-preflight-smoke", resume
+assert resume["request"]["requestedAction"] == "RESUME_ROLLOUT", resume
+assert resume["request"]["requestStatus"] == "PENDING_APPROVAL", resume
+assert resume["preflight"]["preflightStatus"] == "BLOCKED", resume
+assert resume["preflight"]["eligibilityStatus"] == "NOT_ELIGIBLE", resume
+assert "resume_runtime_action_contract_only" in resume["preflight"]["blockingReasons"], resume
+assert resume["runtimeSnapshot"]["rolloutPhase"] == "Paused", resume
+assert resume["evidenceRefs"]["sourceRuntimeActionRequestId"] == "rarq-runtime-action-resume-preflight-smoke", resume
+assert resume["evidenceRefs"]["sourceRuntimeActionRecommendationId"] == "rar-runtime-action-resume-preflight-smoke", resume
+assert resume["evidenceRefs"]["sourceRolloutRuntimeInspectId"] == "rti-runtime-action-resume-preflight-smoke", resume
+assert resume["preflight"]["eligibleForExecution"] is False, resume
+assert resume["preflight"]["readyToExecute"] is False, resume
+assert resume["preflight"]["willExecute"] is False, resume
+assert resume["guardrails"]["preflightOnly"] is True, resume
+assert resume["guardrails"]["willExecute"] is False, resume
+assert resume["guardrails"]["doesNotPause"] is True, resume
+assert resume["guardrails"]["doesNotModifyKubernetes"] is True, resume
 
 print("PASS runtime action preflight")
 PY

@@ -150,10 +150,13 @@ blocking_reasons = unique_strings(as_list(binding.get("blockingReasons")))
 approval_reasons: list[str] = []
 warning_reasons: list[str] = []
 
-supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT"}
+supported_actions = {"NOOP", "REQUIRE_REVIEW", "PAUSE_ROLLOUT", "RESUME_ROLLOUT"}
 
 if requested_action not in supported_actions:
     blocking_reasons.append("unsupported_runtime_action")
+
+if requested_action == "RESUME_ROLLOUT":
+    blocking_reasons.append("resume_runtime_action_contract_only")
 
 if not allowed_to_request and requested_action not in {"NOOP"}:
     blocking_reasons.append("request_not_allowed_by_recommendation")

@@ -50,7 +50,8 @@
           "enum": [
             "NOOP",
             "REQUIRE_REVIEW",
-            "PAUSE_ROLLOUT"
+            "PAUSE_ROLLOUT",
+            "RESUME_ROLLOUT"
           ]
         },
         "riskLevel": {

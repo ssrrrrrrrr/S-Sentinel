@@ -75,7 +75,8 @@
           "enum": [
             "NOOP",
             "REQUIRE_REVIEW",
-            "PAUSE_ROLLOUT"
+            "PAUSE_ROLLOUT",
+            "RESUME_ROLLOUT"
           ]
         },
         "commandWillExecute": {
@@ -102,7 +103,10 @@
       ],
       "properties": {
         "operation": {
-          "const": "PAUSE_ROLLOUT"
+          "enum": [
+            "PAUSE_ROLLOUT",
+            "RESUME_ROLLOUT"
+          ]
         },
         "overallGateStatus": {
           "type": "string",
@@ -225,7 +229,8 @@
           "enum": [
             "NOOP",
             "REQUIRE_REVIEW",
-            "PAUSE_ROLLOUT"
+            "PAUSE_ROLLOUT",
+            "RESUME_ROLLOUT"
           ]
         },
         "commandSucceeded": {

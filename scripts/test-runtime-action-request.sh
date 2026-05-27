@@ -56,6 +56,57 @@ RUNTIME_ACTION_REQUEST_OUTPUT_DIR="$TMP_DIR" \
 REQUESTED_BY="test-runtime-controller" \
 bash scripts/build-runtime-action-request.sh "$TMP_DIR/runtime-action-recommendation-runtime-action-pause-request-smoke.json"
 
+echo "===== create contract-only resume recommendation ====="
+cat > "$TMP_DIR/runtime-action-recommendation-runtime-action-resume-request-smoke.json" <<'JSON'
+{
+  "schemaVersion": "runtime.action.recommendation/v1alpha1",
+  "runtimeActionRecommendationId": "rar-runtime-action-resume-request-smoke",
+  "generatedBy": "test-runtime-action-request.sh",
+  "release": {
+    "releaseId": "runtime-action-resume-request-smoke",
+    "service": "demo-app",
+    "namespace": "slo-rollout",
+    "env": "dev"
+  },
+  "target": {
+    "cluster": "local-dev",
+    "namespace": "slo-rollout",
+    "rolloutName": "demo-app",
+    "service": "demo-app",
+    "env": "dev"
+  },
+  "recommendation": {
+    "recommendationStatus": "ACTION_RECOMMENDED",
+    "recommendedAction": "RESUME_ROLLOUT",
+    "riskLevel": "medium",
+    "confidence": "medium",
+    "approvalRequired": true,
+    "reasons": ["rollout_paused_resume_requested"],
+    "summary": "Contract-only resume action recommendation fixture."
+  },
+  "runtimeSnapshot": {
+    "rolloutPhase": "Paused",
+    "analysisStatus": "Unknown",
+    "paused": true
+  },
+  "evidenceRefs": {
+    "rolloutRuntimeInspect": "rollout-runtime-inspect-runtime-action-resume-request-smoke.json",
+    "sourceRolloutRuntimeInspectId": "rti-runtime-action-resume-request-smoke"
+  },
+  "guardrails": {
+    "readOnly": true,
+    "recommendationOnly": true,
+    "willExecute": false,
+    "doesNotModifyKubernetes": true
+  }
+}
+JSON
+
+echo "===== build contract-only resume request ====="
+RUNTIME_ACTION_REQUEST_OUTPUT_DIR="$TMP_DIR" \
+REQUESTED_BY="test-runtime-controller" \
+bash scripts/build-runtime-action-request.sh "$TMP_DIR/runtime-action-recommendation-runtime-action-resume-request-smoke.json"
+
 echo "===== assert runtime action requests ====="
 python3 - <<'PY'
 import json
@@ -63,6 +114,7 @@ from pathlib import Path
 
 review = json.loads(Path(".tmp/test-runtime-action-request/runtime-action-request-runtime-action-review-request-smoke.json").read_text())
 pause = json.loads(Path(".tmp/test-runtime-action-request/runtime-action-request-runtime-action-pause-request-smoke.json").read_text())
+resume = json.loads(Path(".tmp/test-runtime-action-request/runtime-action-request-runtime-action-resume-request-smoke.json").read_text())
 
 assert review["schemaVersion"] == "runtime.action.request/v1alpha1", review
 assert review["runtimeActionRequestId"] == "rarq-runtime-action-review-request-smoke", review
@@ -106,6 +158,28 @@ assert pause["guardrails"]["requestOnly"] is True, pause
 assert pause["guardrails"]["willExecute"] is False, pause
 assert pause["guardrails"]["doesNotPause"] is True, pause
 assert pause["guardrails"]["doesNotModifyKubernetes"] is True, pause
+
+assert resume["runtimeActionRequestId"] == "rarq-runtime-action-resume-request-smoke", resume
+assert resume["request"]["requestedAction"] == "RESUME_ROLLOUT", resume
+assert resume["request"]["requestStatus"] == "PENDING_APPROVAL", resume
+assert resume["request"]["lifecycleStage"] == "WAITING_APPROVAL", resume
+assert resume["request"]["riskLevel"] == "medium", resume
+assert resume["request"]["approvalRequired"] is True, resume
+assert resume["request"]["readyToExecute"] is False, resume
+assert resume["request"]["willExecute"] is False, resume
+assert resume["recommendationBinding"]["recommendationStatus"] == "ACTION_RECOMMENDED", resume
+assert resume["recommendationBinding"]["recommendedAction"] == "RESUME_ROLLOUT", resume
+assert resume["recommendationBinding"]["allowedToRequest"] is True, resume
+assert resume["runtimeSnapshot"]["rolloutPhase"] == "Paused", resume
+assert resume["evidenceRefs"]["sourceRuntimeActionRecommendationId"] == "rar-runtime-action-resume-request-smoke", resume
+assert resume["evidenceRefs"]["sourceRolloutRuntimeInspectId"] == "rti-runtime-action-resume-request-smoke", resume
+assert resume["approval"]["status"] == "NOT_APPROVED", resume
+assert resume["approval"]["approved"] is False, resume
+assert resume["approval"]["readyToExecute"] is False, resume
+assert resume["guardrails"]["requestOnly"] is True, resume
+assert resume["guardrails"]["willExecute"] is False, resume
+assert resume["guardrails"]["doesNotPause"] is True, resume
+assert resume["guardrails"]["doesNotModifyKubernetes"] is True, resume
 
 print("PASS runtime action request")
 PY

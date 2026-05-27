@@ -126,9 +126,9 @@ def derive_request(
             "blockingReasons": [],
         }
 
-    if recommended_action == "PAUSE_ROLLOUT":
+    if recommended_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"}:
         return {
-            "requestedAction": "PAUSE_ROLLOUT",
+            "requestedAction": recommended_action,
             "requestStatus": "PENDING_APPROVAL" if approval_required else "READY_FOR_PREFLIGHT",
             "lifecycleStage": "WAITING_APPROVAL" if approval_required else "READY_FOR_PREFLIGHT",
             "approvalRequired": bool(approval_required or risk_level in {"high", "critical"}),
