@@ -100,16 +100,46 @@ func TestRuntimeActionExecutionResultEvidenceStoreAndPortalLatestResource(t *tes
     "rolloutPhase": "Degraded",
     "analysisStatus": "Failed"
   },
+  "afterSnapshot": {
+    "observationMode": "live_readonly_rollout_get_after_action",
+    "postActionRolloutGetAttempted": true,
+    "postActionRolloutGetSucceeded": true,
+    "paused": true,
+    "specPaused": true,
+    "statusPaused": false,
+    "phase": "Degraded"
+  },
+  "postActionVerification": {
+    "verificationType": "runtime_action_post_action_verification",
+    "verificationStatus": "VERIFIED",
+    "requestedAction": "PAUSE_ROLLOUT",
+    "commandSucceeded": true,
+    "postActionObserved": true,
+    "desiredStateObserved": true,
+    "pauseVerified": true,
+    "expectedPaused": true,
+    "observedPaused": true,
+    "observedSpecPaused": true,
+    "observedStatusPaused": false,
+    "blockingReasons": [],
+    "warningReasons": []
+  },
   "result": {
     "requestedAction": "PAUSE_ROLLOUT",
     "actionStatus": "EXECUTION_SUCCEEDED",
     "executionStatus": "SUCCEEDED",
+    "verificationStatus": "VERIFIED",
+    "pauseVerified": true,
+    "postActionObserved": true,
+    "desiredStateObserved": true,
     "didPause": true,
     "attemptedKubernetesMutation": true,
     "mutatedKubernetes": true,
     "mutatedGitOps": false
   },
   "receipt": {
+    "verificationStatus": "VERIFIED",
+    "pauseVerified": true,
     "didModifyKubernetes": true,
     "didModifyGitOps": false
   },
@@ -125,6 +155,7 @@ func TestRuntimeActionExecutionResultEvidenceStoreAndPortalLatestResource(t *tes
   },
   "guardrails": {
     "willExecute": true,
+    "postActionVerified": true,
     "doesNotModifyGitOps": true
   }
 }`
@@ -145,6 +176,11 @@ func TestRuntimeActionExecutionResultEvidenceStoreAndPortalLatestResource(t *tes
 	requireB4NestedString(t, latestResult, "action", "requestedAction", "PAUSE_ROLLOUT")
 	requireB4NestedString(t, latestResult, "action", "actionStatus", "EXECUTION_SUCCEEDED")
 	requireB4NestedString(t, latestResult, "result", "executionStatus", "SUCCEEDED")
+	requireB4NestedString(t, latestResult, "result", "verificationStatus", "VERIFIED")
+	requireB4NestedString(t, latestResult, "postActionVerification", "verificationStatus", "VERIFIED")
+	requireB4JSONContains(t, latestResult, "pauseVerified")
+	requireB4JSONContains(t, latestResult, "postActionObserved")
+	requireB4JSONContains(t, latestResult, "live_readonly_rollout_get_after_action")
 
 	refresh := callB4PortalJSON(t, api.handleEvidenceStoreRefresh, http.MethodPost, "/api/evidence-store/refresh", http.StatusOK)
 	requireB4String(t, refresh, "schemaVersion", "evidence.store.refresh/v1alpha1")
@@ -156,9 +192,17 @@ func TestRuntimeActionExecutionResultEvidenceStoreAndPortalLatestResource(t *tes
 	requireB4JSONContains(t, resultObject, "EXECUTION_SUCCEEDED")
 	requireB4JSONContains(t, resultObject, "kubectl_patch_rollout_spec_paused")
 	requireB4JSONContains(t, resultObject, "mutatedKubernetes")
+	requireB4JSONContains(t, resultObject, "verificationStatus")
+	requireB4JSONContains(t, resultObject, "VERIFIED")
+	requireB4JSONContains(t, resultObject, "pauseVerified")
+	requireB4JSONContains(t, resultObject, "postActionObserved")
+	requireB4JSONContains(t, resultObject, "live_readonly_rollout_get_after_action")
 
 	releaseDetail := callB4PortalJSON(t, api.handleEvidenceStoreReleaseDetail, http.MethodGet, "/api/evidence/releases/"+releaseID+"?includeRaw=true", http.StatusOK)
 	requireB4String(t, releaseDetail, "schemaVersion", "evidence.store.release/v1alpha1")
 	requireB4JSONContains(t, releaseDetail, "runtimeActionExecutionResult")
 	requireB4JSONContains(t, releaseDetail, resultID)
+	requireB4JSONContains(t, releaseDetail, "verificationStatus")
+	requireB4JSONContains(t, releaseDetail, "VERIFIED")
+	requireB4JSONContains(t, releaseDetail, "pauseVerified")
 }
