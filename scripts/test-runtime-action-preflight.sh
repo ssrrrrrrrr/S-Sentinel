@@ -165,9 +165,10 @@ assert resume["runtimeActionPreflightId"] == "rap-runtime-action-resume-prefligh
 assert resume["sourceRuntimeActionRequestId"] == "rarq-runtime-action-resume-preflight-smoke", resume
 assert resume["request"]["requestedAction"] == "RESUME_ROLLOUT", resume
 assert resume["request"]["requestStatus"] == "PENDING_APPROVAL", resume
-assert resume["preflight"]["preflightStatus"] == "BLOCKED", resume
+assert resume["preflight"]["preflightStatus"] == "WAITING_APPROVAL", resume
 assert resume["preflight"]["eligibilityStatus"] == "NOT_ELIGIBLE", resume
-assert "resume_runtime_action_contract_only" in resume["preflight"]["blockingReasons"], resume
+assert resume["preflight"]["blockingReasons"] == [], resume
+assert "human_approval_required" in resume["preflight"]["approvalReasons"], resume
 assert resume["runtimeSnapshot"]["rolloutPhase"] == "Paused", resume
 assert resume["evidenceRefs"]["sourceRuntimeActionRequestId"] == "rarq-runtime-action-resume-preflight-smoke", resume
 assert resume["evidenceRefs"]["sourceRuntimeActionRecommendationId"] == "rar-runtime-action-resume-preflight-smoke", resume
