@@ -125,6 +125,7 @@ func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	mux.HandleFunc("/api/releases/latest/runtime-action-recommendation", api.handleLatestResource("runtimeActionRecommendation"))
 	mux.HandleFunc("/api/releases/latest/runtime-action-request", api.handleLatestResource("runtimeActionRequest"))
 	mux.HandleFunc("/api/releases/latest/runtime-action-preflight", api.handleLatestResource("runtimeActionPreflight"))
+	mux.HandleFunc("/api/releases/latest/runtime-action-execution-result", api.handleLatestResource("runtimeActionExecutionResult"))
 	mux.HandleFunc("/api/releases/latest/gitops-proposal", api.handleLatestResource("gitopsPatchProposal"))
 	mux.HandleFunc("/api/releases/latest/gitops-bundle", api.handleLatestResource("gitopsPRBundle"))
 	mux.HandleFunc("/api/releases/latest/gitops-handoff", api.handleLatestResource("gitopsHandoffBundle"))
@@ -257,6 +258,14 @@ func portalResourceDefs() []portalResourceDef {
 			FallbackGlob: "runtime-action-preflight-*.json",
 			ContentType:  "application/json; charset=utf-8",
 			Description:  "Latest read-only runtime action preflight assessment.",
+		},
+		{
+			Name:         "runtimeActionExecutionResult",
+			Endpoint:     "/api/releases/latest/runtime-action-execution-result",
+			Candidates:   []string{"runtime-action-execution-result-latest.json"},
+			FallbackGlob: "runtime-action-execution-result-*.json",
+			ContentType:  "application/json; charset=utf-8",
+			Description:  "Latest controlled runtime action execution result.",
 		},
 		{
 			Name:         "gitopsPatchProposal",
@@ -1199,6 +1208,8 @@ func portalResourceKindFromPathSegment(resourceName string) (string, string, boo
 		return "runtimeActionRequest", "application/json; charset=utf-8", true
 	case "runtime-action-preflight":
 		return "runtimeActionPreflight", "application/json; charset=utf-8", true
+	case "runtime-action-execution-result":
+		return "runtimeActionExecutionResult", "application/json; charset=utf-8", true
 	case "gitops-real-pr-plan":
 		return "gitopsRealPRPlan", "application/json; charset=utf-8", true
 	case "gitops-real-pr-workspace":
@@ -1278,6 +1289,7 @@ func availablePortalResourceNames(group *portalReleaseGroup) []string {
 		"runtimeActionRecommendation":     "runtime-action-recommendation",
 		"runtimeActionRequest":            "runtime-action-request",
 		"runtimeActionPreflight":          "runtime-action-preflight",
+		"runtimeActionExecutionResult":    "runtime-action-execution-result",
 		"gitopsRealPRPlan":                "gitops-real-pr-plan",
 		"gitopsRealPRWorkspace":           "gitops-real-pr-workspace",
 		"gitopsRealPRMaterialization":     "gitops-real-pr-materialization",
@@ -1634,6 +1646,7 @@ func releaseIDFromReportFile(base string) string {
 		"runtime-action-recommendation-",
 		"runtime-action-request-",
 		"runtime-action-preflight-",
+		"runtime-action-execution-result-",
 		"gitops-patch-proposal-",
 		"gitops-pr-bundle-",
 		"gitops-handoff-bundle-",
@@ -1890,6 +1903,8 @@ func kindFromReportFile(base string) string {
 		return "runtimeActionRequest"
 	case strings.HasPrefix(base, "runtime-action-preflight-"):
 		return "runtimeActionPreflight"
+	case strings.HasPrefix(base, "runtime-action-execution-result-"):
+		return "runtimeActionExecutionResult"
 	case strings.HasPrefix(base, "gitops-real-pr-file-materialization-"):
 		return "gitopsRealPRFileMaterialization"
 	case strings.HasPrefix(base, "gitops-real-pr-create-preflight-"):
