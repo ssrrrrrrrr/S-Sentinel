@@ -13,14 +13,18 @@ Usage:
 Environment:
   RELEASE_REPORT_DIR                            Optional report directory.
   RUNTIME_ACTION_EXECUTION_RESULT_OUTPUT_DIR    Optional output directory.
-  S_SENTINEL_RUNTIME_EXECUTION_ENABLED          Future global execution gate.
-  S_SENTINEL_ALLOW_RUNTIME_PAUSE                Future PAUSE_ROLLOUT operation gate.
+  S_SENTINEL_RUNTIME_EXECUTION_ENABLED          Global execution gate.
+  S_SENTINEL_ALLOW_RUNTIME_PAUSE                PAUSE_ROLLOUT operation gate.
+  S_SENTINEL_RUNTIME_ACTION_APPROVED            Approval gate.
+  S_SENTINEL_RUNTIME_PAUSE_EXECUTE              Final explicit execution switch.
 
 Behavior:
   - Reads runtime-action-preflight-*.json.
   - Generates runtime-action-execution-result-*.json and runtime-action-execution-result-latest.json.
   - Records a controlled runtime action execution result / receipt.
-  - E5-1 contract mode never mutates Kubernetes, never pauses, never resumes, never promotes, never aborts, never rolls back, never writes GitOps, never commits, and never pushes.
+  - Default mode records evidence only.
+  - Real PAUSE_ROLLOUT execution requires all explicit gates.
+  - Only PAUSE_ROLLOUT is supported; resume, promote, abort, rollback, GitOps writes, commits, and pushes are not supported.
 USAGE
 }
 
@@ -65,6 +69,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -122,6 +127,8 @@ preflight_passed = (
 
 global_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_EXECUTION_ENABLED")
 pause_gate_enabled = env_enabled("S_SENTINEL_ALLOW_RUNTIME_PAUSE")
+approval_gate_enabled = env_enabled("S_SENTINEL_RUNTIME_ACTION_APPROVED")
+final_execute_enabled = env_enabled("S_SENTINEL_RUNTIME_PAUSE_EXECUTE")
 supported_action = requested_action == "PAUSE_ROLLOUT"
 
 if requested_action in {"NOOP", "REQUIRE_REVIEW"}:
@@ -134,11 +141,47 @@ elif not global_gate_enabled:
     overall_gate_status = "BLOCKED_BY_GLOBAL_GATE"
 elif not pause_gate_enabled:
     overall_gate_status = "BLOCKED_BY_OPERATION_GATE"
+elif not approval_gate_enabled:
+    overall_gate_status = "BLOCKED_BY_APPROVAL_GATE"
+elif not final_execute_enabled:
+    overall_gate_status = "READY_BUT_NOT_EXECUTED_FINAL_SWITCH_OFF"
 else:
-    overall_gate_status = "READY_BUT_NOT_EXECUTED_IN_CONTRACT_MODE"
+    overall_gate_status = "EXECUTION_ALLOWED"
 
 rollout_name = target.get("rolloutName")
 namespace = target.get("namespace")
+
+command_args = [
+    "kubectl",
+    "argo",
+    "rollouts",
+    "pause",
+    str(rollout_name or ""),
+    "-n",
+    str(namespace or ""),
+]
+
+command_started_at = None
+command_finished_at = None
+command_exit_code = None
+command_stdout = None
+command_stderr = None
+executed = False
+
+if overall_gate_status == "EXECUTION_ALLOWED":
+    command_started_at = now()
+    completed = subprocess.run(
+        command_args,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    command_finished_at = now()
+    command_exit_code = completed.returncode
+    command_stdout = completed.stdout
+    command_stderr = completed.stderr
+    executed = True
+    overall_gate_status = "EXECUTION_SUCCEEDED" if completed.returncode == 0 else "EXECUTION_FAILED"
 
 doc = {
     "schemaVersion": "runtime.action.execution.result/v1alpha1",
@@ -165,14 +208,14 @@ doc = {
     },
     "executor": {
         "executorName": "runtime-pause-executor",
-        "executorType": "contract_fixture",
+        "executorType": "controlled_runtime_executor",
         "adapter": "runtime-pause",
         "adapterType": "local-script",
-        "contractMode": True,
-        "dryRunOnly": True,
-        "readOnly": True,
-        "willExecute": False,
-        "mutatesKubernetes": False,
+        "contractMode": False,
+        "dryRunOnly": not executed,
+        "readOnly": not executed,
+        "willExecute": executed,
+        "mutatesKubernetes": executed,
         "mutatesGitOps": False,
         "emitsExecutionEvidence": True,
     },
@@ -180,16 +223,13 @@ doc = {
         "requestedAction": requested_action,
         "supportedAction": supported_action,
         "actionStatus": overall_gate_status,
-        "commandPreviewArgs": [
-            "kubectl",
-            "argo",
-            "rollouts",
-            "pause",
-            str(rollout_name or ""),
-            "-n",
-            str(namespace or ""),
-        ],
-        "commandWillExecute": False,
+        "commandPreviewArgs": command_args,
+        "commandStartedAt": command_started_at,
+        "commandFinishedAt": command_finished_at,
+        "commandExitCode": command_exit_code,
+        "commandStdout": command_stdout,
+        "commandStderr": command_stderr,
+        "commandWillExecute": executed,
     },
     "writeGate": {
         "preflightRequired": True,
@@ -200,26 +240,34 @@ doc = {
         "globalGateEnabled": global_gate_enabled,
         "operationGateEnv": "S_SENTINEL_ALLOW_RUNTIME_PAUSE",
         "operationGateEnabled": pause_gate_enabled,
+        "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
+        "approvalGateEnabled": approval_gate_enabled,
+        "finalExecuteEnv": "S_SENTINEL_RUNTIME_PAUSE_EXECUTE",
+        "finalExecuteEnabled": final_execute_enabled,
         "operation": "PAUSE_ROLLOUT",
         "overallGateStatus": overall_gate_status,
-        "writeAllowed": False,
-        "willExecute": False,
+        "writeAllowed": executed,
+        "willExecute": executed,
     },
     "beforeSnapshot": runtime_snapshot,
-    "afterSnapshot": None,
+    "afterSnapshot": {
+        "observationMode": "command_result_only" if executed else "not_executed",
+        "commandExitCode": command_exit_code,
+        "pausedAssumedFromCommandSuccess": True if executed and command_exit_code == 0 else False,
+    },
     "result": {
-        "executionStatus": "NOT_EXECUTED",
+        "executionStatus": "SUCCEEDED" if executed and command_exit_code == 0 else ("FAILED" if executed else "NOT_EXECUTED"),
         "actionStatus": overall_gate_status,
         "requestedAction": requested_action,
-        "didPause": False,
+        "didPause": True if executed and command_exit_code == 0 else False,
         "didResume": False,
         "didPromote": False,
         "didAbort": False,
         "didRollback": False,
-        "mutatedKubernetes": False,
+        "mutatedKubernetes": executed,
         "mutatedGitOps": False,
-        "readyForExecutor": False,
-        "willExecute": False,
+        "readyForExecutor": overall_gate_status in {"EXECUTION_ALLOWED", "EXECUTION_SUCCEEDED"},
+        "willExecute": executed,
         "summary": f"Runtime action execution result recorded {overall_gate_status} for {requested_action}; no runtime mutation was performed.",
     },
     "receipt": {
@@ -228,8 +276,8 @@ doc = {
         "wroteEvidence": True,
         "sourceRuntimeActionPreflight": str(input_path),
         "resultArtifact": str(output_json),
-        "didPause": False,
-        "didModifyKubernetes": False,
+        "didPause": True if executed and command_exit_code == 0 else False,
+        "didModifyKubernetes": executed,
         "didModifyGitOps": False,
     },
     "evidenceRefs": {
@@ -243,16 +291,16 @@ doc = {
         "sourceRolloutRuntimeInspectId": evidence_refs.get("sourceRolloutRuntimeInspectId"),
     },
     "guardrails": {
-        "contractOnly": True,
-        "readOnly": True,
-        "dryRunOnly": True,
-        "willExecute": False,
-        "doesNotPause": True,
+        "contractOnly": False,
+        "readOnly": not executed,
+        "dryRunOnly": not executed,
+        "willExecute": executed,
+        "doesNotPause": not executed,
         "doesNotResume": True,
         "doesNotPromote": True,
         "doesNotAbort": True,
         "doesNotRollback": True,
-        "doesNotModifyKubernetes": True,
+        "doesNotModifyKubernetes": not executed,
         "doesNotModifyGitOps": True,
         "doesNotCommitOrPush": True,
         "sourcePreflightWillExecute": source_guardrails.get("willExecute"),
@@ -270,7 +318,7 @@ print(json.dumps({
     "requestedAction": requested_action,
     "overallGateStatus": overall_gate_status,
     "executionStatus": doc["result"]["executionStatus"],
-    "didPause": False,
-    "willExecute": False,
+    "didPause": True if executed and command_exit_code == 0 else False,
+    "willExecute": executed,
 }, indent=2))
 PY

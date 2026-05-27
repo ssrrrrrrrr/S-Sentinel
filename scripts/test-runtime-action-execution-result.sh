@@ -70,7 +70,7 @@ assert doc["target"]["namespace"] == "slo-rollout", doc
 assert doc["target"]["rolloutName"] == "demo-app", doc
 
 assert doc["executor"]["executorName"] == "runtime-pause-executor", doc
-assert doc["executor"]["executorType"] == "contract_fixture", doc
+assert doc["executor"]["executorType"] == "controlled_runtime_executor", doc
 assert doc["executor"]["dryRunOnly"] is True, doc
 assert doc["executor"]["readOnly"] is True, doc
 assert doc["executor"]["willExecute"] is False, doc
@@ -96,7 +96,9 @@ assert doc["writeGate"]["willExecute"] is False, doc
 
 assert doc["beforeSnapshot"]["rolloutPhase"] == "Degraded", doc
 assert doc["beforeSnapshot"]["analysisStatus"] == "Failed", doc
-assert doc["afterSnapshot"] is None, doc
+assert doc["afterSnapshot"]["observationMode"] == "not_executed", doc
+assert doc["afterSnapshot"]["commandExitCode"] is None, doc
+assert doc["afterSnapshot"]["pausedAssumedFromCommandSuccess"] is False, doc
 
 assert doc["result"]["executionStatus"] == "NOT_EXECUTED", doc
 assert doc["result"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
@@ -123,7 +125,7 @@ assert doc["evidenceRefs"]["sourceRuntimeActionRequestId"] == "rarq-" + release_
 assert doc["evidenceRefs"]["sourceRuntimeActionRecommendationId"] == "rar-" + release_id, doc
 assert doc["evidenceRefs"]["sourceRolloutRuntimeInspectId"] == "rti-" + release_id, doc
 
-assert doc["guardrails"]["contractOnly"] is True, doc
+assert doc["guardrails"]["contractOnly"] is False, doc
 assert doc["guardrails"]["readOnly"] is True, doc
 assert doc["guardrails"]["dryRunOnly"] is True, doc
 assert doc["guardrails"]["willExecute"] is False, doc
