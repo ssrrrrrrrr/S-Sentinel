@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s-sentinel.local/schemas/runtime-action-preflight.schema.json",
+  "title": "S Sentinel Runtime Action Preflight",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "runtimeActionPreflightId",
+    "generatedBy",
+    "generatedAt",
+    "mode",
+    "sourceRuntimeActionRequestId",
+    "release",
+    "target",
+    "request",
+    "preflight",
+    "runtimeSnapshot",
+    "evidenceRefs",
+    "guardrails"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "runtime.action.preflight/v1alpha1"
+    },
+    "runtimeActionPreflightId": {
+      "type": "string"
+    },
+    "mode": {
+      "const": "read_only_runtime_action_preflight"
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "requestedAction",
+        "requestStatus",
+        "lifecycleStage",
+        "readyToExecute",
+        "willExecute"
+      ],
+      "properties": {
+        "requestedAction": {
+          "enum": [
+            "NOOP",
+            "REQUIRE_REVIEW",
+            "PAUSE_ROLLOUT"
+          ]
+        },
+        "readyToExecute": {
+          "const": false
+        },
+        "willExecute": {
+          "const": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "preflight": {
+      "type": "object",
+      "required": [
+        "preflightStatus",
+        "eligibilityStatus",
+        "blockingReasons",
+        "approvalReasons",
+        "eligibleForExecution",
+        "readyToExecute",
+        "willExecute"
+      ],
+      "properties": {
+        "preflightStatus": {
+          "enum": [
+            "NO_ACTION_REQUIRED",
+            "WAITING_REVIEW",
+            "WAITING_APPROVAL",
+            "BLOCKED",
+            "PREFLIGHT_PASSED"
+          ]
+        },
+        "eligibilityStatus": {
+          "enum": [
+            "NO_ACTION_REQUIRED",
+            "NEEDS_REVIEW",
+            "NOT_ELIGIBLE",
+            "ELIGIBLE_FOR_CONTROLLED_EXECUTOR"
+          ]
+        },
+        "blockingReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvalReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "eligibleForExecution": {
+          "const": false
+        },
+        "readyToExecute": {
+          "const": false
+        },
+        "willExecute": {
+          "const": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "preflightOnly",
+        "readOnly",
+        "willExecute",
+        "doesNotPause",
+        "doesNotModifyKubernetes"
+      ],
+      "properties": {
+        "preflightOnly": {
+          "const": true
+        },
+        "readOnly": {
+          "const": true
+        },
+        "willExecute": {
+          "const": false
+        },
+        "doesNotPause": {
+          "const": true
+        },
+        "doesNotModifyKubernetes": {
+          "const": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
