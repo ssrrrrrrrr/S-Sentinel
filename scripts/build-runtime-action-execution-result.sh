@@ -119,6 +119,18 @@ runtime_snapshot = as_dict(preflight_doc.get("runtimeSnapshot"))
 rollback_target = as_dict(preflight_doc.get("rollbackTarget"))
 evidence_refs = as_dict(preflight_doc.get("evidenceRefs"))
 source_guardrails = as_dict(preflight_doc.get("guardrails"))
+approval = as_dict(preflight_doc.get("approval"))
+
+requested_by = str(first_not_empty(request.get("requestedBy"), preflight_doc.get("requestedBy"), "unknown"))
+approval_required = bool(first_not_empty(approval.get("required"), request.get("approvalRequired"), False))
+approval_status = str(first_not_empty(approval.get("status"), approval.get("approvalStatus"), "UNKNOWN"))
+approved = approval.get("approved") is True
+approval_decision = first_not_empty(approval.get("approvalDecision"), approval.get("decision"))
+approver = first_not_empty(approval.get("approver"), approval.get("approvedBy"))
+
+runtime_executor_id = os.environ.get("S_SENTINEL_RUNTIME_EXECUTOR_ID") or "local-shell-operator"
+kubernetes_identity = os.environ.get("S_SENTINEL_KUBERNETES_IDENTITY") or "kubectl-current-context"
+executor_service_account = os.environ.get("S_SENTINEL_EXECUTOR_SERVICE_ACCOUNT") or None
 
 release_id = str(first_not_empty(
     release.get("releaseId"),
@@ -580,6 +592,48 @@ doc = {
         "mutatesKubernetes": mutated_kubernetes,
         "mutatesGitOps": False,
         "emitsExecutionEvidence": True,
+    },
+    "actorBoundary": {
+        "boundaryVersion": "runtime.action.actor-boundary/v1alpha1",
+        "requester": {
+            "requestedBy": requested_by,
+            "sourceRuntimeActionRequestId": preflight_doc.get("sourceRuntimeActionRequestId"),
+            "canApprove": False,
+            "canExecute": False,
+        },
+        "approval": {
+            "approvalRequired": approval_required,
+            "approvalStatus": approval_status,
+            "approved": approved,
+            "approvalDecision": approval_decision,
+            "approver": approver,
+        },
+        "executorIdentity": {
+            "executorName": "runtime-rollout-executor",
+            "executorType": "controlled_runtime_executor",
+            "adapter": "runtime-rollout-control",
+            "adapterType": "local-script",
+            "runtimeIdentity": runtime_executor_id,
+            "kubernetesIdentity": kubernetes_identity,
+            "serviceAccount": executor_service_account,
+        },
+        "rbacBoundary": {
+            "watcherServiceAccount": "release-rollout-watcher",
+            "watcherRbacMode": "read_only_get_list_watch",
+            "watcherCanMutateKubernetes": False,
+            "executorRequiresKubernetesWrite": requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"},
+            "executorWasAllowedToMutateKubernetes": attempted_kubernetes_mutation,
+            "mutatedKubernetes": mutated_kubernetes,
+            "mutatedGitOps": False,
+        },
+        "separationOfDuties": {
+            "requesterIsExecutor": requested_by == runtime_executor_id,
+            "approverIsExecutor": approver == runtime_executor_id if approver else False,
+            "approvalRequiredBeforeExecution": approval_required,
+            "approvalGateEnabled": approval_gate_enabled,
+            "finalExecuteSwitchRequired": final_execute_env is not None,
+            "finalExecuteSwitchEnabled": final_execute_enabled,
+        },
     },
     "action": {
         "requestedAction": requested_action,

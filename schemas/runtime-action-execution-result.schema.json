@@ -14,6 +14,7 @@
     "release",
     "target",
     "executor",
+    "actorBoundary",
     "action",
     "writeGate",
     "beforeSnapshot",
@@ -525,6 +526,19 @@
           "type": "boolean"
         }
       }
+    },
+    "actorBoundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Launch hardening actor boundary summary for requester, approver, executor identity, RBAC boundary, and separation-of-duties evidence.",
+      "required": [
+        "boundaryVersion",
+        "requester",
+        "approval",
+        "executorIdentity",
+        "rbacBoundary",
+        "separationOfDuties"
+      ]
     }
   }
 }

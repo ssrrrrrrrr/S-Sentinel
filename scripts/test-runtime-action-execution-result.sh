@@ -77,6 +77,30 @@ assert doc["executor"]["willExecute"] is False, doc
 assert doc["executor"]["mutatesKubernetes"] is False, doc
 assert doc["executor"]["mutatesGitOps"] is False, doc
 
+actor = doc["actorBoundary"]
+assert actor["boundaryVersion"] == "runtime.action.actor-boundary/v1alpha1", doc
+assert actor["requester"]["sourceRuntimeActionRequestId"] == "rarq-" + release_id, doc
+assert actor["requester"]["canApprove"] is False, doc
+assert actor["requester"]["canExecute"] is False, doc
+assert actor["approval"]["approvalRequired"] is True, doc
+assert actor["approval"]["approved"] is False, doc
+assert actor["executorIdentity"]["executorName"] == "runtime-rollout-executor", doc
+assert actor["executorIdentity"]["runtimeIdentity"] == "local-shell-operator", doc
+assert actor["executorIdentity"]["kubernetesIdentity"] == "kubectl-current-context", doc
+assert actor["rbacBoundary"]["watcherServiceAccount"] == "release-rollout-watcher", doc
+assert actor["rbacBoundary"]["watcherRbacMode"] == "read_only_get_list_watch", doc
+assert actor["rbacBoundary"]["watcherCanMutateKubernetes"] is False, doc
+assert actor["rbacBoundary"]["executorRequiresKubernetesWrite"] is True, doc
+assert actor["rbacBoundary"]["executorWasAllowedToMutateKubernetes"] is False, doc
+assert actor["rbacBoundary"]["mutatedKubernetes"] is False, doc
+assert actor["rbacBoundary"]["mutatedGitOps"] is False, doc
+assert actor["separationOfDuties"]["requesterIsExecutor"] is False, doc
+assert actor["separationOfDuties"]["approverIsExecutor"] is False, doc
+assert actor["separationOfDuties"]["approvalRequiredBeforeExecution"] is True, doc
+assert actor["separationOfDuties"]["approvalGateEnabled"] is False, doc
+assert actor["separationOfDuties"]["finalExecuteSwitchRequired"] is True, doc
+assert actor["separationOfDuties"]["finalExecuteSwitchEnabled"] is False, doc
+
 assert doc["action"]["requestedAction"] == "PAUSE_ROLLOUT", doc
 assert doc["action"]["supportedAction"] is True, doc
 assert doc["action"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
