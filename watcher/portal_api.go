@@ -87,7 +87,7 @@ type portalReleaseDetailResponse struct {
 func registerPortalAPIHandlers(mux *http.ServeMux, cfg Config) {
 	api := &portalAPI{
 		cfg:       cfg,
-		reportDir: filepath.Join(cfg.RepoDir, "docs", "release-reports"),
+		reportDir: cfg.ReportDir,
 	}
 
 	mux.HandleFunc("/api/releases", api.handleReleaseList)

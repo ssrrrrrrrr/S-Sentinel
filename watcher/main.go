@@ -35,13 +35,18 @@ type Config struct {
 	Rollout   string   `yaml:"rollout"`
 	Targets   []Target `yaml:"targets"`
 
-	Interval   string `yaml:"interval"`
-	Mode       string `yaml:"mode"`
-	RepoDir    string `yaml:"repoDir"`
-	StateFile  string `yaml:"stateFile"`
-	OllamaURL  string `yaml:"ollamaUrl"`
-	Model      string `yaml:"model"`
-	HealthAddr string `yaml:"healthAddr"`
+	Interval                      string `yaml:"interval"`
+	Mode                          string `yaml:"mode"`
+	RepoDir                       string `yaml:"repoDir"`
+	ReportDir                     string `yaml:"reportDir"`
+	StateFile                     string `yaml:"stateFile"`
+	EvidenceStoreDB               string `yaml:"evidenceStoreDB"`
+	EvidenceStoreScriptFile       string `yaml:"evidenceStoreScriptFile"`
+	EvidenceStorePython           string `yaml:"evidenceStorePython"`
+	EvidenceStoreRefreshStateFile string `yaml:"evidenceStoreRefreshStateFile"`
+	OllamaURL                     string `yaml:"ollamaUrl"`
+	Model                         string `yaml:"model"`
+	HealthAddr                    string `yaml:"healthAddr"`
 }
 
 type WatchEvent struct {
@@ -83,12 +88,13 @@ var (
 
 func defaultConfig() Config {
 	return Config{
-		Interval:   "10s",
-		RepoDir:    "/root/slo-rollout-demo",
-		StateFile:  "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
-		OllamaURL:  "http://192.168.30.1:11434",
-		Model:      "qwen2.5:0.5b",
-		HealthAddr: ":8080",
+		Interval:            "10s",
+		RepoDir:             "/root/slo-rollout-demo",
+		StateFile:           "/root/slo-rollout-demo/docs/release-reports/go-rollout-watcher-state.json",
+		EvidenceStorePython: "python3",
+		OllamaURL:           "http://192.168.30.1:11434",
+		Model:               "qwen2.5:0.5b",
+		HealthAddr:          ":8080",
 		Targets: []Target{
 			{
 				Namespace: "slo-rollout",
@@ -119,6 +125,26 @@ func loadConfig(path string) (Config, error) {
 	}
 	if cfg.RepoDir == "" {
 		cfg.RepoDir = def.RepoDir
+	}
+	if cfg.ReportDir == "" {
+		cfg.ReportDir = filepath.Join(cfg.RepoDir, "docs", "release-reports")
+	}
+	if cfg.EvidenceStoreDB == "" {
+		cfg.EvidenceStoreDB = filepath.Join(os.TempDir(), "s-sentinel-evidence-store", "portal-evidence-store.db")
+	}
+	if cfg.EvidenceStoreScriptFile == "" {
+		cfg.EvidenceStoreScriptFile = filepath.Join(cfg.RepoDir, "scripts", "evidence-store.py")
+	}
+	if cfg.EvidenceStorePython == "" {
+		cfg.EvidenceStorePython = def.EvidenceStorePython
+	}
+	if cfg.EvidenceStoreRefreshStateFile == "" {
+		ext := filepath.Ext(cfg.EvidenceStoreDB)
+		if ext == "" {
+			cfg.EvidenceStoreRefreshStateFile = cfg.EvidenceStoreDB + "-refresh.json"
+		} else {
+			cfg.EvidenceStoreRefreshStateFile = strings.TrimSuffix(cfg.EvidenceStoreDB, ext) + "-refresh.json"
+		}
 	}
 	if cfg.StateFile == "" {
 		cfg.StateFile = def.StateFile

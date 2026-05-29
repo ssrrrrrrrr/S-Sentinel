@@ -2,7 +2,12 @@ interval: 10s
 mode: watch
 healthAddr: ":8080"
 repoDir: /app
+reportDir: /app/docs/release-reports
 stateFile: /app/docs/release-reports/go-rollout-watcher-state.json
+evidenceStoreDB: /app/docs/release-reports/evidence-store/portal-evidence-store.db
+evidenceStoreScriptFile: /app/scripts/evidence-store.py
+evidenceStorePython: python3
+evidenceStoreRefreshStateFile: /app/docs/release-reports/evidence-store/portal-evidence-store-refresh.json
 ollamaUrl: http://192.168.30.1:11434
 model: qwen2.5:0.5b
 

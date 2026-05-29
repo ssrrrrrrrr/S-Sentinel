@@ -56,7 +56,7 @@ type EvidenceRuntimeDescriptor struct {
 }
 
 func NewEvidenceService(cfg Config, reportDir string) *EvidenceService {
-	runtime := NewCLIEvidenceRuntime(cfg.RepoDir)
+	runtime := NewCLIEvidenceRuntimeForConfig(cfg)
 
 	return &EvidenceService{
 		cfg: EvidenceServiceConfig{
@@ -385,12 +385,26 @@ func (svc *EvidenceService) readRefreshState() (map[string]interface{}, bool, er
 }
 
 type CLIEvidenceRuntime struct {
-	repoDir string
+	repoDir          string
+	dbFile           string
+	scriptFile       string
+	pythonBin        string
+	refreshStateFile string
 }
 
 func NewCLIEvidenceRuntime(repoDir string) *CLIEvidenceRuntime {
 	return &CLIEvidenceRuntime{
 		repoDir: repoDir,
+	}
+}
+
+func NewCLIEvidenceRuntimeForConfig(cfg Config) *CLIEvidenceRuntime {
+	return &CLIEvidenceRuntime{
+		repoDir:          cfg.RepoDir,
+		dbFile:           strings.TrimSpace(cfg.EvidenceStoreDB),
+		scriptFile:       strings.TrimSpace(cfg.EvidenceStoreScriptFile),
+		pythonBin:        strings.TrimSpace(cfg.EvidenceStorePython),
+		refreshStateFile: strings.TrimSpace(cfg.EvidenceStoreRefreshStateFile),
 	}
 }
 
@@ -425,6 +439,9 @@ func (runtime *CLIEvidenceRuntime) DBFile() string {
 	if dbFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_DB")); dbFile != "" {
 		return dbFile
 	}
+	if runtime.dbFile != "" {
+		return runtime.dbFile
+	}
 
 	return filepath.Join(os.TempDir(), "s-sentinel-evidence-store", "portal-evidence-store.db")
 }
@@ -433,6 +450,9 @@ func (runtime *CLIEvidenceRuntime) ScriptFile() string {
 	if scriptFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_SCRIPT")); scriptFile != "" {
 		return scriptFile
 	}
+	if runtime.scriptFile != "" {
+		return runtime.scriptFile
+	}
 
 	return filepath.Join(runtime.repoDir, "scripts", "evidence-store.py")
 }
@@ -440,6 +460,9 @@ func (runtime *CLIEvidenceRuntime) ScriptFile() string {
 func (runtime *CLIEvidenceRuntime) PythonBin() string {
 	if pythonBin := strings.TrimSpace(os.Getenv("S_SENTINEL_PYTHON_BIN")); pythonBin != "" {
 		return pythonBin
+	}
+	if runtime.pythonBin != "" {
+		return runtime.pythonBin
 	}
 
 	if _, err := exec.LookPath("python3"); err == nil {
@@ -454,6 +477,13 @@ func (runtime *CLIEvidenceRuntime) PythonBin() string {
 }
 
 func (runtime *CLIEvidenceRuntime) RefreshStateFile() string {
+	if refreshStateFile := strings.TrimSpace(os.Getenv("S_SENTINEL_EVIDENCE_STORE_REFRESH_STATE_FILE")); refreshStateFile != "" {
+		return refreshStateFile
+	}
+	if runtime.refreshStateFile != "" {
+		return runtime.refreshStateFile
+	}
+
 	dbFile := runtime.DBFile()
 	ext := filepath.Ext(dbFile)
 	if ext == "" {
