@@ -65,5 +65,40 @@ assert summary.get("willExecute") is True, summary
 assert summary.get("rolloutName") == "demo-app", summary
 assert summary.get("namespace") == "slo-rollout", summary
 
+actor = summary.get("actorBoundary") or {}
+assert actor.get("boundaryVersion") == "runtime.action.actor-boundary/v1alpha1", summary
+assert summary.get("actorRuntimeIdentity") == "local-shell-operator", summary
+assert summary.get("actorKubernetesIdentity") == "kubectl-current-context", summary
+assert summary.get("watcherRbacMode") == "read_only_get_list_watch", summary
+assert summary.get("watcherCanMutateKubernetes") is False, summary
+assert actor.get("rbacBoundary", {}).get("watcherCanMutateKubernetes") is False, summary
+assert actor.get("rbacBoundary", {}).get("executorWasAllowedToMutateKubernetes") is True, summary
+
+recovery = summary.get("recoveryBoundary") or {}
+assert recovery.get("boundaryVersion") == "runtime.action.recovery-boundary/v1alpha1", summary
+assert summary.get("manualRetryAllowed") is False, summary
+assert summary.get("recoveryFailureMode") == "none", summary
+assert recovery.get("failureRecovery", {}).get("executionStatus") == "SUCCEEDED", summary
+assert recovery.get("failureRecovery", {}).get("failureMode") == "none", summary
+assert recovery.get("failureRecovery", {}).get("recoveryRequired") is False, summary
+
+safety = summary.get("executionSafetyBoundary") or {}
+assert safety.get("boundaryVersion") == "runtime.action.execution-safety-boundary/v1alpha1", summary
+assert summary.get("executionDefaultOff") is True, summary
+assert summary.get("executionSafetyRiskLevel") == "medium_high", summary
+assert summary.get("executionDirectExecutionAllowed") is True, summary
+assert summary.get("executionSafetyBlockingReasons") == [], summary
+assert safety.get("defaultPolicy", {}).get("defaultOff") is True, summary
+assert safety.get("operationRisk", {}).get("requestedAction") == "PAUSE_ROLLOUT", summary
+assert safety.get("operationRisk", {}).get("runtimeMutatingAction") is True, summary
+assert safety.get("operationRisk", {}).get("highRiskAction") is False, summary
+assert safety.get("gateMatrix", {}).get("globalGateEnabled") is True, summary
+assert safety.get("gateMatrix", {}).get("operationGateEnabled") is True, summary
+assert safety.get("gateMatrix", {}).get("approvalGateEnabled") is True, summary
+assert safety.get("gateMatrix", {}).get("finalExecuteEnabled") is True, summary
+assert safety.get("safetyDecision", {}).get("allRuntimeGatesEnabled") is True, summary
+assert safety.get("safetyDecision", {}).get("directExecutionAllowed") is True, summary
+assert safety.get("safetyDecision", {}).get("willExecute") is True, summary
+
 print("PASS evidence store runtime action execution result")
 PY

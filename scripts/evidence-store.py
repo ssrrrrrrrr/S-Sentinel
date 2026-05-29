@@ -994,6 +994,16 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         evidence_refs = as_dict(data.get("evidenceRefs"))
         guardrails = as_dict(data.get("guardrails"))
         post_action_verification = as_dict(data.get("postActionVerification"))
+        actor_boundary = as_dict(data.get("actorBoundary"))
+        recovery_boundary = as_dict(data.get("recoveryBoundary"))
+        execution_safety_boundary = as_dict(data.get("executionSafetyBoundary"))
+        actor_executor_identity = as_dict(actor_boundary.get("executorIdentity"))
+        actor_rbac_boundary = as_dict(actor_boundary.get("rbacBoundary"))
+        recovery_retry = as_dict(recovery_boundary.get("retry"))
+        recovery_failure = as_dict(recovery_boundary.get("failureRecovery"))
+        safety_default_policy = as_dict(execution_safety_boundary.get("defaultPolicy"))
+        safety_operation_risk = as_dict(execution_safety_boundary.get("operationRisk"))
+        safety_decision = as_dict(execution_safety_boundary.get("safetyDecision"))
 
         verification_status = (
             post_action_verification.get("verificationStatus")
@@ -1106,6 +1116,19 @@ def compact_object_summary(object_type: str, data: dict[str, Any]) -> dict[str, 
         result["dryRunOnly"] = guardrails.get("dryRunOnly")
         result["willExecute"] = guardrails.get("willExecute")
         result["doesNotModifyGitOps"] = guardrails.get("doesNotModifyGitOps")
+        result["actorBoundary"] = actor_boundary
+        result["recoveryBoundary"] = recovery_boundary
+        result["executionSafetyBoundary"] = execution_safety_boundary
+        result["actorRuntimeIdentity"] = actor_executor_identity.get("runtimeIdentity")
+        result["actorKubernetesIdentity"] = actor_executor_identity.get("kubernetesIdentity")
+        result["watcherRbacMode"] = actor_rbac_boundary.get("watcherRbacMode")
+        result["watcherCanMutateKubernetes"] = actor_rbac_boundary.get("watcherCanMutateKubernetes")
+        result["manualRetryAllowed"] = recovery_retry.get("manualRetryAllowed")
+        result["recoveryFailureMode"] = recovery_failure.get("failureMode")
+        result["executionDefaultOff"] = safety_default_policy.get("defaultOff")
+        result["executionSafetyRiskLevel"] = safety_operation_risk.get("riskLevel")
+        result["executionDirectExecutionAllowed"] = safety_decision.get("directExecutionAllowed")
+        result["executionSafetyBlockingReasons"] = safety_decision.get("blockingReasons") or []
 
     if object_type == "policyRuntimeResult":
         policy_decision = as_dict(data.get("policyDecision"))
