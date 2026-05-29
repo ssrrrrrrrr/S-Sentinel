@@ -4003,6 +4003,78 @@
               ]
             }
           }
+        },
+        "actorBoundary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "recoveryBoundary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "executionSafetyBoundary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "actorRuntimeIdentity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actorKubernetesIdentity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "watcherRbacMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "watcherCanMutateKubernetes": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "manualRetryAllowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "recoveryFailureMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executionDefaultOff": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "executionSafetyRiskLevel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executionDirectExecutionAllowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "executionSafetyBlockingReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

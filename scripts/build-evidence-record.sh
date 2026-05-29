@@ -393,6 +393,16 @@ runtime_action_execution_result_rollback_target = as_dict(runtime_action_executi
 runtime_action_execution_result_receipt = as_dict(runtime_action_execution_result.get("receipt"))
 runtime_action_execution_result_evidence_refs = as_dict(runtime_action_execution_result.get("evidenceRefs"))
 runtime_action_execution_result_guardrails = as_dict(runtime_action_execution_result.get("guardrails"))
+runtime_action_execution_result_actor_boundary = as_dict(runtime_action_execution_result.get("actorBoundary"))
+runtime_action_execution_result_recovery_boundary = as_dict(runtime_action_execution_result.get("recoveryBoundary"))
+runtime_action_execution_result_execution_safety_boundary = as_dict(runtime_action_execution_result.get("executionSafetyBoundary"))
+runtime_action_execution_result_actor_executor_identity = as_dict(runtime_action_execution_result_actor_boundary.get("executorIdentity"))
+runtime_action_execution_result_actor_rbac_boundary = as_dict(runtime_action_execution_result_actor_boundary.get("rbacBoundary"))
+runtime_action_execution_result_recovery_retry = as_dict(runtime_action_execution_result_recovery_boundary.get("retry"))
+runtime_action_execution_result_recovery_failure = as_dict(runtime_action_execution_result_recovery_boundary.get("failureRecovery"))
+runtime_action_execution_result_safety_default_policy = as_dict(runtime_action_execution_result_execution_safety_boundary.get("defaultPolicy"))
+runtime_action_execution_result_safety_operation_risk = as_dict(runtime_action_execution_result_execution_safety_boundary.get("operationRisk"))
+runtime_action_execution_result_safety_decision = as_dict(runtime_action_execution_result_execution_safety_boundary.get("safetyDecision"))
 
 gitops_patch_proposal_path = resolve_ref(artifacts.get("gitopsPatchProposal"), evidence_path)
 gitops_patch_proposal = load_json(gitops_patch_proposal_path)
@@ -1090,6 +1100,19 @@ record = {
         "sourceRolloutRuntimeInspectId": nullable_string(runtime_action_execution_result_evidence_refs.get("sourceRolloutRuntimeInspectId")),
         "sourceRuntimeActionExecutionResult": nullable_string(link_map.get("runtimeActionExecutionResult")),
         "guardrails": runtime_action_execution_result_guardrails,
+        "actorBoundary": runtime_action_execution_result_actor_boundary,
+        "recoveryBoundary": runtime_action_execution_result_recovery_boundary,
+        "executionSafetyBoundary": runtime_action_execution_result_execution_safety_boundary,
+        "actorRuntimeIdentity": nullable_string(runtime_action_execution_result_actor_executor_identity.get("runtimeIdentity")),
+        "actorKubernetesIdentity": nullable_string(runtime_action_execution_result_actor_executor_identity.get("kubernetesIdentity")),
+        "watcherRbacMode": nullable_string(runtime_action_execution_result_actor_rbac_boundary.get("watcherRbacMode")),
+        "watcherCanMutateKubernetes": bool_or_none(runtime_action_execution_result_actor_rbac_boundary.get("watcherCanMutateKubernetes")),
+        "manualRetryAllowed": bool_or_none(runtime_action_execution_result_recovery_retry.get("manualRetryAllowed")),
+        "recoveryFailureMode": nullable_string(runtime_action_execution_result_recovery_failure.get("failureMode")),
+        "executionDefaultOff": bool_or_none(runtime_action_execution_result_safety_default_policy.get("defaultOff")),
+        "executionSafetyRiskLevel": nullable_string(runtime_action_execution_result_safety_operation_risk.get("riskLevel")),
+        "executionDirectExecutionAllowed": bool_or_none(runtime_action_execution_result_safety_decision.get("directExecutionAllowed")),
+        "executionSafetyBlockingReasons": as_list(runtime_action_execution_result_safety_decision.get("blockingReasons")),
     },
     "gitopsPatchProposal": {
         "gitopsPatchProposalId": nullable_string(gitops_patch_proposal.get("gitopsPatchProposalId")),

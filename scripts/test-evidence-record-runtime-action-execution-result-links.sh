@@ -107,6 +107,47 @@ assert execution["sourceRuntimeActionExecutionResult"].endswith(f"runtime-action
 assert execution["guardrails"]["willExecute"] is True, execution
 assert execution["guardrails"]["doesNotModifyGitOps"] is True, execution
 
+actor = execution["actorBoundary"]
+assert actor["boundaryVersion"] == "runtime.action.actor-boundary/v1alpha1", execution
+assert execution["actorRuntimeIdentity"] == "local-shell-operator", execution
+assert execution["actorKubernetesIdentity"] == "kubectl-current-context", execution
+assert execution["watcherRbacMode"] == "read_only_get_list_watch", execution
+assert execution["watcherCanMutateKubernetes"] is False, execution
+assert actor["rbacBoundary"]["watcherCanMutateKubernetes"] is False, execution
+assert actor["rbacBoundary"]["executorWasAllowedToMutateKubernetes"] is True, execution
+assert actor["rbacBoundary"]["mutatedKubernetes"] is True, execution
+assert actor["rbacBoundary"]["mutatedGitOps"] is False, execution
+
+recovery = execution["recoveryBoundary"]
+assert recovery["boundaryVersion"] == "runtime.action.recovery-boundary/v1alpha1", execution
+assert execution["manualRetryAllowed"] is False, execution
+assert execution["recoveryFailureMode"] == "none", execution
+assert recovery["retry"]["automaticRetryAllowed"] is False, execution
+assert recovery["retry"]["manualRetryAllowed"] is False, execution
+assert recovery["failureRecovery"]["executionStatus"] == "SUCCEEDED", execution
+assert recovery["failureRecovery"]["failureMode"] == "none", execution
+assert recovery["failureRecovery"]["recoveryRequired"] is False, execution
+assert recovery["evidenceWrite"]["commandResultCaptured"] is True, execution
+assert recovery["evidenceWrite"]["postActionObservationCaptured"] is True, execution
+
+safety = execution["executionSafetyBoundary"]
+assert safety["boundaryVersion"] == "runtime.action.execution-safety-boundary/v1alpha1", execution
+assert execution["executionDefaultOff"] is True, execution
+assert execution["executionSafetyRiskLevel"] == "medium_high", execution
+assert execution["executionDirectExecutionAllowed"] is True, execution
+assert execution["executionSafetyBlockingReasons"] == [], execution
+assert safety["defaultPolicy"]["defaultOff"] is True, execution
+assert safety["operationRisk"]["requestedAction"] == "PAUSE_ROLLOUT", execution
+assert safety["operationRisk"]["runtimeMutatingAction"] is True, execution
+assert safety["operationRisk"]["highRiskAction"] is False, execution
+assert safety["gateMatrix"]["globalGateEnabled"] is True, execution
+assert safety["gateMatrix"]["operationGateEnabled"] is True, execution
+assert safety["gateMatrix"]["approvalGateEnabled"] is True, execution
+assert safety["gateMatrix"]["finalExecuteEnabled"] is True, execution
+assert safety["safetyDecision"]["allRuntimeGatesEnabled"] is True, execution
+assert safety["safetyDecision"]["directExecutionAllowed"] is True, execution
+assert safety["safetyDecision"]["willExecute"] is True, execution
+
 assert record["coverage"]["total"] == 59, record["coverage"]
 
 print("PASS evidence-record runtime action execution result links")
