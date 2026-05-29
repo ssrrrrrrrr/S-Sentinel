@@ -1053,6 +1053,32 @@ export function ApprovalConsolePanel({
     },
   ]
 
+  const primaryMetricLabels = new Set([
+    "Execution Request",
+    "Approval Required",
+    "Approval Status",
+    "Lifecycle Stage",
+    "Execution Preview",
+    "Execution Result",
+    "Requested Action",
+    "Policy Decision",
+    "Will Execute",
+  ])
+
+  const primaryStepTitles = new Set([
+    "Policy Decision",
+    "Execution Request",
+    "Human Approval Gate",
+    "Approval Record",
+    "Execution Boundary",
+    "Dry-run Preview",
+    "Executor Result",
+  ])
+
+  const primaryMetrics = metrics.filter((metric) => primaryMetricLabels.has(metric.label))
+  const primarySteps = steps.filter((step) => primaryStepTitles.has(step.title))
+
+
   return (
     <section className="rounded-2xl border border-[#1f2b3d] bg-[#0b121d] p-5 shadow-sm shadow-black/20">
       <div className="flex flex-col justify-between gap-4 border-b border-[#1f2b3d] pb-4 lg:flex-row lg:items-end">
@@ -1086,7 +1112,7 @@ export function ApprovalConsolePanel({
       ) : null}
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {metrics.map((metric) => (
+        {primaryMetrics.map((metric) => (
           <ConsoleMetricCard key={metric.label} metric={metric} />
         ))}
       </div>
@@ -1101,7 +1127,7 @@ export function ApprovalConsolePanel({
 
       <section className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-3">
-          {steps.map((step, index) => (
+          {primarySteps.map((step, index) => (
             <ApprovalStepCard key={step.title} step={step} index={index} />
           ))}
         </div>
@@ -1290,7 +1316,15 @@ export function ApprovalConsolePanel({
         </div>
       </section>
 
-      <section className="mt-5 grid gap-4 lg:grid-cols-4">
+      <details className="mt-5 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
+        <summary className="cursor-pointer select-none text-sm font-semibold text-slate-100">
+          Advanced GitOps / Audit Artifacts
+          <span className="ml-2 text-xs font-normal text-slate-500">
+            ???? GitOps handoff?pickup?provider ???????
+          </span>
+        </summary>
+
+        <section className="mt-4 grid gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4">
           <h4 className="text-sm font-semibold text-slate-100">Execution Preview</h4>
           <div className="mt-3">
@@ -1730,7 +1764,8 @@ export function ApprovalConsolePanel({
             />
           </div>
         </div>
-      </section>
+        </section>
+      </details>
 
       <div className="mt-5 rounded-xl border border-[#35517a] bg-[#101a29] p-4 text-sm text-slate-300">
         <div className="flex items-center gap-2 font-semibold text-slate-100">
@@ -1744,26 +1779,11 @@ export function ApprovalConsolePanel({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <ActionButton onClick={() => onTabChange("Action Plan")}>查看 Action Plan</ActionButton>
-        <ActionButton onClick={() => onTabChange("Execution")}>查看 Execution</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Proposal")}>查看 GitOps Proposal</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Bundle")}>查看 GitOps Bundle</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Handoff")}>查看 GitOps Handoff</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Adapter")}>查看 GitOps Adapter</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Delivery")}>查看 GitOps Delivery</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Workspace")}>查看 GitOps Workspace</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Run")}>查看 GitOps Run</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Pickup")}>查看 GitOps Pickup</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Pickup Ack")}>查看 GitOps Pickup Ack</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Handoff State")}>查看 GitOps Handoff State</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Pickup Event")}>查看 GitOps Pickup Event</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Pickup Transition")}>查看 GitOps Pickup Transition</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Handoff Prep")}>查看 GitOps Handoff Prep</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Handoff Progress")}>查看 GitOps Handoff Progress</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Provider Request")}>查看 GitOps Provider Request</ActionButton>
-        <ActionButton onClick={() => onTabChange("GitOps Provider Result")}>查看 GitOps Provider Result</ActionButton>
-        <ActionButton onClick={() => onTabChange("Evidence")}>查看 Evidence</ActionButton>
-        <ActionButton onClick={() => onTabChange("Runbook")}>查看 Runbook</ActionButton>
+        <ActionButton onClick={() => onTabChange("Runtime Actions")}>?? Runtime Actions</ActionButton>
+        <ActionButton onClick={() => onTabChange("GitOps")}>?? GitOps</ActionButton>
+        <ActionButton onClick={() => onTabChange("Evidence")}>?? Evidence</ActionButton>
+        <ActionButton onClick={() => onTabChange("Docs")}>?? Docs</ActionButton>
+        <ActionButton onClick={() => onTabChange("Advisor")}>?? Advisor</ActionButton>
       </div>
     </section>
   )

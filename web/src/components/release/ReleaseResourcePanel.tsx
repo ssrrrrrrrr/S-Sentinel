@@ -15,6 +15,7 @@ import {
   TimelineProductView,
 } from "@/components/product-views/ProductViews"
 import type { LatestReleaseResponse, ReleaseIndexItem } from "@/types/release"
+import { GroupedReleaseResourcePanel } from "./GroupedReleaseResourcePanel"
 import { SafetyPanel } from "./SafetyPanel"
 
 export function ReleaseResourcePanel({
@@ -30,6 +31,16 @@ export function ReleaseResourcePanel({
   resourceKind: string
   resourceQuery: UseQueryResult<ReleaseResourceContent, Error>
 }) {
+  if (["Runtime Actions", "GitOps", "Advisor", "Docs"].includes(activeTab)) {
+    return (
+      <GroupedReleaseResourcePanel
+        activeTab={activeTab}
+        selected={selected}
+        latest={latest}
+      />
+    )
+  }
+
   return (
     <div className="space-y-5">
       {activeTab === "Action Plan" ? (

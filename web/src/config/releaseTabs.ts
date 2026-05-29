@@ -9,7 +9,7 @@ export type ReleaseTabDefinition = {
 
 export const releaseTabs: ReleaseTabDefinition[] = [
   {
-    id: "概览",
+    id: "\u6982\u89c8",
     resourceKind: "summary",
     targetRoute: "Releases",
   },
@@ -19,128 +19,23 @@ export const releaseTabs: ReleaseTabDefinition[] = [
     targetRoute: "Evidence",
   },
   {
-    id: "Intelligence",
-    resourceKind: "intelligence",
-    targetRoute: "Agent Trace",
-  },
-  {
-    id: "Action Plan",
-    resourceKind: "preview",
-    targetRoute: "Approval",
-  },
-  {
-    id: "Execution",
+    id: "Runtime Actions",
     resourceKind: "execution-result",
     targetRoute: "Approval",
   },
   {
-    id: "GitOps Proposal",
-    resourceKind: "gitops-proposal",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Bundle",
-    resourceKind: "gitops-bundle",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Handoff",
-    resourceKind: "gitops-handoff",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Adapter",
-    resourceKind: "gitops-adapter",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Delivery",
-    resourceKind: "gitops-delivery",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Workspace",
-    resourceKind: "gitops-workspace",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Run",
-    resourceKind: "gitops-run",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Pickup",
-    resourceKind: "gitops-pickup",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Pickup Ack",
-    resourceKind: "gitops-pickup-ack",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Handoff State",
-    resourceKind: "gitops-handoff-state",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Pickup Event",
-    resourceKind: "gitops-pickup-event",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Pickup Transition",
-    resourceKind: "gitops-pickup-transition",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Handoff Prep",
-    resourceKind: "gitops-handoff-prep",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Handoff Progress",
-    resourceKind: "gitops-handoff-progress",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Payload",
-    resourceKind: "gitops-payload",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Dispatch",
-    resourceKind: "gitops-dispatch",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Provider Request",
-    resourceKind: "gitops-provider-request",
-    targetRoute: "Approval",
-  },
-  {
-    id: "GitOps Provider Result",
+    id: "GitOps",
     resourceKind: "gitops-provider-result",
     targetRoute: "Approval",
   },
   {
-    id: "Advisor Trace",
+    id: "Advisor",
     resourceKind: "advice",
     targetRoute: "Agent Trace",
   },
   {
-    id: "Timeline",
-    resourceKind: "timeline",
-    targetRoute: "Releases",
-  },
-  {
-    id: "Runbook",
+    id: "Docs",
     resourceKind: "runbook",
-    targetRoute: "Releases",
-  },
-  {
-    id: "RCA",
-    resourceKind: "rca",
     targetRoute: "Releases",
   },
   {
@@ -155,6 +50,131 @@ const legacyReleaseTabAliases: Record<string, ReleaseTabDefinition> = {
     id: "AI Advice",
     resourceKind: "advice",
     targetRoute: "Agent Trace",
+  },
+  Intelligence: {
+    id: "Intelligence",
+    resourceKind: "intelligence",
+    targetRoute: "Agent Trace",
+  },
+  "Action Plan": {
+    id: "Action Plan",
+    resourceKind: "preview",
+    targetRoute: "Approval",
+  },
+  Execution: {
+    id: "Execution",
+    resourceKind: "execution-result",
+    targetRoute: "Approval",
+  },
+  "GitOps Proposal": {
+    id: "GitOps Proposal",
+    resourceKind: "gitops-proposal",
+    targetRoute: "Approval",
+  },
+  "GitOps Bundle": {
+    id: "GitOps Bundle",
+    resourceKind: "gitops-bundle",
+    targetRoute: "Approval",
+  },
+  "GitOps Handoff": {
+    id: "GitOps Handoff",
+    resourceKind: "gitops-handoff",
+    targetRoute: "Approval",
+  },
+  "GitOps Adapter": {
+    id: "GitOps Adapter",
+    resourceKind: "gitops-adapter",
+    targetRoute: "Approval",
+  },
+  "GitOps Delivery": {
+    id: "GitOps Delivery",
+    resourceKind: "gitops-delivery",
+    targetRoute: "Approval",
+  },
+  "GitOps Workspace": {
+    id: "GitOps Workspace",
+    resourceKind: "gitops-workspace",
+    targetRoute: "Approval",
+  },
+  "GitOps Run": {
+    id: "GitOps Run",
+    resourceKind: "gitops-run",
+    targetRoute: "Approval",
+  },
+  "GitOps Pickup": {
+    id: "GitOps Pickup",
+    resourceKind: "gitops-pickup",
+    targetRoute: "Approval",
+  },
+  "GitOps Pickup Ack": {
+    id: "GitOps Pickup Ack",
+    resourceKind: "gitops-pickup-ack",
+    targetRoute: "Approval",
+  },
+  "GitOps Handoff State": {
+    id: "GitOps Handoff State",
+    resourceKind: "gitops-handoff-state",
+    targetRoute: "Approval",
+  },
+  "GitOps Pickup Event": {
+    id: "GitOps Pickup Event",
+    resourceKind: "gitops-pickup-event",
+    targetRoute: "Approval",
+  },
+  "GitOps Pickup Transition": {
+    id: "GitOps Pickup Transition",
+    resourceKind: "gitops-pickup-transition",
+    targetRoute: "Approval",
+  },
+  "GitOps Handoff Prep": {
+    id: "GitOps Handoff Prep",
+    resourceKind: "gitops-handoff-prep",
+    targetRoute: "Approval",
+  },
+  "GitOps Handoff Progress": {
+    id: "GitOps Handoff Progress",
+    resourceKind: "gitops-handoff-progress",
+    targetRoute: "Approval",
+  },
+  "GitOps Payload": {
+    id: "GitOps Payload",
+    resourceKind: "gitops-payload",
+    targetRoute: "Approval",
+  },
+  "GitOps Dispatch": {
+    id: "GitOps Dispatch",
+    resourceKind: "gitops-dispatch",
+    targetRoute: "Approval",
+  },
+  "GitOps Provider Request": {
+    id: "GitOps Provider Request",
+    resourceKind: "gitops-provider-request",
+    targetRoute: "Approval",
+  },
+  "GitOps Provider Result": {
+    id: "GitOps Provider Result",
+    resourceKind: "gitops-provider-result",
+    targetRoute: "Approval",
+  },
+  "Advisor Trace": {
+    id: "Advisor Trace",
+    resourceKind: "advice",
+    targetRoute: "Agent Trace",
+  },
+  Timeline: {
+    id: "Timeline",
+    resourceKind: "timeline",
+    targetRoute: "Releases",
+  },
+  Runbook: {
+    id: "Runbook",
+    resourceKind: "runbook",
+    targetRoute: "Releases",
+  },
+  RCA: {
+    id: "RCA",
+    resourceKind: "rca",
+    targetRoute: "Releases",
   },
 }
 
