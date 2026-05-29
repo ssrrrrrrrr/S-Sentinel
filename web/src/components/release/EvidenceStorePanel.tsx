@@ -12,6 +12,7 @@ import {
   fetchEvidenceStoreObject,
   fetchEvidenceStoreRefresh,
   fetchEvidenceStoreRelease,
+  fetchEvidenceStoreSearch,
   fetchEvidenceStoreStatus,
   type EvidenceStoreJson,
 } from "@/api/evidenceStore"
@@ -135,18 +136,19 @@ function objectDetailRecord(payload: EvidenceStoreJson | undefined) {
   const data = asRecord(root.data)
 
   return (
+    asRecord(root.summary) ??
+    asRecord(object?.summary) ??
+    asRecord(record?.summary) ??
+    asRecord(item?.summary) ??
+    asRecord(data?.summary) ??
     asRecord(root.raw) ??
     asRecord(object?.raw) ??
-    asRecord(object?.summary) ??
     object ??
     asRecord(record?.raw) ??
-    asRecord(record?.summary) ??
     record ??
     asRecord(item?.raw) ??
-    asRecord(item?.summary) ??
     item ??
     asRecord(data?.raw) ??
-    asRecord(data?.summary) ??
     data ??
     root
   )
@@ -169,8 +171,33 @@ function buildRuntimeActionCanonicalSections(
   const gateSummary = asRecord(record.gateSummary)
   const verificationSummary = asRecord(record.verificationSummary)
   const riskSummary = asRecord(record.riskSummary)
+  const actorBoundary = asRecord(record.actorBoundary)
+  const recoveryBoundary = asRecord(record.recoveryBoundary)
+  const executionSafetyBoundary = asRecord(record.executionSafetyBoundary)
+  const actorExecutorIdentity = asRecord(actorBoundary?.executorIdentity)
+  const actorRbacBoundary = asRecord(actorBoundary?.rbacBoundary)
+  const recoveryFailure = asRecord(recoveryBoundary?.failureRecovery)
+  const recoveryRetry = asRecord(recoveryBoundary?.retry)
+  const safetyOperationRisk = asRecord(executionSafetyBoundary?.operationRisk)
+  const safetyDecision = asRecord(executionSafetyBoundary?.safetyDecision)
 
-  if (!executionSummary && !gateSummary && !verificationSummary && !riskSummary) return []
+  const hasFlatRuntimeActionSummary =
+    record.objectType === "runtimeActionExecutionResult" ||
+    typeof record.requestedAction === "string" ||
+    typeof record.runtimeActionExecutionResultId === "string"
+
+  if (
+    !executionSummary &&
+    !gateSummary &&
+    !verificationSummary &&
+    !riskSummary &&
+    !actorBoundary &&
+    !recoveryBoundary &&
+    !executionSafetyBoundary &&
+    !hasFlatRuntimeActionSummary
+  ) {
+    return []
+  }
 
   return [
     {
@@ -217,6 +244,39 @@ function buildRuntimeActionCanonicalSections(
         { label: "GitOps", value: canonicalField(riskSummary ?? record, ["mutatesGitOps"]) },
       ],
     },
+    {
+      title: "Actor",
+      description: "Launch hardening boundary",
+      rows: [
+        { label: "Runtime", value: canonicalField(actorExecutorIdentity ?? record, ["runtimeIdentity", "actorRuntimeIdentity"]) },
+        { label: "K8s Identity", value: canonicalField(actorExecutorIdentity ?? record, ["kubernetesIdentity", "actorKubernetesIdentity"]) },
+        { label: "Watcher RBAC", value: canonicalField(actorRbacBoundary ?? record, ["watcherRbacMode"]) },
+        { label: "Watcher Write", value: canonicalField(actorRbacBoundary ?? record, ["watcherCanMutateKubernetes"]) },
+        { label: "Executor Write", value: canonicalField(actorRbacBoundary ?? record, ["executorWasAllowedToMutateKubernetes"]) },
+      ],
+    },
+    {
+      title: "Recovery",
+      description: "Launch hardening boundary",
+      rows: [
+        { label: "Failure", value: canonicalField(recoveryFailure ?? record, ["failureMode", "recoveryFailureMode"]) },
+        { label: "Recovery", value: canonicalField(recoveryFailure ?? record, ["recoveryRequired"]) },
+        { label: "Manual Retry", value: canonicalField(recoveryRetry ?? record, ["manualRetryAllowed"]) },
+        { label: "Auto Retry", value: canonicalField(recoveryRetry ?? record, ["automaticRetryAllowed"]) },
+        { label: "Fresh Evidence", value: canonicalField(recoveryRetry ?? record, ["retryRequiresFreshEvidence"]) },
+      ],
+    },
+    {
+      title: "Safety",
+      description: "Launch hardening boundary",
+      rows: [
+        { label: "Risk", value: canonicalField(safetyOperationRisk ?? record, ["riskLevel", "executionSafetyRiskLevel"]) },
+        { label: "High Risk", value: canonicalField(safetyOperationRisk ?? record, ["highRiskAction"]) },
+        { label: "Default Off", value: canonicalField(record, ["executionDefaultOff"]) },
+        { label: "Direct Exec", value: canonicalField(safetyDecision ?? record, ["directExecutionAllowed", "executionDirectExecutionAllowed"]) },
+        { label: "Blocking", value: canonicalField(safetyDecision ?? record, ["blockingReasons", "executionSafetyBlockingReasons"]) },
+      ],
+    },
   ]
 }
 
@@ -234,14 +294,14 @@ function RuntimeActionCanonicalSummary({
           Runtime Action Canonical Summary
         </p>
         <h4 className="mt-1 text-base font-semibold text-slate-100">
-          Execution / Gate / Verification / Risk
+          Execution / Gate / Verification / Risk / Launch Hardening Boundaries
         </h4>
         <p className="mt-2 text-sm leading-6 text-slate-400">
           Prefer canonical summaries for runtime action review while keeping raw JSON available for audit compatibility.
         </p>
       </div>
 
-      <div className="mt-4 grid gap-3 xl:grid-cols-4">
+      <div className="mt-4 grid gap-3 xl:grid-cols-4 2xl:grid-cols-7">
         {sections.map((section) => (
           <div key={section.title} className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-sm font-semibold text-slate-100">{section.title}</p>
@@ -293,6 +353,8 @@ export function EvidenceStorePanel({
 
   const statusData = asRecord(statusQuery.data)
   const evidenceStoreReady = statusData?.ready === true
+  const normalizedSearchText = searchText.trim()
+  const globalSearchActive = evidenceStoreReady && normalizedSearchText.length > 0
 
   const releaseQuery = useQuery({
     queryKey: ["evidence-store-release", selected.releaseId],
@@ -306,15 +368,34 @@ export function EvidenceStorePanel({
     [releaseQuery.data, selected.releaseId],
   )
 
+  const globalSearchQuery = useQuery({
+    queryKey: ["evidence-store-global-search", normalizedSearchText],
+    queryFn: () =>
+      fetchEvidenceStoreSearch({
+        query: normalizedSearchText,
+        includeRaw: false,
+        limit: 50,
+      }),
+    enabled: globalSearchActive,
+    staleTime: 15000,
+  })
+
+  const globalObjectRows = useMemo(
+    () => extractObjectRows(globalSearchQuery.data, selected.releaseId),
+    [globalSearchQuery.data, selected.releaseId],
+  )
+
+  const visibleRows = globalSearchActive ? globalObjectRows : objectRows
+
   const filteredRows = useMemo(
-    () => objectRows.filter((row) => matchesSearch(row, searchText)),
-    [objectRows, searchText],
+    () => (globalSearchActive ? globalObjectRows : objectRows.filter((row) => matchesSearch(row, searchText))),
+    [globalSearchActive, globalObjectRows, objectRows, searchText],
   )
 
   const selectedObject =
     filteredRows.find((row) => row.key === selectedKey) ??
     filteredRows[0] ??
-    objectRows[0]
+    visibleRows[0]
 
   const detailQuery = useQuery({
     queryKey: [
@@ -339,6 +420,7 @@ export function EvidenceStorePanel({
     onSuccess: () => {
       void statusQuery.refetch()
       void releaseQuery.refetch()
+      void globalSearchQuery.refetch()
       void detailQuery.refetch()
     },
   })
@@ -358,7 +440,7 @@ export function EvidenceStorePanel({
   const statusErrorMessage = statusQuery.isError ? queryErrorMessage(statusQuery.error) : ""
   const refreshErrorMessage = refreshMutation.isError ? queryErrorMessage(refreshMutation.error) : ""
 
-  const counts = useMemo(() => typeCounts(objectRows), [objectRows])
+  const counts = useMemo(() => typeCounts(visibleRows), [visibleRows])
   const objectTypeCount = Object.keys(counts).length
   const releaseIndexMissing = releaseQuery.isError && isNotFoundError(releaseQuery.error)
   const releaseDBNotReady = releaseQuery.isError && isNotReadyError(releaseQuery.error)
@@ -390,7 +472,7 @@ export function EvidenceStorePanel({
         <div className="grid grid-cols-3 gap-2 text-xs lg:min-w-[360px]">
           <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Objects</p>
-            <p className="mt-1 text-lg font-semibold text-slate-100">{objectRows.length}</p>
+            <p className="mt-1 text-lg font-semibold text-slate-100">{visibleRows.length}</p>
           </div>
           <div className="rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-3">
             <p className="text-slate-500">Types</p>
@@ -489,11 +571,11 @@ export function EvidenceStorePanel({
             当前查询接口不会再隐式导入 evidence。请点击上方 Refresh EvidenceStore，显式刷新 SQLite 索引后再查看对象详情。
           </p>
         </div>
-      ) : releaseQuery.isLoading ? (
+      ) : !globalSearchActive && releaseQuery.isLoading ? (
         <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
           正在查询 EvidenceStore release detail...
         </div>
-      ) : releaseQuery.isError ? (
+      ) : !globalSearchActive && releaseQuery.isError ? (
         <div
           className={`mt-4 rounded-xl border p-4 text-sm ${
             releaseIndexMissing
@@ -516,7 +598,15 @@ export function EvidenceStorePanel({
                 : `接口返回错误：${releaseQueryErrorMessage}`}
           </p>
         </div>
-      ) : objectRows.length === 0 ? (
+      ) : globalSearchActive && globalSearchQuery.isLoading ? (
+        <div className="mt-4 rounded-xl border border-[#1f2b3d] bg-[#0b121d] p-4 text-sm text-slate-400">
+          Searching EvidenceStore objects...
+        </div>
+      ) : globalSearchActive && globalSearchQuery.isError ? (
+        <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
+          Global EvidenceStore search failed: {queryErrorMessage(globalSearchQuery.error)}
+        </div>
+      ) : visibleRows.length === 0 ? (
         <div className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 p-4 text-sm text-amber-200">
           EvidenceStore 已返回数据，但没有解析出对象列表。当前面板保留为只读 Raw View，后续可根据真实 schema 调整解析路径。
         </div>
@@ -553,7 +643,7 @@ export function EvidenceStorePanel({
                   Evidence Objects
                 </div>
                 <span className="rounded-full border border-[#1f2b3d] bg-[#0b121d] px-2.5 py-1 text-xs font-semibold text-slate-500">
-                  {filteredRows.length}/{objectRows.length}
+                  {filteredRows.length}/{visibleRows.length}
                 </span>
               </div>
 

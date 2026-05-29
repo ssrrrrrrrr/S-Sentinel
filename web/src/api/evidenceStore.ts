@@ -37,6 +37,42 @@ export function fetchEvidenceStoreRelease(releaseId: string, includeRaw = true) 
   return fetchJson<EvidenceStoreJson>(`/api/evidence/releases/${encodeURIComponent(releaseId)}${suffix}`)
 }
 
+export function fetchEvidenceStoreSearch({
+  query = "",
+  objectType,
+  releaseId,
+  includeRaw = false,
+  limit = 50,
+}: {
+  query?: string
+  objectType?: string
+  releaseId?: string
+  includeRaw?: boolean
+  limit?: number
+}) {
+  const params = new URLSearchParams()
+
+  if (query) {
+    params.set("q", query)
+  }
+
+  if (objectType) {
+    params.set("objectType", objectType)
+  }
+
+  if (releaseId) {
+    params.set("releaseId", releaseId)
+  }
+
+  if (includeRaw) {
+    params.set("includeRaw", "true")
+  }
+
+  params.set("limit", String(limit))
+
+  return fetchJson<EvidenceStoreJson>(`/api/evidence/search?${params.toString()}`)
+}
+
 export function fetchEvidenceStoreObject({
   objectType,
   objectId,
