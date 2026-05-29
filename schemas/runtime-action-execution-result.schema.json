@@ -15,6 +15,7 @@
     "target",
     "executor",
     "actorBoundary",
+    "recoveryBoundary",
     "action",
     "writeGate",
     "beforeSnapshot",
@@ -538,6 +539,18 @@
         "executorIdentity",
         "rbacBoundary",
         "separationOfDuties"
+      ]
+    },
+    "recoveryBoundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Launch hardening idempotency, retry, and failure recovery boundary for controlled runtime actions.",
+      "required": [
+        "boundaryVersion",
+        "idempotency",
+        "retry",
+        "failureRecovery",
+        "evidenceWrite"
       ]
     }
   }

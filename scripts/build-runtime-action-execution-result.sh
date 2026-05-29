@@ -528,6 +528,24 @@ elif requested_action == "ROLLBACK_ROLLOUT" and not desired_state_observed:
 else:
     verification_status = "VERIFIED"
 
+action_verified = pause_verified or resume_verified or promote_verified or abort_verified or rollback_verified
+execution_status_value = "SUCCEEDED" if executed and command_exit_code == 0 else ("FAILED" if executed else "NOT_EXECUTED")
+
+if not executed:
+    recovery_failure_mode = "not_executed"
+elif command_exit_code != 0:
+    recovery_failure_mode = "command_failed"
+elif not action_verified:
+    recovery_failure_mode = "post_action_verification_failed"
+else:
+    recovery_failure_mode = "none"
+
+recovery_required = recovery_failure_mode in {"command_failed", "post_action_verification_failed"}
+manual_retry_safe = (
+    not mutated_kubernetes
+    and recovery_failure_mode in {"not_executed", "command_failed"}
+)
+
 post_action_verification = {
     "verificationType": "runtime_action_post_action_verification",
     "verificationStatus": verification_status,
@@ -633,6 +651,39 @@ doc = {
             "approvalGateEnabled": approval_gate_enabled,
             "finalExecuteSwitchRequired": final_execute_env is not None,
             "finalExecuteSwitchEnabled": final_execute_enabled,
+        },
+    },
+    "recoveryBoundary": {
+        "boundaryVersion": "runtime.action.recovery-boundary/v1alpha1",
+        "idempotency": {
+            "idempotencyKey": f"{release_id}:{requested_action}:{preflight_doc.get('runtimeActionPreflightId')}",
+            "correlationId": preflight_doc.get("runtimeActionPreflightId"),
+            "duplicatePolicy": "same_preflight_same_action_is_duplicate",
+            "samePreflightReexecutionAllowed": False,
+            "requiresFreshPreflightForRetry": True,
+        },
+        "retry": {
+            "automaticRetryAllowed": False,
+            "manualRetryAllowed": manual_retry_safe,
+            "maxAutomaticAttempts": 1,
+            "currentAttempt": 1,
+            "retryRequiresOperatorReview": True,
+            "retryRequiresFreshEvidence": True,
+        },
+        "failureRecovery": {
+            "executionStatus": execution_status_value,
+            "failureMode": recovery_failure_mode,
+            "recoveryRequired": recovery_required,
+            "recoveryStatus": "OPERATOR_REVIEW_REQUIRED" if recovery_required else "NO_RECOVERY_REQUIRED",
+            "safeToRetryWithoutFreshPreflight": False,
+            "safeToRetryAfterFreshPreflight": manual_retry_safe,
+        },
+        "evidenceWrite": {
+            "receiptStatus": "RECORDED",
+            "wroteEvidence": True,
+            "resultArtifact": str(output_json),
+            "commandResultCaptured": executed,
+            "postActionObservationCaptured": post_action_observed,
         },
     },
     "action": {

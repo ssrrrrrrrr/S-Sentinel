@@ -101,6 +101,30 @@ assert actor["separationOfDuties"]["approvalGateEnabled"] is False, doc
 assert actor["separationOfDuties"]["finalExecuteSwitchRequired"] is True, doc
 assert actor["separationOfDuties"]["finalExecuteSwitchEnabled"] is False, doc
 
+recovery = doc["recoveryBoundary"]
+assert recovery["boundaryVersion"] == "runtime.action.recovery-boundary/v1alpha1", doc
+assert recovery["idempotency"]["idempotencyKey"] == f"{release_id}:PAUSE_ROLLOUT:rap-{release_id}", doc
+assert recovery["idempotency"]["correlationId"] == "rap-" + release_id, doc
+assert recovery["idempotency"]["duplicatePolicy"] == "same_preflight_same_action_is_duplicate", doc
+assert recovery["idempotency"]["samePreflightReexecutionAllowed"] is False, doc
+assert recovery["idempotency"]["requiresFreshPreflightForRetry"] is True, doc
+assert recovery["retry"]["automaticRetryAllowed"] is False, doc
+assert recovery["retry"]["manualRetryAllowed"] is True, doc
+assert recovery["retry"]["maxAutomaticAttempts"] == 1, doc
+assert recovery["retry"]["currentAttempt"] == 1, doc
+assert recovery["retry"]["retryRequiresOperatorReview"] is True, doc
+assert recovery["retry"]["retryRequiresFreshEvidence"] is True, doc
+assert recovery["failureRecovery"]["executionStatus"] == "NOT_EXECUTED", doc
+assert recovery["failureRecovery"]["failureMode"] == "not_executed", doc
+assert recovery["failureRecovery"]["recoveryRequired"] is False, doc
+assert recovery["failureRecovery"]["recoveryStatus"] == "NO_RECOVERY_REQUIRED", doc
+assert recovery["failureRecovery"]["safeToRetryWithoutFreshPreflight"] is False, doc
+assert recovery["failureRecovery"]["safeToRetryAfterFreshPreflight"] is True, doc
+assert recovery["evidenceWrite"]["receiptStatus"] == "RECORDED", doc
+assert recovery["evidenceWrite"]["wroteEvidence"] is True, doc
+assert recovery["evidenceWrite"]["commandResultCaptured"] is False, doc
+assert recovery["evidenceWrite"]["postActionObservationCaptured"] is False, doc
+
 assert doc["action"]["requestedAction"] == "PAUSE_ROLLOUT", doc
 assert doc["action"]["supportedAction"] is True, doc
 assert doc["action"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
