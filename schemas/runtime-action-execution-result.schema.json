@@ -16,6 +16,7 @@
     "executor",
     "actorBoundary",
     "recoveryBoundary",
+    "executionSafetyBoundary",
     "action",
     "writeGate",
     "beforeSnapshot",
@@ -551,6 +552,18 @@
         "retry",
         "failureRecovery",
         "evidenceWrite"
+      ]
+    },
+    "executionSafetyBoundary": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Launch hardening execution safety boundary for default-off runtime action policy, risk tier, required gates, and direct execution decision.",
+      "required": [
+        "boundaryVersion",
+        "defaultPolicy",
+        "operationRisk",
+        "gateMatrix",
+        "safetyDecision"
       ]
     }
   }

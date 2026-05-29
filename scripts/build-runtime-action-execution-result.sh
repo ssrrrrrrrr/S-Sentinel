@@ -546,6 +546,36 @@ manual_retry_safe = (
     and recovery_failure_mode in {"not_executed", "command_failed"}
 )
 
+runtime_mutating_action = requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT", "PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
+runtime_high_risk_action = requested_action in {"PROMOTE_ROLLOUT", "ABORT_ROLLOUT", "ROLLBACK_ROLLOUT"}
+runtime_risk_level = (
+    "high"
+    if runtime_high_risk_action
+    else ("medium_high" if requested_action in {"PAUSE_ROLLOUT", "RESUME_ROLLOUT"} else "unknown")
+)
+
+safety_blocking_reasons = []
+if runtime_mutating_action:
+    if not preflight_passed:
+        safety_blocking_reasons.append("preflight_not_passed")
+    if not global_gate_enabled:
+        safety_blocking_reasons.append("global_runtime_execution_gate_disabled")
+    if not operation_gate_enabled:
+        safety_blocking_reasons.append("operation_runtime_gate_disabled")
+    if not approval_gate_enabled:
+        safety_blocking_reasons.append("approval_gate_disabled")
+    if final_execute_env and not final_execute_enabled:
+        safety_blocking_reasons.append("final_execute_switch_disabled")
+
+all_runtime_gates_enabled = (
+    runtime_mutating_action
+    and preflight_passed
+    and global_gate_enabled
+    and operation_gate_enabled
+    and approval_gate_enabled
+    and final_execute_enabled
+)
+
 post_action_verification = {
     "verificationType": "runtime_action_post_action_verification",
     "verificationStatus": verification_status,
@@ -684,6 +714,44 @@ doc = {
             "resultArtifact": str(output_json),
             "commandResultCaptured": executed,
             "postActionObservationCaptured": post_action_observed,
+        },
+    },
+    "executionSafetyBoundary": {
+        "boundaryVersion": "runtime.action.execution-safety-boundary/v1alpha1",
+        "defaultPolicy": {
+            "defaultOff": True,
+            "denyByDefault": True,
+            "requiresFreshPreflight": True,
+            "requiresExplicitGlobalGate": True,
+            "requiresExplicitOperationGate": True,
+            "requiresApprovalGate": True,
+            "requiresFinalExecuteSwitch": final_execute_env is not None,
+        },
+        "operationRisk": {
+            "requestedAction": requested_action,
+            "riskLevel": runtime_risk_level,
+            "highRiskAction": runtime_high_risk_action,
+            "runtimeMutatingAction": runtime_mutating_action,
+            "mutatesKubernetesByDesign": runtime_mutating_action,
+            "mutatesGitOpsByDesign": False,
+        },
+        "gateMatrix": {
+            "globalGateEnv": "S_SENTINEL_RUNTIME_EXECUTION_ENABLED",
+            "globalGateEnabled": global_gate_enabled,
+            "operationGateEnv": operation_gate_env,
+            "operationGateEnabled": operation_gate_enabled,
+            "approvalGateEnv": "S_SENTINEL_RUNTIME_ACTION_APPROVED",
+            "approvalGateEnabled": approval_gate_enabled,
+            "finalExecuteEnv": final_execute_env,
+            "finalExecuteEnabled": final_execute_enabled,
+        },
+        "safetyDecision": {
+            "allRuntimeGatesEnabled": all_runtime_gates_enabled,
+            "directExecutionAllowed": overall_gate_status in {"EXECUTION_ALLOWED", "EXECUTION_SUCCEEDED", "EXECUTION_FAILED"},
+            "willExecute": executed,
+            "defaultOffEnforced": True,
+            "blockedByDefaultOff": runtime_mutating_action and not final_execute_enabled,
+            "blockingReasons": safety_blocking_reasons,
         },
     },
     "action": {

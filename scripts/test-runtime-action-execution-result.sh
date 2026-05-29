@@ -125,6 +125,38 @@ assert recovery["evidenceWrite"]["wroteEvidence"] is True, doc
 assert recovery["evidenceWrite"]["commandResultCaptured"] is False, doc
 assert recovery["evidenceWrite"]["postActionObservationCaptured"] is False, doc
 
+safety = doc["executionSafetyBoundary"]
+assert safety["boundaryVersion"] == "runtime.action.execution-safety-boundary/v1alpha1", doc
+assert safety["defaultPolicy"]["defaultOff"] is True, doc
+assert safety["defaultPolicy"]["denyByDefault"] is True, doc
+assert safety["defaultPolicy"]["requiresFreshPreflight"] is True, doc
+assert safety["defaultPolicy"]["requiresExplicitGlobalGate"] is True, doc
+assert safety["defaultPolicy"]["requiresExplicitOperationGate"] is True, doc
+assert safety["defaultPolicy"]["requiresApprovalGate"] is True, doc
+assert safety["defaultPolicy"]["requiresFinalExecuteSwitch"] is True, doc
+assert safety["operationRisk"]["requestedAction"] == "PAUSE_ROLLOUT", doc
+assert safety["operationRisk"]["riskLevel"] == "medium_high", doc
+assert safety["operationRisk"]["highRiskAction"] is False, doc
+assert safety["operationRisk"]["runtimeMutatingAction"] is True, doc
+assert safety["operationRisk"]["mutatesKubernetesByDesign"] is True, doc
+assert safety["operationRisk"]["mutatesGitOpsByDesign"] is False, doc
+assert safety["gateMatrix"]["globalGateEnabled"] is False, doc
+assert safety["gateMatrix"]["operationGateEnv"] == "S_SENTINEL_ALLOW_RUNTIME_PAUSE", doc
+assert safety["gateMatrix"]["operationGateEnabled"] is False, doc
+assert safety["gateMatrix"]["approvalGateEnabled"] is False, doc
+assert safety["gateMatrix"]["finalExecuteEnv"] == "S_SENTINEL_RUNTIME_PAUSE_EXECUTE", doc
+assert safety["gateMatrix"]["finalExecuteEnabled"] is False, doc
+assert safety["safetyDecision"]["allRuntimeGatesEnabled"] is False, doc
+assert safety["safetyDecision"]["directExecutionAllowed"] is False, doc
+assert safety["safetyDecision"]["willExecute"] is False, doc
+assert safety["safetyDecision"]["defaultOffEnforced"] is True, doc
+assert safety["safetyDecision"]["blockedByDefaultOff"] is True, doc
+assert "preflight_not_passed" in safety["safetyDecision"]["blockingReasons"], doc
+assert "global_runtime_execution_gate_disabled" in safety["safetyDecision"]["blockingReasons"], doc
+assert "operation_runtime_gate_disabled" in safety["safetyDecision"]["blockingReasons"], doc
+assert "approval_gate_disabled" in safety["safetyDecision"]["blockingReasons"], doc
+assert "final_execute_switch_disabled" in safety["safetyDecision"]["blockingReasons"], doc
+
 assert doc["action"]["requestedAction"] == "PAUSE_ROLLOUT", doc
 assert doc["action"]["supportedAction"] is True, doc
 assert doc["action"]["actionStatus"] == "BLOCKED_BY_PREFLIGHT", doc
