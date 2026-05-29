@@ -1,4 +1,5 @@
-﻿import { getReleaseResourceKindByTab } from "@/config/releaseTabs"
+﻿import { fetchText } from "@/api/client"
+import { getReleaseResourceKindByTab } from "@/config/releaseTabs"
 
 export type ReleaseResourceKind =
   | "summary"
@@ -64,18 +65,8 @@ export async function fetchReleaseResource(
   releaseId: string,
   kind: ReleaseResourceKind,
 ): Promise<ReleaseResourceContent> {
-  const response = await fetch(`/api/releases/${releaseId}/${kind}`, {
-    headers: {
-      Accept: "application/json, text/markdown, text/plain, */*",
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`/api/releases/${releaseId}/${kind} returned HTTP ${response.status}`)
-  }
-
-  const contentType = response.headers.get("content-type") ?? "text/plain; charset=utf-8"
-  const body = await response.text()
+  const path = `/api/releases/${releaseId}/${kind}`
+  const { contentType, body } = await fetchText(path)
 
   return {
     releaseId,

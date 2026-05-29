@@ -1,20 +1,6 @@
-﻿export type EvidenceStoreJson = Record<string, unknown>
+export type EvidenceStoreJson = Record<string, unknown>
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.headers ?? {}),
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`${path} returned HTTP ${response.status}`)
-  }
-
-  return response.json() as Promise<T>
-}
+import { fetchJson } from "@/api/client"
 
 export function fetchEvidenceStoreStatus() {
   return fetchJson<EvidenceStoreJson>("/api/evidence-store/status")
